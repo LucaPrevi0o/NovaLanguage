@@ -3,9 +3,9 @@ package src.parser.parser;
 import src.lexer.*;
 import src.lexer.token.LiteralToken;
 import src.lexer.token.TypeToken;
+import src.parser.ast.SymbolTable;
 import src.parser.ast.nodes.ExpressionNode;
 import src.parser.ast.nodes.StatementNode;
-import src.parser.ast.nodes.Symbol;
 import src.parser.ast.nodes.statement.*;
 import src.parser.ast.nodes.statement.conditional.*;
 import src.parser.ast.nodes.statement.declaration.*;
@@ -37,13 +37,22 @@ import java.util.List;
  */
 public class DeclarationParser extends ParserBase {
     
-    private final ExpressionParser expressionParser;
-    private final ClassParser classParser;
+    private ExpressionParser expressionParser;
+    private ClassParser classParser;
     
     public DeclarationParser(ParserState state) {
-
         super(state);
-        this.expressionParser = new ExpressionParser(state);
+        // Share the symbol table with child parsers
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        this.classParser = new ClassParser(this);
+    }
+    
+    /**
+     * Constructor for child parsers (shares symbol table).
+     */
+    public DeclarationParser(ParserState state, SymbolTable symbolTable) {
+        super(state, symbolTable);
+        this.expressionParser = new ExpressionParser(state, symbolTable);
         this.classParser = new ClassParser(this);
     }
     
@@ -176,13 +185,8 @@ public class DeclarationParser extends ParserBase {
 
             if (accessModifier == null) throw new ParseException("Class declaration requires an access modifier", previous());
             
-            // Get the current symbol count before parsing
-            int symbolCountBefore = classParser.getSymbolTable().getSymbols().size();
+            // Parse class declaration - it will register itself in the symbol table
             ClassDeclarationStatement classDecl = classParser.parseClassDeclaration(accessModifier);
-            
-            // Collect only the NEW symbols added by this class (avoids duplicates from inner classes)
-            List<Symbol> classSymbols = classParser.getSymbolTable().getSymbols().subList(symbolCountBefore, classParser.getSymbolTable().getSymbols().size());
-            for (Symbol sym : classSymbols) this.symbolTable.register(sym);
             
             return classDecl;
         }
@@ -220,21 +224,42 @@ public class DeclarationParser extends ParserBase {
 
         consume(Delimiter.RPAREN, "Expect ')' after parameters");
         
-        // Register parameters in symbol table so they can be used in function body
-        for (FunctionParameter param : parameters) this.symbolTable.register(param);
+        // Register function in CURRENT scope (before entering function scope)
+        var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
+        this.symbolTable.register(decl);  // Register function as symbol
         
-        // Parse function body
+        // Create NEW scope for function body (parameters + local variables)
+        SymbolTable functionScope = enterScope();
+        this.symbolTable = functionScope;
+        
+        // Register parameters in FUNCTION scope
+        for (FunctionParameter param : parameters) {
+            this.symbolTable.register(param);
+        }
+        
+        // Update the ExpressionParser to use the new scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
+        // Parse function body in the new scope
         consume(Delimiter.LBRACE, "Expect '{' before function body");
         
         List<StatementNode> bodyStatements = new ArrayList<>();
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) bodyStatements.add(parseDeclaration());
+        while (!check(Delimiter.RBRACE) && !isAtEnd()) {
+            bodyStatements.add(parseDeclaration());
+        }
 
         consume(Delimiter.RBRACE, "Expect '}' after block");
         
+        // Exit function scope
+        this.symbolTable = exitScope(functionScope);
+        
+        // Restore ExpressionParser with original scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
         BlockStatement body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
-        var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
-        this.symbolTable.register(decl);  // Register function as symbol
-        return decl;
+        
+        // Update the function declaration with the actual body
+        return new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
     }
     
     /**
@@ -416,15 +441,29 @@ public class DeclarationParser extends ParserBase {
     public BlockStatement parseBlock() {
 
         Token lbrace = previous();
+        
+        // Create NEW scope for block
+        SymbolTable blockScope = enterScope();
+        this.symbolTable = blockScope;
+        
+        // Update ExpressionParser to use the new scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
         List<StatementNode> statements = new ArrayList<>();
         
         while (!check(Delimiter.RBRACE) && !isAtEnd()) {
-
             StatementNode stmt = parseDeclaration();
             statements.add(stmt);
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after block");
+        
+        // Exit block scope
+        this.symbolTable = exitScope(blockScope);
+        
+        // Restore ExpressionParser with original scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
         return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
     }
     

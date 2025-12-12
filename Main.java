@@ -442,54 +442,177 @@ public class Main {
     // ========== Symbol Table Printer ==========
     
     /**
-     * Print symbol table with intelligent grouping based on AST structure.
-     * Groups symbols by their containing scope (global, class, method).
+     * Print symbol table with hierarchical scope structure.
+     * Shows the actual scope tree with parent-child relationships.
      */
     private static void printSymbolTableGrouped(src.parser.ast.SymbolTable symbolTable, List<StatementNode> ast) {
-        
         System.out.println("└─ Global Scope");
+        printScopeRecursive(symbolTable, 1, true);
+    }
+    
+    /**
+     * Recursively print a scope and all its children.
+     */
+    private static void printScopeRecursive(src.parser.ast.SymbolTable scope, int depth, boolean isRoot) {
+        var symbols = scope.getSymbols();
+        var children = scope.getChildren();
         
-        var allSymbols = symbolTable.getSymbols();
-        var globalSymbols = new ArrayList<src.parser.ast.nodes.Symbol>();
-        var classesMap = new java.util.HashMap<String, src.parser.ast.nodes.statement.ClassDeclarationStatement>();
-        
-        // Build map of classes
-        for (var node : ast) {
-            if (node instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement cds) {
-                classesMap.put(cds.getName(), cds);
-                collectInnerClasses(cds, classesMap);
+        // Print symbols in this scope
+        if (!symbols.isEmpty()) {
+            String symbolsPrefix = (children.isEmpty() && !isRoot) ? "└─" : "├─";
+            printLine(depth, symbolsPrefix + " Symbols: " + symbols.size());
+            
+            for (int i = 0; i < symbols.size(); i++) {
+                var symbol = symbols.get(i);
+                boolean isLastSymbol = (i == symbols.size() - 1) && children.isEmpty();
+                String prefix = isLastSymbol ? "└─" : "├─";
+                printSymbolInfo(symbol, depth + 1, prefix);
             }
         }
         
-        // Separate global symbols
-        for (var symbol : allSymbols) {
-            if (symbol instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement ||
-                (symbol instanceof src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement && 
-                 !isClassMember(symbol, classesMap)) ||
-                (symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement &&
-                 !isClassMethod(symbol, classesMap))) {
-                globalSymbols.add(symbol);
+        // Print child scopes
+        for (int i = 0; i < children.size(); i++) {
+            var childScope = children.get(i);
+            boolean isLast = (i == children.size() - 1);
+            
+            // Determine scope type based on symbols
+            String scopeType = determineScopeType(childScope);
+            String prefix = isLast ? "└─" : "├─";
+            
+            printLine(depth, prefix + " " + scopeType);
+            printScopeRecursive(childScope, depth + 1, false);
+        }
+    }
+    
+    /**
+     * Determine the type of scope based on its symbols.
+     */
+    private static String determineScopeType(src.parser.ast.SymbolTable scope) {
+        var symbols = scope.getSymbols();
+        
+        if (symbols.isEmpty()) {
+            return "Block Scope (empty)";
+        }
+        
+        // Check if this scope contains a class declaration
+        for (var symbol : symbols) {
+            if (symbol instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement cds) {
+                // This is NOT the class scope itself, but the scope of its parent
+                // The class scope is the child scope
+                break;
             }
         }
         
-        // Print global symbols
-        if (!globalSymbols.isEmpty()) {
-            printLine(1, "├─ Symbols: " + globalSymbols.size());
-            for (var symbol : globalSymbols) {
-                if (!(symbol instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement)) {
-                    printSymbol(symbol, 2, "├─");
+        // Check if it's a class scope (contains fields/methods but NOT from parent)
+        boolean hasFields = false;
+        boolean hasMethods = false;
+        String className = null;
+        
+        for (var symbol : symbols) {
+            if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration) {
+                hasFields = true;
+            }
+            if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration cmd) {
+                hasMethods = true;
+                // Try to extract class name from method's fully qualified name
+                if (className == null) {
+                    String fullName = printNonPrimitiveType(cmd.getDeclaredType().getBaseType());
+                    if (fullName.contains(".")) {
+                        // Extract class name from something like "MainClass.method"
+                        String[] parts = fullName.split("\\.");
+                        if (parts.length > 0) {
+                            className = parts[parts.length - 2]; // Get second-to-last part
+                        }
+                    }
                 }
             }
         }
         
-        // Print class scopes
-        int classIndex = 0;
-        for (var node : ast) {
-            if (node instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement cds) {
-                classIndex++;
-                printClassScope(cds, 1, allSymbols, classIndex == ast.size());
+        if (hasFields || hasMethods) {
+            return className != null ? "Class Scope (" + className + ")" : "Class Scope";
+        }
+        
+        // Check if it's a function/method scope (contains parameters)
+        for (var symbol : symbols) {
+            if (symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionParameter) {
+                // Look for function/method name in parent scope
+                if (scope.getParent() != null) {
+                    var parentSymbols = scope.getParent().getSymbols();
+                    
+                    // Try to find the function that owns these parameters
+                    for (var parentSym : parentSymbols) {
+                        if (parentSym instanceof src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement fds) {
+                            // Check if this function has these parameters
+                            for (var param : fds.getParameters()) {
+                                if (param == symbol) {
+                                    return "Function Scope (" + fds.getName() + ")";
+                                }
+                            }
+                        }
+                        if (parentSym instanceof src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration cmd) {
+                            // Check if this method has these parameters
+                            for (var param : cmd.getParameters()) {
+                                if (param == symbol) {
+                                    return "Method Scope (" + cmd.getName() + ")";
+                                }
+                            }
+                        }
+                    }
+                }
+                return "Function/Method Scope";
             }
         }
+        
+        // Default to block scope
+        return "Block Scope";
+    }
+    
+    /**
+     * Print information about a single symbol.
+     */
+    private static void printSymbolInfo(src.parser.ast.nodes.Symbol symbol, int depth, String prefix) {
+        String symbolInfo = getSymbolDescription(symbol);
+        printLine(depth, prefix + " " + symbolInfo);
+    }
+    
+    /**
+     * Get a human-readable description of a symbol.
+     */
+    private static String getSymbolDescription(src.parser.ast.nodes.Symbol symbol) {
+        if (symbol instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement cds) {
+            String desc = cds.getName() + " (class)";
+            if (cds.getSuperClass() != null) {
+                desc += " extends " + cds.getSuperClass().getName();
+            }
+            return desc + " [line " + symbol.getLine() + "]";
+        }
+        
+        if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration cmd) {
+            return cmd.getName() + ": " + getTypeString(cmd.getDeclaredType()) + 
+                   " (method, " + cmd.getAccessModifier() + ") [line " + symbol.getLine() + "]";
+        }
+        
+        if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration cfd) {
+            return cfd.getName() + ": " + getTypeString(cfd.getDeclaredType()) + 
+                   " (field, " + cfd.getAccessModifier() + ") [line " + symbol.getLine() + "]";
+        }
+        
+        if (symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement fds) {
+            return fds.getName() + ": " + getTypeString(fds.getDeclaredType()) + 
+                   " (function) [line " + symbol.getLine() + "]";
+        }
+        
+        if (symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionParameter fp) {
+            return fp.getName() + ": " + getTypeString(fp.getType()) + 
+                   " (parameter) [line " + symbol.getLine() + "]";
+        }
+        
+        if (symbol instanceof src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement vds) {
+            return vds.getName() + ": " + getTypeString(vds.getDeclaredType()) + 
+                   " (variable) [line " + symbol.getLine() + "]";
+        }
+        
+        return symbol.getName() + " [line " + symbol.getLine() + "]";
     }
     
     /**
@@ -501,107 +624,6 @@ public class Main {
             map.put(inner.getName(), inner);
             collectInnerClasses(inner, map);
         }
-    }
-    
-    /**
-     * Check if a symbol is a member of any class.
-     */
-    private static boolean isClassMember(src.parser.ast.nodes.Symbol symbol,
-                                        java.util.Map<String, src.parser.ast.nodes.statement.ClassDeclarationStatement> classesMap) {
-        if (!(symbol instanceof src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement)) {
-            return false;
-        }
-        
-        for (var cds : classesMap.values()) {
-            for (var field : cds.getFields()) {
-                if (field.getName().equals(symbol.getName())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Check if a symbol is a method of any class.
-     */
-    private static boolean isClassMethod(src.parser.ast.nodes.Symbol symbol,
-                                        java.util.Map<String, src.parser.ast.nodes.statement.ClassDeclarationStatement> classesMap) {
-        if (!(symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement)) {
-            return false;
-        }
-        
-        for (var cds : classesMap.values()) {
-            for (var method : cds.getMethods()) {
-                if (method.getName().equals(symbol.getName())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Print a class scope with its members.
-     */
-    private static void printClassScope(src.parser.ast.nodes.statement.ClassDeclarationStatement cds, 
-                                       int depth,
-                                       List<src.parser.ast.nodes.Symbol> allSymbols,
-                                       boolean isLast) {
-        
-        String prefix = isLast ? "└─" : "├─";
-        printLine(depth, prefix + " Class: " + cds.getName());
-        
-        // Count members
-        int memberCount = cds.getFields().length + cds.getMethods().length + cds.getConstructors().length + cds.getInnerClasses().length;
-        
-        if (memberCount > 0) {
-            printLine(depth + 1, "├─ Members: " + memberCount);
-            
-            // Print fields
-            for (var field : cds.getFields()) {
-                printLine(depth + 2, "├─ " + field.getName() + ": " + getTypeString(field.getDeclaredType()) + " (field) [line " + field.getLine() + "]");
-            }
-            
-            // Print methods
-            for (var method : cds.getMethods()) {
-                printLine(depth + 2, "├─ " + method.getName() + ": " + getTypeString(method.getDeclaredType()) + " (method) [line " + method.getLine() + "]");
-            }
-            
-            // Print constructors
-            for (var constructor : cds.getConstructors()) {
-                printLine(depth + 2, "├─ " + cds.getName() + " (constructor) [line " + constructor.getLine() + "]");
-            }
-            
-            // Print inner classes recursively
-            for (int i = 0; i < cds.getInnerClasses().length; i++) {
-                printClassScope(cds.getInnerClasses()[i], depth + 2, allSymbols, i == cds.getInnerClasses().length - 1);
-            }
-        }
-    }
-    
-    /**
-     * Print details of a single symbol.
-     */
-    private static void printSymbol(src.parser.ast.nodes.Symbol symbol, int depth, String prefix) {
-        
-        String indent = indent(depth);
-        String symbolInfo = symbol.getName();
-        
-        // Add type information if available
-        if (symbol instanceof src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement vds) {
-            symbolInfo += ": " + getTypeString(vds.getDeclaredType());
-        } else if (symbol instanceof src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement fds) {
-            symbolInfo += ": " + getTypeString(fds.getDeclaredType()) + " (function)";
-        } else if (symbol instanceof src.parser.ast.nodes.statement.ClassDeclarationStatement) {
-            symbolInfo += " (class)";
-        } else if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration cfd) {
-            symbolInfo += ": " + getTypeString(cfd.getDeclaredType()) + " (field)";
-        } else if (symbol instanceof src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration cmd) {
-            symbolInfo += ": " + getTypeString(cmd.getDeclaredType()) + " (method)";
-        }
-        
-        System.out.println(indent + prefix + " " + symbolInfo + " [line " + symbol.getLine() + "]");
     }
     
     /**

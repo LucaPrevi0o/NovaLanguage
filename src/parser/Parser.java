@@ -39,11 +39,10 @@ public class Parser extends ParserBase {
     private final DeclarationParser declarationParser;
     
     public Parser(List<Token> tokens) {
-
         super(new ParserState(tokens));
         
-        // DeclarationParser creates its own ExpressionParser internally
-        this.declarationParser = new DeclarationParser(state);
+        // DeclarationParser shares the same symbol table
+        this.declarationParser = new DeclarationParser(state, this.symbolTable);
     }
     
     // ========== Public API ==========
@@ -53,13 +52,12 @@ public class Parser extends ParserBase {
      * Throws ParseException immediately if any parsing error occurs.
      */
     public List<StatementNode> parse() {
-
         List<StatementNode> statements = new ArrayList<>();
-        while (!isAtEnd()) statements.add(declarationParser.parseDeclaration());
+        while (!isAtEnd()) {
+            statements.add(declarationParser.parseDeclaration());
+        }
         
-        // Collect all symbols from the declaration parser (which includes symbols from ClassParser)
-        for (var sym : declarationParser.getSymbolTable().getSymbols()) this.symbolTable.register(sym);
-        
+        // No need to copy symbols - we share the same symbol table
         return statements;
     }
 }

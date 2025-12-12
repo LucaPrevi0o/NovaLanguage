@@ -2,6 +2,7 @@ package src.parser.parser;
 
 import src.lexer.*;
 import src.lexer.token.*;
+import src.parser.ast.SymbolTable;
 import src.parser.ast.nodes.ExpressionNode;
 import src.parser.ast.nodes.expression.*;
 import src.parser.ast.nodes.expression.access.ArrayAccessExpression;
@@ -38,8 +39,11 @@ import java.util.List;
  */
 public class ExpressionParser extends ParserBase {
 
-    public ExpressionParser(ParserState state) { 
-        super(state); 
+    /**
+     * Constructor that shares the symbol table with parent parser.
+     */
+    public ExpressionParser(ParserState state, SymbolTable symbolTable) { 
+        super(state, symbolTable); 
     }
 
     /**
@@ -268,9 +272,7 @@ public class ExpressionParser extends ParserBase {
             
             // Validate that the identifier has been declared
             var symbol = symbolTable.lookup(name);
-            if (symbol == null) {
-                throw new ParseException("Undefined variable '" + name + "'", lit);
-            }
+            if (symbol == null) throw new ParseException("Undefined variable '" + name + "'", lit);
             
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
