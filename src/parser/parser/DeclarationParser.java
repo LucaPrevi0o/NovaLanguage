@@ -375,10 +375,18 @@ public class DeclarationParser extends ParserBase {
         Token forToken = previous();
         consume(Delimiter.LPAREN, "Expect '(' after 'for'");
         
+        // Create NEW scope for for loop (initializer + body)
+        SymbolTable forScope = enterScope();
+        this.symbolTable = forScope;
+        
+        // Update ExpressionParser to use the new scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
         // Initializer
         StatementNode initializer = null;
-        if (match(Delimiter.SEMICOLON)) initializer = null;
-        else if (isTypeToken(peek())) {
+        if (match(Delimiter.SEMICOLON)) {
+            initializer = null;
+        } else if (isTypeToken(peek())) {
 
             // Variable declaration: type IDENTIFIER = expr ;
             TypeToken type = (TypeToken) advance();
@@ -393,8 +401,12 @@ public class DeclarationParser extends ParserBase {
             ExpressionNode init = null;
             if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
             consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+            
             initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(),
                 new ReturnType(tokenFamily, new ExpressionNode[0]), name, init);
+            
+            // Register the initializer variable in the FOR scope
+            this.symbolTable.register((VariableDeclarationStatement) initializer);
         } else {
 
             // Expression statement: expr ;
@@ -403,7 +415,7 @@ public class DeclarationParser extends ParserBase {
             initializer = new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
         }
         
-        // Condition
+        // Condition (now 'i' is in scope)
         ExpressionNode condition = null;
         if (!check(Delimiter.SEMICOLON)) condition = expressionParser.parseExpression();
         consume(Delimiter.SEMICOLON, "Expect ';' after loop condition");
@@ -417,7 +429,15 @@ public class DeclarationParser extends ParserBase {
         StatementNode increment = null;
         if (incrementExpr != null) increment = new ExpressionStatement(incrementExpr.getLine(), incrementExpr.getColumn(), incrementExpr);
         
+        // Parse body in the FOR scope
         StatementNode body = parseStatement();
+        
+        // Exit for scope
+        this.symbolTable = exitScope(forScope);
+        
+        // Restore ExpressionParser with original scope
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        
         return new ForStatement(forToken.getLine(), forToken.getColumn(), initializer, condition, increment, body);
     }
     
