@@ -1,5 +1,6 @@
 package src.parser.ast;
 
+import java.util.ArrayList;
 import java.util.List;
 import src.parser.ast.nodes.Symbol;
 
@@ -16,7 +17,7 @@ public class SymbolTable {
         this.children = children;
     }
 
-    private SymbolTable(SymbolTable parent) { this(parent, new java.util.ArrayList<>(), new java.util.ArrayList<>()); }
+    private SymbolTable(SymbolTable parent) { this(parent, new ArrayList<>(), new ArrayList<>()); }
 
     public SymbolTable getParent() { return parent; }
     public List<Symbol> getSymbols() { return symbols; }
