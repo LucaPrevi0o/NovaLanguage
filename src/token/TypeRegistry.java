@@ -16,25 +16,21 @@ import java.util.List;
  */
 public class TypeRegistry {
 
-    private static final List<TokenFamily> types = new ArrayList<>();
+    private static final List<ReturnType> types = new ArrayList<>();
 
-    static { for (var primitive : PrimitiveType.values()) types.add(primitive); }
+    static { for (var primitive : PrimitiveType.values()) types.add(new ReturnType(primitive)); }
     
-    public static void registerClass(ClassDeclarationStatement classDecl) { types.add(new NonPrimitiveType(classDecl)); }
+    public static void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
 
-    public static TokenFamily getTokenFamilyByName(String typeName) { return types.stream().filter(t -> t.get().equals(typeName)).findFirst().orElse(null); }
+    public static ReturnType getReturnType(String typeName) { return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null); }
 
-    public static boolean isType(String typeName) { return types.stream().anyMatch(t -> t.get().equals(typeName)); }
+    public static boolean isType(String typeName) { return types.stream().anyMatch(t -> t.getBaseType().get().equals(typeName)); }
 
-    public static ClassDeclarationStatement getClassDeclaration(String className) {
+    public static ReturnType getClassDeclaration(String className) {
 
-        return types.stream()
-            .filter(NonPrimitiveType.class :: isInstance)
-            .map(NonPrimitiveType.class :: cast)
-            .map(NonPrimitiveType :: getClassDeclaration)
-            .filter(decl -> decl.getName().equals(className))
-            .findFirst()
-            .orElse(null);
+        for (var type : types) if (type.getBaseType() instanceof NonPrimitiveType npt)
+            if (npt.getClassDeclaration().getName().equals(className)) return type;
+        return null;
     }
 
     public static boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }

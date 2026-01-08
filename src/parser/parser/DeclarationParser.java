@@ -79,17 +79,6 @@ public class DeclarationParser extends ParserBase {
     }
     
     /**
-     * Parse a complete type with optional array dimensions.
-     * Returns a ReturnType object containing the TokenFamily and array information.
-     */
-    public ReturnType parseTypeWithArrays() {
-
-        var tokenFamily = parseType();
-        var arraySizes = parseArrayDimensions();
-        return new ReturnType(tokenFamily, arraySizes);
-    }
-    
-    /**
      * Check if the current token can be used as a type (primitive type or class name).
      */
     public boolean isValidType(Token token) { return isTypeToken(token) || isClassName(token); }
@@ -98,20 +87,29 @@ public class DeclarationParser extends ParserBase {
      * Parse a type token (primitive or class name) and return a TokenFamily.
      * This handles both built-in types (int, float, etc.) and user-defined class types.
      */
-    private TokenFamily parseType() {
+    protected ReturnType parseType() {
 
         var token = peek();
-        
-        if (isTypeToken(token)) return advance().getType();
-        if (isClassName(token)) {
+        if (isTypeToken(token)) {
+
+            var typeToken = advance();
+            var baseType = typeToken.getType(); // TokenFamily (PrimitiveType etc.)
+            var arrayDims = parseArrayDimensions();
+            return new ReturnType(baseType, arrayDims);
+        } else if (isClassName(token)) {
 
             var classToken = (LiteralToken) advance();
             var className = classToken.getValue();
-            
-            var classType = TypeRegistry.getTokenFamilyByName(className);
-            if (classType != null) return classType;
+
+            var classType = TypeRegistry.getReturnType(className);
+            if (classType != null) {
+
+                var arrayDims = parseArrayDimensions();
+                if (arrayDims.length == 0) return classType;
+                return new ReturnType(classType.getBaseType(), arrayDims);
+            }
         } 
-        
+
         throw new ParseException("Expect type (primitive or class name)", token);
     }
     
@@ -146,7 +144,7 @@ public class DeclarationParser extends ParserBase {
 
             if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
             
-            var paramType = parseTypeWithArrays();
+            var paramType = parseType();
             var paramName = consume(new Literal.IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue(paramName), paramType));
         } while (match(Delimiter.COMMA));
@@ -171,7 +169,7 @@ public class DeclarationParser extends ParserBase {
         
         if (isValidType(peek())) {
             
-            var returnType = parseTypeWithArrays();
+            var returnType = parseType();
             if (check(new Literal.IdentifierLiteral())) {
 
                 var nameToken = advance();

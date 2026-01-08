@@ -49,7 +49,7 @@ public class ClassParser extends ParserBase {
         var nameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'class'");
         var className = getLiteralValue(nameToken);
         
-        ClassDeclarationStatement superClass = null;
+        ReturnType superClass = null;
         ReturnType genericClassParameter = null;
         if (match(Delimiter.DOUBLE_COLON)) {
 
@@ -64,7 +64,7 @@ public class ClassParser extends ParserBase {
 
                 var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
                 var superClassName = getLiteralValue(superClassToken);
-                superClass = TypeRegistry.getClassDeclaration(superClassName);
+                superClass = TypeRegistry.getReturnType(superClassName);
                 if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
             }
         }
@@ -118,7 +118,7 @@ public class ClassParser extends ParserBase {
             if (!declarationParser.isValidType(peek()))
                 throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", peek());
             
-            var type = declarationParser.parseTypeWithArrays();
+            var type = declarationParser.parseType();
             var memberNameToken = consume(new Literal.IdentifierLiteral(), "Expect member name");
             var memberName = getLiteralValue(memberNameToken);
             

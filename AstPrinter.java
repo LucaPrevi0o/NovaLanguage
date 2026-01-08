@@ -109,7 +109,7 @@ public class AstPrinter {
 
         spacers.add(vLine ? "|  " : "   ");
         printLine(spacers, "├─ Name: " + cds.getName());
-        if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass().getName());
+        if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass());
         printLine(spacers, "├─ Access Modifier: " + cds.getAccessModifier());
         if (cds.getGenericClassParameter() != null)
             printLine(spacers, "├─ Generic Parameter: " + buildTypeStringWithSizes(cds.getGenericClassParameter()));
