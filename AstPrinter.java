@@ -111,6 +111,8 @@ public class AstPrinter {
         printLine(spacers, "├─ Name: " + cds.getName());
         if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass().getName());
         printLine(spacers, "├─ Access Modifier: " + cds.getAccessModifier());
+        if (cds.getGenericClassParameter() != null)
+            printLine(spacers, "├─ Generic Parameter: " + buildTypeStringWithSizes(cds.getGenericClassParameter()));
         printChildNodes(cds.getConstructors(), spacers, "├─ Constructors: ", true);
         printChildNodes(cds.getInnerClasses(), spacers, "├─ Inner Classes: ", true);
         printChildNodes(cds.getFields(), spacers, "├─ Fields: ", true);

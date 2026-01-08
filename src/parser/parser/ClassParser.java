@@ -12,6 +12,7 @@ import src.token.ReturnType;
 import src.token.TypeRegistry;
 import src.token.family.AccessModifier;
 import src.token.family.Delimiter;
+import src.token.family.GenericParameterType;
 import src.token.family.Keyword;
 import src.token.family.Literal;
 import src.token.family.Operator;
@@ -49,22 +50,33 @@ public class ClassParser extends ParserBase {
         var className = getLiteralValue(nameToken);
         
         ClassDeclarationStatement superClass = null;
+        ReturnType genericClassParameter = null;
         if (match(Delimiter.DOUBLE_COLON)) {
 
-            var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
-            var superClassName = getLiteralValue(superClassToken);
-            
-            superClass = TypeRegistry.getClassDeclaration(superClassName);
-            if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+            if (match(Delimiter.LSQUARE)) {
+
+                var genToken = consume(new Literal.IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+                var genericParameterName = getLiteralValue(genToken);
+                var genericType = new GenericParameterType(genericParameterName);
+                genericClassParameter = new ReturnType(genericType);
+                consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+            } else {
+
+                var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
+                var superClassName = getLiteralValue(superClassToken);
+                superClass = TypeRegistry.getClassDeclaration(superClassName);
+                if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+            }
         }
 
-        ClassDeclarationStatement classDecl = new ClassDeclarationStatement(
+        var classDecl = new ClassDeclarationStatement(
             classToken.getLine(),
             classToken.getColumn(),
             className,
             new ClassMethodDeclaration[0],
             new ClassFieldDeclaration[0],
             superClass,
+            genericClassParameter,
             new ClassDeclarationStatement[0],
             classAccessModifier,
             new ClassConstructorDeclaration[0]
@@ -127,6 +139,7 @@ public class ClassParser extends ParserBase {
             methods.toArray(new ClassMethodDeclaration[0]),
             fields.toArray(new ClassFieldDeclaration[0]),
             superClass,
+            genericClassParameter,
             innerClasses.toArray(new ClassDeclarationStatement[0]),
             classAccessModifier,
             constructors.toArray(new ClassConstructorDeclaration[0])
