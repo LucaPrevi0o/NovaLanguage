@@ -1,3 +1,5 @@
+import java.util.List;
+
 import src.parser.ast.AstNode;
 import src.parser.ast.nodes.expression.AssignmentExpression;
 import src.parser.ast.nodes.expression.BinaryExpression;
@@ -22,320 +24,381 @@ import src.parser.ast.nodes.statement.declaration.object.ClassConstructorDeclara
 import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import src.token.ReturnType;
-import src.token.TokenFamily;
-import src.token.TypeRegistry;
 import src.token.family.PrimitiveType;
 
+/**
+ * Rewritten AstPrinter that uses a simple depth-based indentation scheme
+ * consistent with SymbolTablePrinter. Each indent level is three spaces.
+ */
 public class AstPrinter {
-    public static void printASTNode(AstNode node, int depth) {
-        printNodeHeader(node, depth);
-        printNodeDetails(node, depth);
-    }
 
-    private static void printNodeHeader(AstNode node, int depth) {
-        String indent = indent(depth);
-        String className = node.getClass().getSimpleName();
-        System.out.println(indent + "└─ " + className + " [line " + node.getLine() + "]");
-    }
+    public static void printASTNode(AstNode node, List<String> spacers, String header) { printASTNode(node, spacers, header, false); }
 
-    private static void printNodeDetails(AstNode node, int depth) {
+    private static void printASTNode(AstNode node, List<String> spacers, String header, boolean vLine) {
+
+        if (node == null) return;
+        var className = node.getClass().getSimpleName();
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, header + className + " [line " + node.getLine() + "]");
+
         try {
-            if (node instanceof ClassDeclarationStatement cd) printClassDeclaration(cd, depth);
-            else if (node instanceof ClassMethodDeclaration cmd) printMethodDeclaration(cmd, depth);
-            else if (node instanceof ClassFieldDeclaration cfd) printMemberDeclaration(cfd, depth);
-            else if (node instanceof ClassConstructorDeclaration ccd) printConstructorDeclaration(ccd, depth);
-            else if (node instanceof FunctionDeclarationStatement fds) printFunctionDeclaration(fds, depth);
-            else if (node instanceof VariableDeclarationStatement vds) printVariableDeclaration(vds, depth);
-            else if (node instanceof ExpressionStatement es) printExpressionStatement(es, depth);
-            else if (node instanceof ReturnStatement rs) printReturnStatement(rs, depth);
-            else if (node instanceof BlockStatement bs) printBlockStatement(bs, depth);
-            else if (node instanceof IfStatement is) printIfStatement(is, depth);
-            else if (node instanceof WhileStatement ws) printWhileStatement(ws, depth);
-            else if (node instanceof ForStatement fs) printForStatement(fs, depth);
-            else if (node instanceof AssignmentExpression ae) printAssignmentExpression(ae, depth);
-            else if (node instanceof BinaryExpression be) printBinaryExpression(be, depth);
-            else if (node instanceof UnaryExpression ue) printUnaryExpression(ue, depth);
-            else if (node instanceof CallExpression ce) printCallExpression(ce, depth);
-            else if (node instanceof MemberAccessExpression mae) printMemberAccess(mae, depth);
-            else if (node instanceof ArrayAccessExpression aae) printArrayAccess(aae, depth);
-            else if (node instanceof IdentifierLiteralExpression ile) printIdentifier(ile, depth);
-            else if (node instanceof NumberLiteralExpression nle) printNumberLiteral(nle, depth);
-            else if (node instanceof StringLiteralExpression sle) printStringLiteral(sle, depth);
-            else if (node instanceof BoolLiteralExpression ble) printBoolLiteral(ble, depth);
+
+            if (node instanceof ClassDeclarationStatement cds) printClassDeclaration(cds, spacers, !header.equals("└─ "));
+            else if (node instanceof FunctionDeclarationStatement fds) printFunctionDeclaration(fds, spacers, !header.equals("└─ "));
+            else if (node instanceof ClassMethodDeclaration cmd) printMethodDeclaration(cmd, spacers, !header.equals("└─ "));
+            else if (node instanceof ClassConstructorDeclaration ccd) printConstructorDeclaration(ccd, spacers, !header.equals("└─ "));
+            else if (node instanceof VariableDeclarationStatement vds) printVariableDeclaration(vds, spacers, !header.equals("└─ "));
+            else if (node instanceof ClassFieldDeclaration cfd) printFieldDeclaration(cfd, spacers, !header.equals("└─ "));
+            else if (node instanceof ReturnStatement rs) printReturnStatement(rs, spacers);
+            else if (node instanceof BlockStatement bs) printBlockStatement(bs, spacers);
+            else if (node instanceof IfStatement is) printIfStatement(is, spacers, !header.equals("└─ "));
+            else if (node instanceof WhileStatement ws) printWhileStatement(ws, spacers, !header.equals("└─ "));
+            else if (node instanceof ForStatement fs) printForStatement(fs, spacers, !header.equals("└─ "));
+            else if (node instanceof ExpressionStatement es) printExpressionStatement(es, spacers, !header.equals("└─ "));
+            else if (node instanceof AssignmentExpression ae) printAssignmentExpression(ae, spacers, !header.equals("└─ "));
+            else if (node instanceof BinaryExpression be) printBinaryExpression(be, spacers);
+            else if (node instanceof UnaryExpression ue) printUnaryExpression(ue, spacers);
+            else if (node instanceof CallExpression ce) printCallExpression(ce, spacers);
+            else if (node instanceof MemberAccessExpression mae) printMemberAccess(mae, spacers);
+            else if (node instanceof ArrayAccessExpression aae) printArrayAccess(aae, spacers);
+            else if (node instanceof IdentifierLiteralExpression ile) printIdentifier(ile, spacers);
+            else if (node instanceof NumberLiteralExpression nle) printNumberLiteral(nle, spacers);
+            else if (node instanceof StringLiteralExpression sle) printStringLiteral(sle, spacers);
+            else if (node instanceof BoolLiteralExpression ble) printBoolLiteral(ble, spacers);
         } catch (Exception e) { e.printStackTrace(); }
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printLine(List<String> spacers, String text) {
+        
+        var prefix = new StringBuilder();
+        for (var s: spacers) prefix.append(s);  
+        System.out.println(prefix + text);
+    }
+
+    private static void printChildNodes(AstNode[] nodes, List<String> spacers, String header) { printChildNodes(nodes, spacers, header, false); }
+
+    private static void printChildNodes(AstNode[] nodes, List<String> spacers, String header, boolean vLine) {
+
+        printLine(spacers, header + nodes.length);
+        for (int i = 0; i < nodes.length; i++) {
+
+            var childPrefix = (i == nodes.length - 1) ? "└─ " : "├─ ";
+            printASTNode(nodes[i], spacers, childPrefix, vLine);
+        }
     }
 
     // ========== Statement Printers ==========
-    public static String getTypeString(ReturnType type) {
-        return printNonPrimitiveType(type.getBaseType()) + "[]".repeat(type.getSizes().length);
-    }
+    public static String getTypeString(ReturnType type) { return buildTypeStringWithSizes(type); }
 
-    public static String printNonPrimitiveType(TokenFamily type) {
+    private static void printFunctionDeclaration(FunctionDeclarationStatement fds, List<String> spacers, boolean vLine) {
 
-        if (type instanceof PrimitiveType) return type.get();
-        var classDeclaration = TypeRegistry.getClassDeclaration(type.get());
-        var superClass = classDeclaration.getSuperClass();
-        if (superClass != null) return printNonPrimitiveType(TypeRegistry.getTokenFamilyByName(superClass.getName())) + "." + type.get();
-        else return type.get();
-    }
-
-    private static void printFunctionDeclaration(FunctionDeclarationStatement fds, int depth) {
-
+        spacers.add(vLine ? "|  " : "   ");
         var returnType = fds.getDeclaredType();
         var params = fds.getParameters();
-        printLine(depth + 1, "├─ Type: " + getTypeString(returnType));
-        printLine(depth + 1, "├─ Parameters: " + params.length);
-        for (var param : params) {
-
-            var paramType = param.getType();
-            String typeStr = buildTypeStringWithSizes(paramType);
-            printLine(depth + 2, "└─ " + param.getName() + ": " + typeStr);
-        }
-        printLine(depth + 1, "├─ Name: " + fds.getName());
-        printLine(depth + 1, "└─ Body:");
-        printASTNode(fds.getBody(), depth + 2);
+        printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(returnType));
+        printLine(spacers, "├─ Parameters: " + params.length);
+        printParameters(params, spacers);
+        printLine(spacers, "├─ Name: " + fds.getName());
+        printLine(spacers, "└─ Body:");
+        printASTNode(fds.getBody(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printClassDeclaration(ClassDeclarationStatement cds, int depth) {
+    private static void printClassDeclaration(ClassDeclarationStatement cds, List<String> spacers, boolean vLine) {
 
-        var methods = cds.getMethods();
-        var fields = cds.getFields();
-        var superClass = cds.getSuperClass();
-        var accessModifier = cds.getAccessModifier();
-        var innerClasses = cds.getInnerClasses();
-        var constructors = cds.getConstructors();
-
-        printLine(depth + 1, "├─ Name: " + cds.getName());
-        if (superClass != null) printLine(depth + 1, "├─ Superclass: " + superClass.getName());
-        printLine(depth + 1, "├─ Access Modifier: " + accessModifier);
-        printLine(depth + 1, "├─ Constructors: " + constructors.length);
-        for (var constructor : constructors) printASTNode(constructor, depth + 2);
-        printLine(depth + 1, "├─ Inner Classes: " + innerClasses.length);
-        for (var innerClass : innerClasses) printASTNode(innerClass, depth + 2);
-        printLine(depth + 1, "├─ Fields: " + fields.length);
-        for (var field : fields) printASTNode(field, depth + 2);
-        printLine(depth + 1, "└─ Methods: " + methods.length);
-        for (var method : methods) printASTNode(method, depth + 2);
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Name: " + cds.getName());
+        if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass().getName());
+        printLine(spacers, "├─ Access Modifier: " + cds.getAccessModifier());
+        printChildNodes(cds.getConstructors(), spacers, "├─ Constructors: ", true);
+        printChildNodes(cds.getInnerClasses(), spacers, "├─ Inner Classes: ", true);
+        printChildNodes(cds.getFields(), spacers, "├─ Fields: ", true);
+        printChildNodes(cds.getMethods(), spacers, "└─ Methods: ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printMemberDeclaration(ClassFieldDeclaration cfd, int depth) {
+    private static void printFieldDeclaration(ClassFieldDeclaration cfd, List<String> spacers, boolean vLine) {
 
-        var memberType = cfd.getDeclaredType();
-        var accessModifier = cfd.getAccessModifier();
-        var initializer = cfd.getInitialValue();
-        printLine(depth + 1, "├─ Name: " + cfd.getName());
-        printLine(depth + 1, "├─ Type: " + getTypeString(memberType));
-        if (initializer != null) {
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Name: " + cfd.getName());
+        printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(cfd.getDeclaredType()));
+        if (cfd.getInitialValue() != null) {
 
-            printLine(depth + 1, "├─ Access Modifier: " + accessModifier);
-            printLine(depth + 1, "└─ Initializer:");
-            printASTNode(initializer, depth + 2);
-        } else printLine(depth + 1, "└─ Access Modifier: " + accessModifier);
+            printLine(spacers, "├─ Access Modifier: " + cfd.getAccessModifier());
+            printLine(spacers, "└─ Initializer:");
+            printASTNode(cfd.getInitialValue(), spacers, "└─ ");
+        } else printLine(spacers, "└─ Access Modifier: " + cfd.getAccessModifier());
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printMethodDeclaration(ClassMethodDeclaration cmd, int depth) {
+    private static void printMethodDeclaration(ClassMethodDeclaration cmd, List<String> spacers, boolean vLine) {
 
-        var returnType = cmd.getDeclaredType();
-        var accessModifier = cmd.getAccessModifier();
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Name: " + cmd.getName());
+        printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(cmd.getDeclaredType()));
+        printLine(spacers, "├─ Access Modifier: " + cmd.getAccessModifier());
         var params = cmd.getParameters();
-        printLine(depth + 1, "├─ Name: " + cmd.getName());
-        printLine(depth + 1, "├─ Type: " + getTypeString(returnType));
-        printLine(depth + 1, "├─ Access Modifier: " + accessModifier);
-        printLine(depth + 1, "├─ Parameters: " + params.length);
-        for (var param : params) {
-
-            var paramType = param.getType();
-            String typeStr = buildTypeStringWithSizes(paramType);
-            printLine(depth + 2, "└─ " + param.getName() + ": " + typeStr);
-        }
-        printLine(depth + 1, "└─ Body:");
-        printASTNode(cmd.getBody(), depth + 2);
+        printLine(spacers, "├─ Parameters: " + params.length);
+        printParameters(params, spacers);
+        printLine(spacers, "└─ Body:");
+        printASTNode(cmd.getBody(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printConstructorDeclaration(ClassConstructorDeclaration ccd, int depth) {
+    private static void printConstructorDeclaration(ClassConstructorDeclaration ccd, List<String> spacers, boolean vLine) {
 
-        var accessModifier = ccd.getAccessModifier();
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Access Modifier: " + ccd.getAccessModifier());
         var params = ccd.getParameters();
-        printLine(depth + 1, "├─ Access Modifier: " + accessModifier);
-        printLine(depth + 1, "├─ Parameters: " + params.length);
-        for (var param : params) {
+        printLine(spacers, "├─ Parameters: " + params.length);
+        printParameters(params, spacers);
+        printLine(spacers, "└─ Body:");
+        printASTNode(ccd.getBody(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
 
-            var paramType = param.getType();
-            String typeStr = buildTypeStringWithSizes(paramType);
-            printLine(depth + 2, "└─ " + param.getName() + ": " + typeStr);
+    private static void printReturnStatement(ReturnStatement rs, List<String> spacers) {
+
+        spacers.add("   ");
+        if (rs.getReturnValue() != null) {
+            
+            printLine(spacers, "└─ Return Value:");
+            printASTNode(rs.getReturnValue(), spacers, "└─ ");
         }
-        printLine(depth + 1, "└─ Body:");
-        printASTNode(ccd.getBody(), depth + 2);
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printReturnStatement(ReturnStatement rs, int depth) {
+    private static void printBlockStatement(BlockStatement bs, List<String> spacers) {
 
-        var returnValue = rs.getReturnValue();
-        if (returnValue != null) {
-
-            printLine(depth + 1, "└─ Return Value:");
-            printASTNode(returnValue, depth + 2);
-        }
+        spacers.add("   ");
+        printChildNodes(bs.getStatements(), spacers, "└─ Statements: ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printBlockStatement(BlockStatement bs, int depth) {
+    private static void printIfStatement(IfStatement is, List<String> spacers, boolean vLine) {
 
-        var statements = bs.getStatements();
-        printLine(depth + 1, "└─ Statements: " + statements.length);
-        for (var stmt : statements) printASTNode(stmt, depth + 2);
-    }
-
-    private static void printIfStatement(IfStatement is, int depth) {
-
-        printLine(depth + 1, "├─ Condition:");
-        printASTNode(is.getCondition(), depth + 2);
-        printLine(depth + 1, "├─ Then:");
-        printASTNode(is.getThenBlock(), depth + 2);
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Condition:");
+        printASTNode(is.getCondition(), spacers, "└─ ", true);
         if (is.getElseBlock() != null) {
 
-            printLine(depth + 1, "└─ Else:");
-            printASTNode(is.getElseBlock(), depth + 2);
+            printLine(spacers, "├─ Then:");
+            printASTNode(is.getThenBlock(), spacers, "└─ ", true);
+            printLine(spacers, "└─ Else:");
+            printASTNode(is.getElseBlock(), spacers, "└─ ");
+        } else {
+
+            printLine(spacers, "└─ Then:");
+            printASTNode(is.getThenBlock(), spacers, "└─ ");
         }
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printWhileStatement(WhileStatement ws, int depth) {
+    private static void printWhileStatement(WhileStatement ws, List<String> spacers, boolean vLine) {
 
-        printLine(depth + 1, "├─ Condition:");
-        printASTNode(ws.getCondition(), depth + 2);
-        printLine(depth + 1, "└─ Body:");
-        printASTNode(ws.getBody(), depth + 2);
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Condition:");
+        printASTNode(ws.getCondition(), spacers, "└─ ", true);
+        printLine(spacers, "└─ Body:");
+        printASTNode(ws.getBody(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printForStatement(ForStatement fs, int depth) {
+    private static void printForStatement(ForStatement fs, List<String> spacers, boolean vLine) {
 
-        printLine(depth + 1, "├─ Condition:");
-        printASTNode(fs.getCondition(), depth + 2);
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Condition:");
+        printASTNode(fs.getCondition(), spacers, "└─ ", true);
         if (fs.getInitialization() != null) {
 
-            printLine(depth + 1, "├─ Initializer:");
-            printASTNode(fs.getInitialization(), depth + 2);
+            printLine(spacers, "├─ Initializer:");
+            printASTNode(fs.getInitialization(), spacers, "└─ ", true);
         }
         if (fs.getIncrement() != null) {
 
-            printLine(depth + 1, "├─ Increment:");
-            printASTNode(fs.getIncrement(), depth + 2);
+            printLine(spacers, "├─ Increment:");
+            printASTNode(fs.getIncrement(), spacers, "└─ ", true);
         }
-        printLine(depth + 1, "└─ Body:");
-        printASTNode(fs.getBody(), depth + 2);
+        printLine(spacers, "└─ Body:");
+        printASTNode(fs.getBody(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
     }
 
-    private static void printVariableDeclaration(VariableDeclarationStatement vds, int depth) {
+    private static void printVariableDeclaration(VariableDeclarationStatement vds, List<String> spacers, boolean vLine) {
 
-        var type = vds.getDeclaredType();
-        var initializer = vds.getInitialValue();
-        printLine(depth + 1, "├─ Name: " + vds.getName());
-        String typeStr = buildTypeStringWithSizes(type);
-        if (initializer != null) {
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Name: " + vds.getName());
+        if (vds.getInitialValue() != null) {
 
-            printLine(depth + 1, "├─ Type: " + typeStr);
-            printLine(depth + 1, "└─ Initializer:");
-            printASTNode(initializer, depth + 2);
-        } else printLine(depth + 1, "└─ Type: " + typeStr);
+            printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(vds.getDeclaredType()));
+            printLine(spacers, "└─ Initializer:");
+            printASTNode(vds.getInitialValue(), spacers, "└─ ");
+        } else printLine(spacers, "└─ Type: " + buildTypeStringWithSizes(vds.getDeclaredType()));
+        spacers.remove(spacers.size() - 1);
     }
 
-    /**
-     * Build a type string including size information for arrays.
-     */
+    private static void printExpressionStatement(ExpressionStatement es, List<String> spacers, boolean vLine) {
+        
+        spacers.add(vLine ? "|  " : "   ");
+        if (es.getExpression() != null) {
+
+            printLine(spacers, "└─ Expression:");
+            printASTNode(es.getExpression(), spacers, "└─ ");
+        }
+        spacers.remove(spacers.size() - 1);
+    }
+
+    // ========== Expression Printers ==========
+    private static void printAssignmentExpression(AssignmentExpression ae, List<String> spacers, boolean vLine) {
+
+        spacers.add(vLine ? "|  " : "   ");
+        printLine(spacers, "├─ Target:");
+        printASTNode(ae.getTarget(), spacers, "└─ ", true);
+        printLine(spacers, "└─ Value:");
+        printASTNode(ae.getValue(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printBinaryExpression(BinaryExpression be, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Operator: " + be.getOperator().getType());
+        printLine(spacers, "├─ Left:");
+        printASTNode(be.getLeft(), spacers, "└─ ", true);
+        printLine(spacers, "└─ Right:");
+        printASTNode(be.getRight(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printUnaryExpression(UnaryExpression ue, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Operator: " + ue.getOperator().getType());
+        printLine(spacers, "└─ Operand:");
+        printASTNode(ue.getOperand(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printCallExpression(CallExpression ce, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Callee:");
+        printASTNode(ce.getCallee(), spacers, "└─ ", true);
+        printChildNodes(ce.getArguments(), spacers, "└─ Arguments: ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printMemberAccess(MemberAccessExpression mae, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Member: " + mae.getMemberName());
+        printLine(spacers, "└─ Object:");
+        printASTNode(mae.getObject(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printArrayAccess(ArrayAccessExpression aae, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Array:");
+        printASTNode(aae.getArray(), spacers, "└─ ", true);
+        printLine(spacers, "└─ Index:");
+        printASTNode(aae.getIndex(), spacers, "└─ ");
+        spacers.remove(spacers.size() - 1);
+    }
+
+    // ========== Literal Printers ==========
+    private static void printIdentifier(IdentifierLiteralExpression ile, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Identifier: " + ile.getName());
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printNumberLiteral(NumberLiteralExpression nle, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Value: " + nle.getValue());
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printStringLiteral(StringLiteralExpression sle, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Value: " + sle.getValue());
+        spacers.remove(spacers.size() - 1);
+    }
+
+    private static void printBoolLiteral(BoolLiteralExpression ble, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Value: " + ble.getValue());
+        spacers.remove(spacers.size() - 1);
+    }
+
+    // ========== Parameter printing (reflection-safe) ==========
+    private static void printParameters(Object[] params, List<String> spacers) {
+
+        spacers.add("|  ");
+        for (int i = 0; i < params.length; i++) {
+
+            var param = params[i];
+            Object paramType = null;
+            var paramName = "";
+            try {
+
+                var mType = param.getClass().getMethod("getType");
+                var t = mType.invoke(param);
+                paramType = t;
+            } catch (Exception ignored) {}
+            try {
+
+                var mName = param.getClass().getMethod("getName");
+                var n = mName.invoke(param);
+                paramName = n != null ? n.toString() : "";
+            } catch (Exception ignored) {}
+
+            var typeStr = paramType instanceof ReturnType ? buildTypeStringWithSizes((ReturnType) paramType) : (paramType != null ? paramType.toString() : "unknown");
+            var prefix = (i == params.length - 1) ? "└─ " : "├─ ";
+            printLine(spacers, prefix + paramName + ": " + typeStr);
+        }
+        spacers.remove(spacers.size() - 1);
+    }
+
+    // ========== Type helpers ==========
+    private static String printNonPrimitiveType(Object baseType) {
+
+        if (baseType == null) return "null";
+        try {
+
+            var m = baseType.getClass().getMethod("get");
+            var res = m.invoke(baseType);
+            return res != null ? res.toString() : baseType.toString();
+        } catch (Exception e) { return baseType.toString(); }
+    }
+
     public static String buildTypeStringWithSizes(ReturnType type) {
 
+        if (type == null) return "null";
         var baseType = type.getBaseType();
         String baseTypeStr;
-        if (baseType instanceof PrimitiveType) baseTypeStr = baseType.get();
+        if (baseType instanceof PrimitiveType) baseTypeStr = ((PrimitiveType) baseType).get();
         else baseTypeStr = printNonPrimitiveType(baseType);
+
         var sizes = type.getSizes();
-        if (sizes.length == 0) return baseTypeStr;
+        if (sizes == null || sizes.length == 0) return baseTypeStr;
         var result = new StringBuilder(baseTypeStr);
         for (var size : sizes) {
 
             result.append("[");
             if (size != null) {
-
-                if (size instanceof NumberLiteralExpression nle) result.append(nle.getValue());
-                else result.append("?");
+                
+                if (size instanceof NumberLiteralExpression ile) result.append(ile.getValue());
+                else result.append(size.toString());
             }
             result.append("]");
         }
         return result.toString();
     }
-
-    private static void printExpressionStatement(ExpressionStatement es, int depth) {
-
-        printLine(depth + 1, "└─ Expression:");
-        printASTNode(es.getExpression(), depth + 2);
-    }
-
-    // ========== Expression Printers ==========
-    private static void printAssignmentExpression(AssignmentExpression ae, int depth) {
-
-        printLine(depth + 1, "├─ Target:");
-        printASTNode(ae.getTarget(), depth + 2);
-        printLine(depth + 1, "└─ Value:");
-        printASTNode(ae.getValue(), depth + 2);
-    }
-
-    private static void printBinaryExpression(BinaryExpression be, int depth) {
-
-        printLine(depth + 1, "├─ Operator: " + be.getOperator().getType());
-        printLine(depth + 1, "├─ Left:");
-        printASTNode(be.getLeft(), depth + 2);
-        printLine(depth + 1, "└─ Right:");
-        printASTNode(be.getRight(), depth + 2);
-    }
-
-    private static void printUnaryExpression(UnaryExpression ue, int depth) {
-
-        printLine(depth + 1, "├─ Operator: " + ue.getOperator().getType());
-        printLine(depth + 1, "└─ Operand:");
-        printASTNode(ue.getOperand(), depth + 2);
-    }
-
-    private static void printCallExpression(CallExpression ce, int depth) {
-
-        var arguments = ce.getArguments();
-        printLine(depth + 1, "├─ Callee:");
-        printASTNode(ce.getCallee(), depth + 2);
-        printLine(depth + 1, "└─ Arguments: " + arguments.length);
-        for (var arg : arguments) printASTNode(arg, depth + 2);
-    }
-
-    private static void printMemberAccess(MemberAccessExpression mae, int depth) {
-
-        printLine(depth + 1, "├─ Member: " + mae.getMemberName());
-        printLine(depth + 1, "└─ Object:");
-        printASTNode(mae.getObject(), depth + 2);
-    }
-
-    private static void printArrayAccess(ArrayAccessExpression aae, int depth) {
-
-        printLine(depth + 1, "├─ Array:");
-        printASTNode(aae.getArray(), depth + 2);
-        printLine(depth + 1, "└─ Index:");
-        printASTNode(aae.getIndex(), depth + 2);
-    }
-
-    // ========== Literal Printers ==========
-    private static void printIdentifier(IdentifierLiteralExpression ile, int depth) {
-        printLine(depth + 1, "└─ Identifier: " + ile.getName());
-    }
-
-    private static void printNumberLiteral(NumberLiteralExpression nle, int depth) {
-        printLine(depth + 1, "└─ Value: " + nle.getValue());
-    }
-
-    private static void printStringLiteral(StringLiteralExpression sle, int depth) {
-        printLine(depth + 1, "└─ Value: " + sle.getValue());
-    }
-
-    private static void printBoolLiteral(BoolLiteralExpression ble, int depth) {
-        printLine(depth + 1, "└─ Value: " + ble.getValue());
-    }
-
-    // ========== Utility Methods ==========
-    private static String indent(int depth) { return "   ".repeat(depth); }
-    private static void printLine(int depth, String text) { System.out.println(indent(depth) + text); }
 }

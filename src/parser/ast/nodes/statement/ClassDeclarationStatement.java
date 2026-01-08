@@ -15,8 +15,7 @@ public class ClassDeclarationStatement extends Symbol {
     private final AccessModifier accessModifier;
     private final ClassConstructorDeclaration[] constructors;
 
-    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields,
-        ClassDeclarationStatement superClass, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
+    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, ClassDeclarationStatement superClass, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
 
         super(line, column, name);
         this.methods = methods;

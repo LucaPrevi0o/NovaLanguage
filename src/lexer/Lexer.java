@@ -79,7 +79,7 @@ public class Lexer {
      */
     private char peek(int offset) {
 
-        int peekPos = position + offset;
+        var peekPos = position + offset;
         if (peekPos < source.length()) return source.charAt(peekPos);
         return '\0';
     }
@@ -89,11 +89,7 @@ public class Lexer {
     /**
      * Skip all whitespace characters.
      */
-    private void skipWhitespace() {
-
-        while (currentChar != '\0' && Character.isWhitespace(currentChar))
-            advance();
-    }
+    private void skipWhitespace() { while (currentChar != '\0' && Character.isWhitespace(currentChar)) advance(); }
     
     /**
      * Skip single-line and multi-line comments.
@@ -104,18 +100,12 @@ public class Lexer {
         else if (currentChar == '/' && peek() == '*') skipMultiLineComment();
     }
     
-    private void skipSingleLineComment() {
-
-        // Skip until end of line or end of file
-        while (currentChar != '\0' && currentChar != '\n')
-            advance();
-    }
+    private void skipSingleLineComment() { while (currentChar != '\0' && currentChar != '\n') advance(); }
     
     private void skipMultiLineComment() {
 
         advance(); // skip '/'
         advance(); // skip '*'
-        
         while (currentChar != '\0') {
 
             if (currentChar == '*' && peek() == '/') {
@@ -135,9 +125,9 @@ public class Lexer {
      */
     private Token readNumber() {
 
-        int startLine = line;
-        int startColumn = column;
-        StringBuilder number = new StringBuilder();
+        var startLine = line;
+        var startColumn = column;
+        var number = new StringBuilder();
         
         while (currentChar != '\0' && (Character.isDigit(currentChar) || currentChar == '.')) {
 
@@ -153,9 +143,9 @@ public class Lexer {
      */
     private Token readIdentifierOrKeyword() {
 
-        int startLine = line;
-        int startColumn = column;
-        StringBuilder identifier = new StringBuilder();
+        var startLine = line;
+        var startColumn = column;
+        var identifier = new StringBuilder();
         
         while (currentChar != '\0' && (Character.isLetterOrDigit(currentChar) || currentChar == '_')) {
 
@@ -163,9 +153,9 @@ public class Lexer {
             advance();
         }
         
-        String value = identifier.toString();
-        TokenFamily isKeyword = KEYWORDS.get(value);
-        TokenFamily isType = TYPES.get(value);
+        var value = identifier.toString();
+        var isKeyword = KEYWORDS.get(value);
+        var isType = TYPES.get(value);
 
         if (isKeyword != null) return new KeywordToken(isKeyword, startLine, startColumn);
         if (isType != null) return new TypeToken(isType, startLine, startColumn);
@@ -177,24 +167,19 @@ public class Lexer {
      */
     private Token readString() {
 
-        int startLine = line;
-        int startColumn = column;
-        StringBuilder string = new StringBuilder();
-        
+        var startLine = line;
+        var startColumn = column;
+        var string = new StringBuilder();
         advance(); // skip opening quote
-        
-        while (currentChar != '\0' && currentChar != '"') {
+        while (currentChar != '\0' && currentChar != '"') if (currentChar == '\\' && peek() == '"') {
 
-            if (currentChar == '\\' && peek() == '"') {
+            advance(); // skip backslash
+            string.append(currentChar);
+            advance();
+        } else {
 
-                advance(); // skip backslash
-                string.append(currentChar);
-                advance();
-            } else {
-
-                string.append(currentChar);
-                advance();
-            }
+            string.append(currentChar);
+            advance();
         }
         
         if (currentChar == '"')  advance(); // skip closing quote
@@ -206,12 +191,11 @@ public class Lexer {
      */
     private Token readOperator() {
         
-        int tokenLine = line;
-        int tokenColumn = column;
+        var tokenLine = line;
+        var tokenColumn = column;
         
-        // Try two-character operators first
-        String twoChar = "" + currentChar + peek();
-        TokenFamily type = OPERATORS.get(twoChar);
+        var twoChar = "" + currentChar + peek();
+        var type = OPERATORS.get(twoChar);
         
         if (type != null) {
 
@@ -220,8 +204,7 @@ public class Lexer {
             return new OperatorToken(type, tokenLine, tokenColumn);
         }
         
-        // Try single-character operators
-        String oneChar = "" + currentChar;
+        var oneChar = "" + currentChar;
         type = OPERATORS.get(oneChar);
         
         if (type != null) {
@@ -231,29 +214,31 @@ public class Lexer {
         }
         
         return null;
-    }    /**
+    }    
+    
+    /**
      * Read a delimiter token.
      */
     private Token readDelimiter() {
 
-        int tokenLine = line;
-        int tokenColumn = column;
+        var tokenLine = line;
+        var tokenColumn = column;
         
-        // Try two-character delimiters first (::)
-        String twoChar = "" + currentChar + peek();
-        TokenFamily type = DELIMITERS.get(twoChar);
+        var twoChar = "" + currentChar + peek();
+        var type = DELIMITERS.get(twoChar);
 
         if (type != null) {
+
             advance();
             advance();
             return new DelimiterToken(type, tokenLine, tokenColumn);
         }
         
-        // Try single-character delimiters
-        String oneChar = "" + currentChar;
+        var oneChar = "" + currentChar;
         type = DELIMITERS.get(oneChar);
         
         if (type != null) {
+
             advance();
             return new DelimiterToken(type, tokenLine, tokenColumn);
         }
@@ -270,45 +255,34 @@ public class Lexer {
 
         while (currentChar != '\0') {
 
-            // Skip whitespace
             if (Character.isWhitespace(currentChar)) {
 
                 skipWhitespace();
                 continue;
             }
             
-            // Skip comments
             if (currentChar == '/' && (peek() == '/' || peek() == '*')) {
 
                 skipComment();
                 continue;
             }
             
-            // Numbers
             if (Character.isDigit(currentChar)) return readNumber();
-            
-            // Identifiers and keywords
             if (Character.isLetter(currentChar) || currentChar == '_') return readIdentifierOrKeyword();
-            
-            // Strings
             if (currentChar == '"') return readString();
 
-            // Operators
-            Token operator = readOperator();
+            var operator = readOperator();
             if (operator != null) return operator;
 
-            // Delimiters
-            Token delimiter = readDelimiter();
+            var delimiter = readDelimiter();
             if (delimiter != null) return delimiter;
             
-            // Unknown character
-            int tokenLine = line;
-            int tokenColumn = column;
+            var tokenLine = line;
+            var tokenColumn = column;
             advance();
             return new Token(Special.UNKNOWN, tokenLine, tokenColumn);
         }
         
-        // End of file
         return new Token(Special.EOF, line, column);
     }
     
@@ -317,7 +291,7 @@ public class Lexer {
      */
     public List<Token> tokenize() {
 
-        List<Token> tokens = new ArrayList<>();
+        var tokens = new ArrayList<Token>();
         Token token;
         
         do {

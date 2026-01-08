@@ -3,7 +3,6 @@ package src.token;
 import src.parser.ast.nodes.statement.ClassDeclarationStatement;
 import src.token.family.NonPrimitiveType;
 import src.token.family.PrimitiveType;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +18,7 @@ public class TypeRegistry {
 
     private static final List<TokenFamily> types = new ArrayList<>();
 
-    static { for (PrimitiveType primitive : PrimitiveType.values()) types.add(primitive); }
+    static { for (var primitive : PrimitiveType.values()) types.add(primitive); }
     
     public static void registerClass(ClassDeclarationStatement classDecl) { types.add(new NonPrimitiveType(classDecl)); }
 

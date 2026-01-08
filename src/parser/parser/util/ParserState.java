@@ -40,16 +40,15 @@ public class ParserState {
     public boolean check(TokenFamily type) {
 
         if (isAtEnd()) return false;
-        TokenFamily currentType = peek().getType();
+        var currentType = peek().getType();
         
-        // For Literal subclasses, compare by class type instead of instance
         if (type instanceof Literal && currentType instanceof Literal) return type.getClass() == currentType.getClass();
         return currentType == type;
     }
     
     public boolean match(TokenFamily... types) {
 
-        for (TokenFamily type : types) if (check(type)) {
+        for (var type : types) if (check(type)) {
 
             advance();
             return true;

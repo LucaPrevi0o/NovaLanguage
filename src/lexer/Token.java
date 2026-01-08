@@ -26,9 +26,5 @@ public class Token {
     public int getColumn() { return column; }
 
     @Override
-    public String toString() {
-        
-        return String.format("%s {type=%s, line=%d, col=%d}",
-            getClass().getSimpleName(), type, line, column);
-    }
+    public String toString() { return this.getClass().getSimpleName() + "{type=" + type + ", line=" + line + ", col=" + column + "}"; }
 }

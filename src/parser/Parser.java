@@ -39,9 +39,8 @@ public class Parser extends ParserBase {
     private final DeclarationParser declarationParser;
     
     public Parser(List<Token> tokens) {
+
         super(new ParserState(tokens));
-        
-        // DeclarationParser shares the same symbol table
         this.declarationParser = new DeclarationParser(state, this.symbolTable);
     }
     
@@ -52,12 +51,9 @@ public class Parser extends ParserBase {
      * Throws ParseException immediately if any parsing error occurs.
      */
     public List<StatementNode> parse() {
-        List<StatementNode> statements = new ArrayList<>();
-        while (!isAtEnd()) {
-            statements.add(declarationParser.parseDeclaration());
-        }
-        
-        // No need to copy symbols - we share the same symbol table
+
+        var statements = new ArrayList<StatementNode>();
+        while (!isAtEnd()) statements.add(declarationParser.parseDeclaration());
         return statements;
     }
 }

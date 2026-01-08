@@ -38,23 +38,18 @@ public class ReturnType {
     /**
      * Check if this is an array type.
      */
-    public boolean isArray() {
-        return arraySizes.length > 0;
-    }
+    public boolean isArray() { return arraySizes.length > 0; }
     
     /**
      * Get the number of array dimensions.
      */
-    public int getArrayDimensions() {
-        return arraySizes.length;
-    }
+    public int getArrayDimensions() { return arraySizes.length; }
     
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(baseType.get());
-        for (int i = 0; i < arraySizes.length; i++) {
-            sb.append("[]");
-        }
+
+        var sb = new StringBuilder(baseType.get());
+        for (var i = 0; i < arraySizes.length; i++) sb.append("[" + arraySizes[i] + "]");
         return sb.toString();
     }
 }

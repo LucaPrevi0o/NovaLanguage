@@ -16,6 +16,8 @@ public class SymbolTable {
         this.children = children;
     }
 
+    private SymbolTable(SymbolTable parent) { this(parent, new java.util.ArrayList<>(), new java.util.ArrayList<>()); }
+
     public SymbolTable getParent() { return parent; }
     public List<Symbol> getSymbols() { return symbols; }
     public List<SymbolTable> getChildren() { return children; }
@@ -25,7 +27,8 @@ public class SymbolTable {
      * @return A new SymbolTable with this as parent.
      */
     public SymbolTable createChildScope() {
-        SymbolTable child = new SymbolTable(this, new java.util.ArrayList<>(), new java.util.ArrayList<>());
+
+        var child = new SymbolTable(this);
         this.children.add(child);
         return child;
     }
@@ -36,13 +39,9 @@ public class SymbolTable {
      */
     public void register(Symbol symbol) { 
         
-        // Check for duplicate only in the CURRENT scope (not parent)
-        for (var sym : symbols) {
-            if (sym.getName().equals(symbol.getName())) 
-                throw new RuntimeException("Symbol '" + symbol.getName() + "' is already defined in this scope.");
-        }
+        for (var sym : symbols) if (sym.getName().equals(symbol.getName())) 
+            throw new RuntimeException("Symbol '" + symbol.getName() + "' is already defined in this scope.");
         
-        // Allow shadowing - variables can hide parent scope variables
         symbols.add(symbol);
     }
 
@@ -53,16 +52,10 @@ public class SymbolTable {
      */
     public Symbol lookup(String name) { 
 
-        for (var symbol : symbols) {
-            if (symbol.getName().equals(name)) {
-                return symbol;
-            }
-        }
+        for (var symbol : symbols)
+            if (symbol.getName().equals(name)) return symbol;
         
-        if (parent != null) {
-            return parent.lookup(name);
-        }
-
+        if (parent != null) return parent.lookup(name);
         return null;
     }
 }

@@ -20,7 +20,5 @@ public class LiteralToken extends Token {
     public String getValue() { return value; }
     
     @Override
-    public String toString() {
-        return "LiteralToken {value='" + value + "', line=" + getLine() + ", col=" + getColumn() + "}";
-    }
+    public String toString() { return "LiteralToken {value='" + value + "', line=" + getLine() + ", col=" + getColumn() + "}"; }
 }

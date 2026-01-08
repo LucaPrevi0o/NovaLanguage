@@ -19,6 +19,7 @@ public abstract class ParserBase {
      * Constructor for root parser (creates global scope).
      */
     protected ParserBase(ParserState state) { 
+
         this.state = state;
         this.symbolTable = new SymbolTable(null, new ArrayList<>(), new ArrayList<>());
     }
@@ -27,6 +28,7 @@ public abstract class ParserBase {
      * Constructor for child parsers (shares symbol table).
      */
     protected ParserBase(ParserState state, SymbolTable symbolTable) { 
+
         this.state = state;
         this.symbolTable = symbolTable;
     }
@@ -38,10 +40,7 @@ public abstract class ParserBase {
      * Enter a new scope by creating a child symbol table.
      * @return The new child scope.
      */
-    protected SymbolTable enterScope() {
-        SymbolTable newScope = symbolTable.createChildScope();
-        return newScope;
-    }
+    protected SymbolTable enterScope() { return symbolTable.createChildScope(); }
     
     /**
      * Exit the current scope by returning to parent.
@@ -49,10 +48,9 @@ public abstract class ParserBase {
      * @return The parent scope.
      */
     protected SymbolTable exitScope(SymbolTable scope) {
-        SymbolTable parent = scope.getParent();
-        if (parent != null) {
-            return parent;
-        }
+
+        var parent = scope.getParent();
+        if (parent != null) return parent;
         return scope;  // Already at global scope
     }
 

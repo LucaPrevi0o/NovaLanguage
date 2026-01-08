@@ -1,64 +1,50 @@
 import src.lexer.Lexer;
-import src.lexer.Token;
 import src.parser.Parser;
-import src.parser.ast.nodes.StatementNode;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.ArrayList;
 
 public class Main {
     public static void main(String[] args) {
 
         String sourceCode;
-        if (args.length > 0) {
+        if (args.length < 1) {
 
-            String filePath = args[0];
-            try {
-
-                sourceCode = readFile(filePath);
-                System.out.println("=== Reading from file: " + filePath + " ===\n");
-            } catch (IOException e) {
-
-                System.err.println("Error reading file: " + e.getMessage());
-                return;
-            }
-        } else {
-
-            sourceCode = """
-                    int x = 10;
-                    if (x > 5) {
-                        for (int i = 0; i < x; i = i + 1) {
-                            x = x + i;
-                        }
-                        return x * 2;
-                    } else {
-                        return 0;
-                    }
-                    """;
-            System.out.println("=== Using default example code ===\n");
+            System.out.println("Usage: java Main <source-file-path>");
+            System.exit(1);
         }
 
-        Lexer lexer = new Lexer(sourceCode);
-        List<Token> tokens = lexer.tokenize();
+        var filePath = args[0];
+        try {
+
+            sourceCode = readFile(filePath);
+            System.out.println("=== Reading from file: " + filePath + " ===\n");
+        } catch (IOException e) {
+
+            System.err.println("Error reading file: " + e.getMessage());
+            return;
+        }
+
+        var lexer = new Lexer(sourceCode);
+        var tokens = lexer.tokenize();
 
         System.out.println("=== TOKENS ===\n");
-        for (Token token : tokens) System.out.println(token);
+        for (var token : tokens) System.out.println(token);
 
         System.out.println("\n=== PARSING ===\n");
         try {
 
-            Parser parser = new Parser(tokens);
-            List<StatementNode> ast = parser.parse();
+            var parser = new Parser(tokens);
+            var ast = parser.parse();
             System.out.println("Parsing completed successfully!");
             System.out.println("Total AST nodes: " + ast.size());
 
             System.out.println("\n=== AST STRUCTURE ===\n");
-            for (StatementNode node : ast) AstPrinter.printASTNode(node, 0);
+            for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.get(ast.size() - 1)) ? "├─ " : "└─ ");
 
-            System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableGrouped(parser.getSymbolTable(), ast);
+            //System.out.println("\n=== SYMBOL TABLE ===\n");
+            //SymbolTablePrinter.printSymbolTableGrouped(parser.getSymbolTable(), ast);
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");
@@ -68,9 +54,5 @@ public class Main {
         }
     }
 
-    private static String readFile(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        return Files.readString(path);
-    }
-
+    private static String readFile(String filePath) throws IOException { return Files.readString(Paths.get(filePath)); }
 }

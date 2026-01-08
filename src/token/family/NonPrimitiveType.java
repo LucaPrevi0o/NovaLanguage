@@ -15,9 +15,7 @@ public class NonPrimitiveType implements TokenFamily {
     /**
      * Create a non-primitive type with a class name.
      */
-    public NonPrimitiveType(ClassDeclarationStatement className) {
-        this.classDecl = className;
-    }
+    public NonPrimitiveType(ClassDeclarationStatement className) { this.classDecl = className; }
 
     @Override
     public String get() { return classDecl.getName(); }
