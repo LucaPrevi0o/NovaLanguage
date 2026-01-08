@@ -38,7 +38,7 @@ public class AstPrinter {
 
         if (node == null) return;
         var className = node.getClass().getSimpleName();
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, header + className + " [line " + node.getLine() + "]");
 
         try {
@@ -93,7 +93,7 @@ public class AstPrinter {
 
     private static void printFunctionDeclaration(FunctionDeclarationStatement fds, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         var returnType = fds.getDeclaredType();
         var params = fds.getParameters();
         printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(returnType));
@@ -107,7 +107,7 @@ public class AstPrinter {
 
     private static void printClassDeclaration(ClassDeclarationStatement cds, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Name: " + cds.getName());
         if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass());
         printLine(spacers, "├─ Access Modifier: " + cds.getAccessModifier());
@@ -122,7 +122,7 @@ public class AstPrinter {
 
     private static void printFieldDeclaration(ClassFieldDeclaration cfd, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Name: " + cfd.getName());
         printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(cfd.getDeclaredType()));
         if (cfd.getInitialValue() != null) {
@@ -136,7 +136,7 @@ public class AstPrinter {
 
     private static void printMethodDeclaration(ClassMethodDeclaration cmd, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Name: " + cmd.getName());
         printLine(spacers, "├─ Type: " + buildTypeStringWithSizes(cmd.getDeclaredType()));
         printLine(spacers, "├─ Access Modifier: " + cmd.getAccessModifier());
@@ -150,7 +150,7 @@ public class AstPrinter {
 
     private static void printConstructorDeclaration(ClassConstructorDeclaration ccd, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Access Modifier: " + ccd.getAccessModifier());
         var params = ccd.getParameters();
         printLine(spacers, "├─ Parameters: " + params.length);
@@ -180,7 +180,7 @@ public class AstPrinter {
 
     private static void printIfStatement(IfStatement is, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Condition:");
         printASTNode(is.getCondition(), spacers, "└─ ", true);
         if (is.getElseBlock() != null) {
@@ -199,7 +199,7 @@ public class AstPrinter {
 
     private static void printWhileStatement(WhileStatement ws, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Condition:");
         printASTNode(ws.getCondition(), spacers, "└─ ", true);
         printLine(spacers, "└─ Body:");
@@ -209,7 +209,7 @@ public class AstPrinter {
 
     private static void printForStatement(ForStatement fs, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Condition:");
         printASTNode(fs.getCondition(), spacers, "└─ ", true);
         if (fs.getInitialization() != null) {
@@ -229,7 +229,7 @@ public class AstPrinter {
 
     private static void printVariableDeclaration(VariableDeclarationStatement vds, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Name: " + vds.getName());
         if (vds.getInitialValue() != null) {
 
@@ -242,7 +242,7 @@ public class AstPrinter {
 
     private static void printExpressionStatement(ExpressionStatement es, List<String> spacers, boolean vLine) {
         
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         if (es.getExpression() != null) {
 
             printLine(spacers, "└─ Expression:");
@@ -254,7 +254,7 @@ public class AstPrinter {
     // ========== Expression Printers ==========
     private static void printAssignmentExpression(AssignmentExpression ae, List<String> spacers, boolean vLine) {
 
-        spacers.add(vLine ? "|  " : "   ");
+        spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Target:");
         printASTNode(ae.getTarget(), spacers, "└─ ", true);
         printLine(spacers, "└─ Value:");
@@ -342,7 +342,7 @@ public class AstPrinter {
     // ========== Parameter printing (reflection-safe) ==========
     private static void printParameters(Object[] params, List<String> spacers) {
 
-        spacers.add("|  ");
+        spacers.add("│  ");
         for (int i = 0; i < params.length; i++) {
 
             var param = params[i];
