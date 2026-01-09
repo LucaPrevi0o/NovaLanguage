@@ -43,8 +43,8 @@ public class Main {
             System.out.println("\n=== AST STRUCTURE ===\n");
             for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.get(ast.size() - 1)) ? "├─ " : "└─ ");
 
-            //System.out.println("\n=== SYMBOL TABLE ===\n");
-            //SymbolTablePrinter.printSymbolTableGrouped(parser.getSymbolTable(), ast);
+            System.out.println("\n=== SYMBOL TABLE ===\n");
+            SymbolTablePrinter.printSymbolTableGrouped(parser.getSymbolTable(), ast);
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");

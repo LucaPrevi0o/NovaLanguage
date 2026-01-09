@@ -95,18 +95,20 @@ public class DeclarationParser extends ParserBase {
             var typeToken = advance();
             var baseType = typeToken.getType(); // TokenFamily (PrimitiveType etc.)
             var arrayDims = parseArrayDimensions();
-            return new ReturnType(baseType, arrayDims);
+            return new ReturnType(baseType, arrayDims, null, null);
         } else if (isClassName(token)) {
 
             var classToken = (LiteralToken) advance();
             var className = classToken.getValue();
 
             var classType = TypeRegistry.getReturnType(className);
+            var superTypes = classType.getSuperTypes();
+            var genericParamType = classType.getGenericParameterType();
             if (classType != null) {
 
                 var arrayDims = parseArrayDimensions();
                 if (arrayDims.length == 0) return classType;
-                return new ReturnType(classType.getBaseType(), arrayDims);
+                return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType);
             }
         } 
 
@@ -337,7 +339,11 @@ public class DeclarationParser extends ParserBase {
             if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
             consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
             
-            initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), new ReturnType(tokenFamily, new ExpressionNode[0]), name, init);
+            initializer = new VariableDeclarationStatement(
+                nameToken.getLine(), nameToken.getColumn(),
+                new ReturnType(tokenFamily, new ExpressionNode[0], null, null),
+                name, init
+            );
             
             this.symbolTable.register((VariableDeclarationStatement) initializer);
         } else {

@@ -32,10 +32,10 @@ public class ClassParser extends ParserBase {
         super(declarationParser.getState(), declarationParser.getSymbolTable());
         this.declarationParser = declarationParser;
     }
-    
+
     /**
      * Parse class declaration:
-     * [access_modifier] class ClassName [:: SuperClassName] {
+     * [access_modifier] class ClassName [GenericTypeParameterName] :: SuperClassName {
      *     [access_modifier] type field;
      *     [access_modifier] ClassName(params) { ... }
      *     [access_modifier] returnType method(params) { ... }
@@ -49,33 +49,41 @@ public class ClassParser extends ParserBase {
         var nameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'class'");
         var className = getLiteralValue(nameToken);
         
-        ReturnType superClass = null;
+        List<ReturnType> superClasses = new ArrayList<>();
         ReturnType genericClassParameter = null;
+        
+        if (match(Delimiter.LSQUARE)) {
+
+            var genToken = consume(new Literal.IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+            var genericParameterName = getLiteralValue(genToken);
+            var genericType = new GenericParameterType(genericParameterName);
+            genericClassParameter = new ReturnType(genericType);
+            consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+        } 
+        
         if (match(Delimiter.DOUBLE_COLON)) {
 
-            if (match(Delimiter.LSQUARE)) {
+            var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
+            var superClassName = getLiteralValue(superClassToken);
+            superClasses.add(TypeRegistry.getReturnType(superClassName));
+            if (superClasses.get(superClasses.size() - 1) == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
 
-                var genToken = consume(new Literal.IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
-                var genericParameterName = getLiteralValue(genToken);
-                var genericType = new GenericParameterType(genericParameterName);
-                genericClassParameter = new ReturnType(genericType);
-                consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
-            } else {
+            while (match(Delimiter.COMMA)) {
 
-                var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
-                var superClassName = getLiteralValue(superClassToken);
-                superClass = TypeRegistry.getReturnType(superClassName);
-                if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+                superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
+                superClassName = getLiteralValue(superClassToken);
+                superClasses.add(TypeRegistry.getReturnType(superClassName));
+                if (superClasses.get(superClasses.size() - 1) == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
             }
-        }
+        } 
 
-        var classDecl = new ClassDeclarationStatement(
+        var classDecl = new ClassDeclarationStatement( 
             classToken.getLine(),
             classToken.getColumn(),
             className,
             new ClassMethodDeclaration[0],
             new ClassFieldDeclaration[0],
-            superClass,
+            superClasses.toArray(new ReturnType[0]),
             genericClassParameter,
             new ClassDeclarationStatement[0],
             classAccessModifier,
@@ -138,7 +146,7 @@ public class ClassParser extends ParserBase {
             className,
             methods.toArray(new ClassMethodDeclaration[0]),
             fields.toArray(new ClassFieldDeclaration[0]),
-            superClass,
+            superClasses.toArray(new ReturnType[0]),
             genericClassParameter,
             innerClasses.toArray(new ClassDeclarationStatement[0]),
             classAccessModifier,

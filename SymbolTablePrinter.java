@@ -78,7 +78,7 @@ public class SymbolTablePrinter {
         if (symbol instanceof ClassDeclarationStatement cds) {
 
             var desc = cds.getName() + " (class)";
-            if (cds.getSuperClass() != null) desc += " extends " + cds.getSuperClass();
+            if (cds.getSuperClasses() != null) desc += " extends " + cds.getSuperClasses();
             return desc + " [line " + symbol.getLine() + "]";
         }
         if (symbol instanceof ClassMethodDeclaration cmd)

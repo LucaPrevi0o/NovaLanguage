@@ -109,7 +109,14 @@ public class AstPrinter {
 
         spacers.add(vLine ? "│  " : "   ");
         printLine(spacers, "├─ Name: " + cds.getName());
-        if (cds.getSuperClass() != null) printLine(spacers, "├─ Superclass: " + cds.getSuperClass());
+        if (cds.getSuperClasses() != null) {
+            
+            var superClasses = cds.getSuperClasses();
+            var nodes = new AstNode[superClasses.length];
+            for (int i = 0; i < superClasses.length; i++)
+                nodes[i] = new IdentifierLiteralExpression(cds.getLine(), cds.getColumn(), superClasses[i].getBaseType().get());
+            printChildNodes(nodes, spacers, "├─ Superclasses: ", true);
+        }
         printLine(spacers, "├─ Access Modifier: " + cds.getAccessModifier());
         if (cds.getGenericClassParameter() != null)
             printLine(spacers, "├─ Generic Parameter: " + buildTypeStringWithSizes(cds.getGenericClassParameter()));

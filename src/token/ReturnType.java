@@ -10,20 +10,21 @@ public class ReturnType {
     
     private final TokenFamily baseType;
     private final ExpressionNode[] arraySizes;
-    
-    /**
-     * Create a return type with a TokenFamily base and optional array dimensions.
-     */
-    public ReturnType(TokenFamily baseType, ExpressionNode[] arraySizes) {
+    private final ReturnType[] superTypes;
+    private final ReturnType genericParameterType;
+
+    public ReturnType(TokenFamily baseType, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType) {
 
         this.baseType = baseType;
-        this.arraySizes = arraySizes != null ? arraySizes : new ExpressionNode[0];
+        this.arraySizes = arraySizes;
+        this.superTypes = superTypes;
+        this.genericParameterType = genericParameterType;
     }
     
     /**
      * Create a simple return type without arrays.
      */
-    public ReturnType(TokenFamily baseType) { this(baseType, new ExpressionNode[0]); }
+    public ReturnType(TokenFamily baseType) { this(baseType, new ExpressionNode[0], null, null); }
     
     /**
      * Get the base type (primitive or custom class).
@@ -34,6 +35,16 @@ public class ReturnType {
      * Get array dimension sizes.
      */
     public ExpressionNode[] getSizes() { return arraySizes; }
+
+    /**
+     * Get the super type if any (for classes).
+     */
+    public ReturnType[] getSuperTypes() { return superTypes; }
+
+    /**
+     * Get the generic parameter type if any.
+     */
+    public ReturnType getGenericParameterType() { return genericParameterType; }
     
     /**
      * Check if this is an array type.
