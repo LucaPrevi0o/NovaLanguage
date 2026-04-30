@@ -49,7 +49,7 @@ public abstract class ParserBase {
      */
     protected SymbolTable exitScope(SymbolTable scope) {
 
-        var parent = scope.getParent();
+        var parent = scope.parent();
         if (parent != null) return parent;
         return scope;  // Already at global scope
     }

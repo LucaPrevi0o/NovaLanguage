@@ -2,7 +2,7 @@ package src.parser.ast.nodes;
 
 public abstract class Symbol extends StatementNode {
     
-    private String name;
+    private final String name;
 
     public Symbol(int line, int column, String name) {
 
