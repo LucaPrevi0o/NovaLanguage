@@ -23,6 +23,18 @@ public enum Operator implements TokenFamily {
     /// The assign operator, used for assignment.
     ASSIGN("="),
 
+    /// The plus-assign operator, used for addition assignment (a += 5).
+    PLUS_ASSIGN("+="),
+
+    /// The minus-assign operator, used for subtraction assignment (a -= 5).
+    MINUS_ASSIGN("-="),
+
+    /// The multiply-assign operator, used for multiplication assignment (a *= 5).
+    MULTIPLY_ASSIGN("*="),
+
+    /// The divide-assign operator, used for division assignment (a /= 5).
+    DIVIDE_ASSIGN("/="),
+
     /// The equal operator, used for equality comparison.
     EQUAL("=="),
 

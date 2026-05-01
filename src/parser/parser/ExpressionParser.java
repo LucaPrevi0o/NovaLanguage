@@ -82,33 +82,58 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the parsed expression in the abstract syntax tree (AST).
     public ExpressionNode parseExpression() { return assignment(); }
 
-    /// Parses an assignment expression, handling both simple assignments and compound assignments.
-    ///
-    /// Grammar rule: `assignment → (lValue) "=" assignment | logicOr`,
-    /// where `lValue` can be an identifier, array access, or member access.
-    /// @return An ExpressionNode representing the parsed assignment expression in the AST, or a logical OR expression if no assignment is present.
-    private ExpressionNode assignment() {
+     /// Parses an assignment expression, handling both simple assignments and compound assignments.
+     ///
+     /// Grammar rule: `assignment → (lValue) ("=" | "+=" | "-=" | "*=" | "/=") assignment | logicOr`,
+     /// where `lValue` can be an identifier, array access, or member access.
+     /// @return An ExpressionNode representing the parsed assignment expression in the AST, or a logical OR expression if no assignment is present.
+     private ExpressionNode assignment() {
 
-        var expr = logicOr();
-        if (match(Operator.ASSIGN)) {
+         var expr = logicOr();
+         if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN)) {
 
-            var equals = previous();
-            var value = assignment();
-            
-            // Valid assignment targets: identifier, array access, member access
-            if (expr instanceof IdentifierLiteralExpression || 
-            expr instanceof ArrayAccessExpression ||
-            expr instanceof MemberAccessExpression) return new AssignmentExpression(
-                equals.getLine(),
-                equals.getColumn(),
-                expr, // target
-                value
-            );
-            throw new ParseException("Invalid assignment target", equals);
-        }
-        
-        return expr;
-    }
+             var operator = previous();
+             var value = assignment();
+
+             // Valid assignment targets: identifier, array access, member access
+             if (!(expr instanceof IdentifierLiteralExpression ||
+                 expr instanceof ArrayAccessExpression ||
+                 expr instanceof MemberAccessExpression))
+                 throw new ParseException("Invalid assignment target", operator);
+
+             // For compound assignments, convert them to binary operations
+             ExpressionNode assignmentValue = value;
+             if (operator.getType() instanceof Operator op && op != Operator.ASSIGN) {
+
+                 // Map compound operators to their base binary operators
+                 Operator binaryOp = switch (op) {
+                     case PLUS_ASSIGN -> Operator.PLUS;
+                     case MINUS_ASSIGN -> Operator.MINUS;
+                     case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
+                     case DIVIDE_ASSIGN -> Operator.DIVIDE;
+                     default -> throw new ParseException("Unknown compound assignment operator", operator);
+                 };
+
+                 // Create binary expression: target += value becomes target = target + value
+                 assignmentValue = new BinaryExpression(
+                     operator.getLine(),
+                     operator.getColumn(),
+                     expr,
+                     new OperatorToken(binaryOp, operator.getLine(), operator.getColumn()),
+                     value
+                 );
+             }
+
+             return new AssignmentExpression(
+                 operator.getLine(),
+                 operator.getColumn(),
+                 expr,
+                 assignmentValue
+             );
+         }
+
+         return expr;
+     }
 
     /// Parses logical OR expressions, handling the "||" operator with left associativity.
     ///
