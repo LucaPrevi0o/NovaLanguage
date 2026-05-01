@@ -10,6 +10,7 @@ import src.parser.ast.nodes.expression.UnaryExpression;
 import src.parser.ast.nodes.expression.access.ArrayAccessExpression;
 import src.parser.ast.nodes.expression.access.MemberAccessExpression;
 import src.parser.ast.nodes.expression.literal.BoolLiteralExpression;
+import src.parser.ast.nodes.expression.literal.CharLiteralExpression;
 import src.parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
 import src.parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import src.parser.ast.nodes.expression.literal.StringLiteralExpression;
@@ -74,6 +75,7 @@ public class AstPrinter {
                 case IdentifierLiteralExpression ile -> printIdentifier(ile, spacers);
                 case NumberLiteralExpression nle -> printNumberLiteral(nle, spacers);
                 case StringLiteralExpression sle -> printStringLiteral(sle, spacers);
+                case CharLiteralExpression cle -> printCharLiteral(cle, spacers);
                 case BoolLiteralExpression ble -> printBoolLiteral(ble, spacers);
                 default -> {}
             }
@@ -431,6 +433,16 @@ public class AstPrinter {
 
         spacers.add("   ");
         printLine(spacers, "└─ Value: " + sle.getValue());
+        spacers.removeLast();
+    }
+
+    /// A helper method to print the details of a character literal expression, including its value.
+    /// @param cle The CharLiteralExpression node representing the character literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    private static void printCharLiteral(CharLiteralExpression cle, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Value: '" + cle.getValue() + "'");
         spacers.removeLast();
     }
 

@@ -7,6 +7,7 @@ import src.parser.ast.nodes.expression.*;
 import src.parser.ast.nodes.expression.access.ArrayAccessExpression;
 import src.parser.ast.nodes.expression.access.MemberAccessExpression;
 import src.parser.ast.nodes.expression.literal.BoolLiteralExpression;
+import src.parser.ast.nodes.expression.literal.CharLiteralExpression;
 import src.parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
 import src.parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import src.parser.ast.nodes.expression.literal.StringLiteralExpression;
@@ -315,6 +316,14 @@ public class ExpressionParser extends ParserBase {
             return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getValue());
         }
         
+        if (match(new Literal.CharLiteral())) {
+
+            var lit = (LiteralToken) previous();
+            var value = lit.getValue();
+            char ch = value.length() > 0 ? value.charAt(0) : '\0';
+            return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
+        }
+
         if (match(new Literal.IdentifierLiteral())) {
 
             var lit = (LiteralToken) previous();

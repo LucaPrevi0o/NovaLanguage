@@ -193,6 +193,42 @@ public class Lexer {
         return new LiteralToken(new Literal.StringLiteral(string.toString()), startLine, startColumn);
     }
 
+    /// Read a character literal, which is a single character enclosed in single quotes.
+    /// Handles escape sequences similar to string literals.
+    /// @return A LiteralToken representing the character literal.
+    private Token readChar() {
+
+        var startLine = line;
+        var startColumn = column;
+        advance(); // skip opening quote
+
+        char ch = '\0';
+        if (currentChar == '\\') {
+
+            advance(); // skip backslash
+            if (currentChar != '\0') {
+
+                // Handle escape sequences
+                ch = switch (currentChar) {
+                    case 'n' -> '\n';
+                    case 't' -> '\t';
+                    case 'r' -> '\r';
+                    case '\'' -> '\'';
+                    case '\\' -> '\\';
+                    default -> currentChar;
+                };
+                advance();
+            }
+        } else if (currentChar != '\0' && currentChar != '\'') {
+
+            ch = currentChar;
+            advance();
+        }
+
+        if (currentChar == '\'') advance(); // skip closing quote
+        return new LiteralToken(new Literal.CharLiteral(ch), startLine, startColumn);
+    }
+
     /// Read an operator token, which can be one or two characters long.
     ///
     /// Checks for two-character operators first (e.g., {@code ==}, {@code !=}, {@code <=}, {@code >=}), then checks
@@ -280,6 +316,7 @@ public class Lexer {
             if (Character.isDigit(currentChar)) return readNumber();
             if (Character.isLetter(currentChar) || currentChar == '_') return readIdentifierOrKeyword();
             if (currentChar == '"') return readString();
+            if (currentChar == '\'') return readChar();
 
             var operator = readOperator();
             if (operator != null) return operator;
