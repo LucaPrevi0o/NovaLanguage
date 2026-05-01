@@ -12,6 +12,7 @@ import src.parser.ast.nodes.expression.access.MemberAccessExpression;
 import src.parser.ast.nodes.expression.literal.BoolLiteralExpression;
 import src.parser.ast.nodes.expression.literal.CharLiteralExpression;
 import src.parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
+import src.parser.ast.nodes.expression.literal.NullLiteralExpression;
 import src.parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import src.parser.ast.nodes.expression.literal.StringLiteralExpression;
 import src.parser.ast.nodes.statement.BlockStatement;
@@ -76,6 +77,7 @@ public class AstPrinter {
                 case NumberLiteralExpression nle -> printNumberLiteral(nle, spacers);
                 case StringLiteralExpression sle -> printStringLiteral(sle, spacers);
                 case CharLiteralExpression cle -> printCharLiteral(cle, spacers);
+                case NullLiteralExpression nle -> printNullLiteral(nle, spacers);
                 case BoolLiteralExpression ble -> printBoolLiteral(ble, spacers);
                 default -> {}
             }
@@ -453,6 +455,16 @@ public class AstPrinter {
 
         spacers.add("   ");
         printLine(spacers, "└─ Value: " + ble.getValue());
+        spacers.removeLast();
+    }
+
+    /// A helper method to print the details of a null literal expression.
+    /// @param nle The NullLiteralExpression node representing the null literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    private static void printNullLiteral(NullLiteralExpression nle, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "└─ Value: null");
         spacers.removeLast();
     }
 

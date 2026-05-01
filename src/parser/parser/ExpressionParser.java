@@ -9,12 +9,14 @@ import src.parser.ast.nodes.expression.access.MemberAccessExpression;
 import src.parser.ast.nodes.expression.literal.BoolLiteralExpression;
 import src.parser.ast.nodes.expression.literal.CharLiteralExpression;
 import src.parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
+import src.parser.ast.nodes.expression.literal.NullLiteralExpression;
 import src.parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import src.parser.ast.nodes.expression.literal.StringLiteralExpression;
 import src.parser.parser.util.ParseException;
 import src.parser.parser.util.ParserBase;
 import src.parser.parser.util.ParserState;
 import src.token.family.Delimiter;
+import src.token.family.Keyword;
 import src.token.family.Literal;
 import src.token.family.Operator;
 import java.util.ArrayList;
@@ -303,6 +305,7 @@ public class ExpressionParser extends ParserBase {
         
         if (match(Literal.BooleanLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
         if (match(Literal.BooleanLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
+        if (match(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
 
         if (match(new Literal.NumberLiteral())) {
 

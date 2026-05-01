@@ -21,7 +21,10 @@ public enum Keyword implements TokenFamily {
     CLASS("class"),
 
     /// The return keyword, used for returning a value from a function or method.
-    RETURN("return");
+    RETURN("return"),
+
+    /// The null keyword, used for the null literal value.
+    NULL("null");
 
     private final String keyword;
 
