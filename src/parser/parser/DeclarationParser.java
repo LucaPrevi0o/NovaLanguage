@@ -362,15 +362,11 @@ public class DeclarationParser extends ParserBase {
         
         StatementNode initializer;
         if (match(Delimiter.SEMICOLON)) initializer = null;
-        else if (isTypeToken(peek())) {
+        else if (isValidType(peek())) {
 
-            var type = advance();
+            var type = parseType();
             var nameToken = consume(new Literal.IdentifierLiteral(), "Expect variable name");
             var name = getLiteralValue(nameToken);
-            
-            TokenFamily tokenFamily;
-            if (type.getType() instanceof PrimitiveType) tokenFamily = type.getType();
-            else throw new ParseException("Unknown primitive type: " + type.getType(), type);
             
             ExpressionNode init = null;
             if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
@@ -378,7 +374,7 @@ public class DeclarationParser extends ParserBase {
             
             initializer = new VariableDeclarationStatement(
                 nameToken.getLine(), nameToken.getColumn(),
-                new ReturnType(tokenFamily, new ExpressionNode[0], null, null),
+                type,
                 name, init
             );
             
