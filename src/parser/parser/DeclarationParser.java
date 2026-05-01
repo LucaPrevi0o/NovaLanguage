@@ -126,6 +126,8 @@ public class DeclarationParser extends ParserBase {
             var className = classToken.getValue();
 
             var classType = TypeRegistry.getReturnType(className);
+            if (classType == null) throw new ParseException("Class '" + className + "' not found", classToken);
+
             var superTypes = classType.getSuperTypes();
             var genericParamType = classType.getGenericParameterType();
 
