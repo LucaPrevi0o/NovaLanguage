@@ -36,4 +36,11 @@ public class TypeRegistry {
     /// @param typeName The string representation of the type to check (e.g., "MyClass").
     /// @return true if the specified type name corresponds to a custom class type registered in the registry, false otherwise.
     public static boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
+
+    /// Resets the registry by removing all non-primitive types, retaining only primitive types.
+    /// This should be called at the start of each parse to ensure a clean state.
+    public static void reset() {
+
+        types.removeIf(t -> !(t.getBaseType() instanceof PrimitiveType));
+    }
 }

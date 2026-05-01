@@ -7,6 +7,7 @@ import src.parser.parser.util.ParserBase;
 import src.parser.parser.util.ParserState;
 import src.parser.parser.ClassParser;
 import src.parser.parser.ExpressionParser;
+import src.token.TypeRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,13 +37,14 @@ public class Parser extends ParserBase {
     
     private final DeclarationParser declarationParser;
 
-    /// Constructs a new Parser with the given list of tokens. Initializes the parser state and the declaration parser.
-    /// @param tokens The list of tokens to be parsed into an AST.
-    public Parser(List<Token> tokens) {
+     /// Constructs a new Parser with the given list of tokens. Initializes the parser state and the declaration parser.
+     /// @param tokens The list of tokens to be parsed into an AST.
+     public Parser(List<Token> tokens) {
 
-        super(new ParserState(tokens));
-        this.declarationParser = new DeclarationParser(state, this.symbolTable);
-    }
+         super(new ParserState(tokens));
+         TypeRegistry.reset();  // Clear any previously registered custom classes
+         this.declarationParser = new DeclarationParser(state, this.symbolTable);
+     }
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     /// Continues parsing declarations until the end of the token list is reached.
