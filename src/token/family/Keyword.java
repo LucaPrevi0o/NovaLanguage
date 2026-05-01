@@ -30,7 +30,10 @@ public enum Keyword implements TokenFamily {
     BREAK("break"),
 
     /// The continue keyword, used to skip the current iteration and continue with the next one in a loop.
-    CONTINUE("continue");
+    CONTINUE("continue"),
+
+    /// The new keyword, used for creating instances of classes.
+    NEW("new");
 
     private final String keyword;
 
