@@ -17,6 +17,9 @@ public enum Operator implements TokenFamily {
     /// The divide operator, used for division.
     DIVIDE("/"),
 
+    /// The modulo operator, used for computing the remainder of division.
+    MODULO("%"),
+
     /// The assign operator, used for assignment.
     ASSIGN("="),
 

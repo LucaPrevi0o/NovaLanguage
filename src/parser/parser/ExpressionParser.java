@@ -36,7 +36,7 @@ import java.util.ArrayList;
 /// - equality   → comparison (("==" | "!=") comparison)*
 /// - comparison → term (("<" | ">" | "<=" | ">=") term)*
 /// - term       → factor (("+" | "-") factor)*
-/// - factor     → unary (("*" | "/") unary)*
+/// - factor     → unary (("*" | "/" | "%") unary)*
 /// - unary      → ("!" | "-" | "++" | "--") unary | call
 /// - call       → primary (postfixOp)*
 ///     where postfixOp is: "(" arguments? ")" | "." IDENTIFIER | "[" expression "]" | "++" | "--"
@@ -191,21 +191,21 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
-    /// Parses factor expressions, handling the "*" and "/" operators with left associativity.
-    ///
-    /// Grammar rule: `factor → unary (("*" | "/") unary)*`
-    /// @return An ExpressionNode representing the parsed factor expression in the AST.
-    private ExpressionNode factor() {
+     /// Parses factor expressions, handling the "*", "/", and "%" operators with left associativity.
+     ///
+     /// Grammar rule: `factor → unary (("*" | "/" | "%") unary)*`
+     /// @return An ExpressionNode representing the parsed factor expression in the AST.
+     private ExpressionNode factor() {
 
-        var expr = unary();
-        while (match(Operator.MULTIPLY, Operator.DIVIDE)) {
+         var expr = unary();
+         while (match(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
 
-            var operator = previous();
-            var right = unary();
-            expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, (OperatorToken) operator, right);
-        }
-        
-        return expr;
+             var operator = previous();
+             var right = unary();
+             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, (OperatorToken) operator, right);
+         }
+
+         return expr;
     }
 
     /// Parses unary expressions, handling the "!", "-", "++", and "--" operators with right associativity.
