@@ -6,6 +6,7 @@ import src.parser.ast.AstNode;
 import src.parser.ast.nodes.expression.AssignmentExpression;
 import src.parser.ast.nodes.expression.BinaryExpression;
 import src.parser.ast.nodes.expression.CallExpression;
+import src.parser.ast.nodes.expression.ObjectCreationExpression;
 import src.parser.ast.nodes.expression.UnaryExpression;
 import src.parser.ast.nodes.expression.access.ArrayAccessExpression;
 import src.parser.ast.nodes.expression.access.MemberAccessExpression;
@@ -75,6 +76,7 @@ public class AstPrinter {
                 case BinaryExpression be -> printBinaryExpression(be, spacers);
                 case UnaryExpression ue -> printUnaryExpression(ue, spacers);
                 case CallExpression ce -> printCallExpression(ce, spacers);
+                case ObjectCreationExpression oce -> printObjectCreation(oce, spacers);
                 case MemberAccessExpression mae -> printMemberAccess(mae, spacers);
                 case ArrayAccessExpression aae -> printArrayAccess(aae, spacers);
                 case IdentifierLiteralExpression ile -> printIdentifier(ile, spacers);
@@ -384,6 +386,17 @@ public class AstPrinter {
         printLine(spacers, "├─ Callee:");
         printASTNode(ce.getCallee(), spacers, "└─ ", true);
         printChildNodes(ce.getArguments(), spacers, "└─ Arguments: ");
+        spacers.removeLast();
+    }
+
+    /// A helper method to print the details of an object creation expression, including the class name and arguments.
+    /// @param oce The ObjectCreationExpression node representing the object creation expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    private static void printObjectCreation(ObjectCreationExpression oce, List<String> spacers) {
+
+        spacers.add("   ");
+        printLine(spacers, "├─ Class: " + oce.getClassName());
+        printChildNodes(oce.getArguments(), spacers, "└─ Arguments: ");
         spacers.removeLast();
     }
 
