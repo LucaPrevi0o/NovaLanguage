@@ -18,38 +18,63 @@ import src.token.family.Literal;
 import src.token.family.Operator;
 
 import java.util.ArrayList;
-import java.util.List;
 
-/**
- * Handles parsing of class declarations and their members.
- */
+/// Parses class declarations, including their methods, fields, superclasses, generic parameters, inner classes, access modifiers, and constructors.
+///
+/// <hr>
+///
+/// GRAMMAR FOR CLASS DECLARATIONS
+///
+/// ```
+/// classDecl      → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*] "{" classMembers "}"
+/// classMembers   → (classField | classMethod | constructor | innerClass)*
+///
+/// classField     → accessModifier? type IDENTIFIER ("=" expression)? ";"
+/// classMethod    → accessModifier? type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
+/// constructor    → accessModifier? CLASSNAME "(" parameters? ")" "{" declaration* "}"
+/// innerClass     → accessModifier? classDecl
+///
+/// accessModifier → "public" | "private" | "protected"
+/// parameters     → type IDENTIFIER ("," type IDENTIFIER)*
+/// ```
+///
+/// Features:
+/// - **Generic Parameters**: Classes can have a single generic parameter specified with square brackets `[T]`
+/// - **Superclasses**: Multiple inheritance supported using double colon `::` followed by comma-separated class names
+/// - **Inner Classes**: Nested class declarations within the class body
+/// - **Members**: Mix of fields (with optional initializers), methods, and constructors
+/// - **Access Control**: Public, private, and protected modifiers for all class members
+///
+/// @see DeclarationParser
+/// @see ExpressionParser
 public class ClassParser extends ParserBase {
     
     private DeclarationParser declarationParser;
-    
+
+    /// Constructs a new ClassParser with the given DeclarationParser.
+    /// @param declarationParser The DeclarationParser to use for parsing types and other declarations within the class.
     public ClassParser(DeclarationParser declarationParser) {
         
         super(declarationParser.getState(), declarationParser.getSymbolTable());
         this.declarationParser = declarationParser;
     }
 
-    /**
-     * Parse class declaration:
-     * [access_modifier] class ClassName [GenericTypeParameterName] :: SuperClassName {
-     *     [access_modifier] type field;
-     *     [access_modifier] ClassName(params) { ... }
-     *     [access_modifier] returnType method(params) { ... }
-     *     [access_modifier] class InnerClass { ... }
-     * }
-     */
+    /// Parses a class declaration according to the grammar defined in the class documentation.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classDecl → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*]
+    ///             "{" classMembers "}"
+    /// ```
+    /// @param classAccessModifier The access modifier of the class (e.g., public, private).
+    /// @return A ClassDeclarationStatement representing the parsed class declaration.
     public ClassDeclarationStatement parseClassDeclaration(AccessModifier classAccessModifier) {
 
         var classToken = previous();
-        
         var nameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'class'");
         var className = getLiteralValue(nameToken);
         
-        List<ReturnType> superClasses = new ArrayList<>();
+        var superClasses = new ArrayList<ReturnType>();
         ReturnType genericClassParameter = null;
         
         if (match(Delimiter.LSQUARE)) {
@@ -66,14 +91,14 @@ public class ClassParser extends ParserBase {
             var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
             var superClassName = getLiteralValue(superClassToken);
             superClasses.add(TypeRegistry.getReturnType(superClassName));
-            if (superClasses.get(superClasses.size() - 1) == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+            if (superClasses.getFirst() == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
 
             while (match(Delimiter.COMMA)) {
 
                 superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
                 superClassName = getLiteralValue(superClassToken);
                 superClasses.add(TypeRegistry.getReturnType(superClassName));
-                if (superClasses.get(superClasses.size() - 1) == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+                if (superClasses.getLast() == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
             }
         } 
 
@@ -101,10 +126,10 @@ public class ClassParser extends ParserBase {
         // Update declarationParser to use the new scope
         this.declarationParser = new DeclarationParser(state, this.symbolTable);
 
-        List<ClassFieldDeclaration> fields = new ArrayList<>();
-        List<ClassConstructorDeclaration> constructors = new ArrayList<>();
-        List<ClassMethodDeclaration> methods = new ArrayList<>();
-        List<ClassDeclarationStatement> innerClasses = new ArrayList<>();
+        var fields = new ArrayList<ClassFieldDeclaration>();
+        var constructors = new ArrayList<ClassConstructorDeclaration>();
+        var methods = new ArrayList<ClassMethodDeclaration>();
+        var innerClasses = new ArrayList<ClassDeclarationStatement>();
         
         while (!check(Delimiter.RBRACE) && !isAtEnd()) {
 
@@ -119,7 +144,7 @@ public class ClassParser extends ParserBase {
             if (check(new Literal.IdentifierLiteral()) && getLiteralValue(peek()).equals(className)) {
 
                 advance();  // consume class name
-                constructors.add(parseConstructor(className, classToken.getLine(), classToken.getColumn(), memberAccessModifier));
+                constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
                 continue;
             }
             
@@ -153,11 +178,14 @@ public class ClassParser extends ParserBase {
             constructors.toArray(new ClassConstructorDeclaration[0])
         );
     }
-    
-    /**
-     * Parse optional access modifier (public, private, protected).
-     * Returns null if no access modifier is present.
-     */
+
+    /// Parses an access modifier if present. If no access modifier is found, returns null.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// accessModifier → "public" | "private" | "protected"
+    /// ```
+    /// @return The AccessModifier if an access modifier keyword is present; otherwise, null.
     private AccessModifier parseAccessModifier() {
 
         if (match(AccessModifier.PUBLIC)) return AccessModifier.PUBLIC;
@@ -165,10 +193,19 @@ public class ClassParser extends ParserBase {
         if (match(AccessModifier.PROTECTED)) return AccessModifier.PROTECTED;
         return null;
     }
-    
-    /**
-     * Parse class field: type fieldName [= initializer];
-     */
+
+    /// Parses a class field declaration, which may optionally include an initializer.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classField → accessModifier? type IDENTIFIER ("=" expression)? ";"
+    /// ```
+    /// @param type The type of the field, which should have been parsed before calling this method.
+    /// @param name The name of the field, which should have been parsed before calling this method.
+    /// @param line The line number where the field is declared, used for error reporting and AST node construction.
+    /// @param column The column number where the field is declared, used for error reporting and AST node construction.
+    /// @param accessModifier The access modifier of the field (e.g., public, private), which should have been parsed before calling this method.
+    /// @return A ClassFieldDeclaration representing the parsed field declaration.
     private ClassFieldDeclaration parseClassField(ReturnType type, String name, int line, int column, AccessModifier accessModifier) {
 
         ExpressionNode initializer = null;
@@ -176,13 +213,22 @@ public class ClassParser extends ParserBase {
         if (match(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
         consume(Delimiter.SEMICOLON, "Expect ';' after field declaration");
         var decl = new ClassFieldDeclaration(line, column, type, name, initializer, accessModifier);
-        this.symbolTable.register(decl);  // Register field as symbol
+        this.symbolTable.register(decl); // Register field as symbol
         return decl;
     }
-    
-    /**
-     * Parse class method: type methodName(params) { ... }
-     */
+
+    /// Parses a class method declaration, including its parameters and body.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classMethod → accessModifier? type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
+    /// ```
+    /// @param returnType The return type of the method, which should have been parsed before calling this method.
+    /// @param name The name of the method, which should have been parsed before calling this method.
+    /// @param line The line number where the method is declared, used for error reporting and AST node construction.
+    /// @param column The column number where the method is declared, used for error reporting and AST node construction.
+    /// @param accessModifier The access modifier of the method (e.g., public, private), which should have been parsed before calling this method.
+    /// @return A ClassMethodDeclaration representing the parsed method declaration.
     private ClassMethodDeclaration parseClassMethod(ReturnType returnType, String name, int line, int column, AccessModifier accessModifier) {
 
         consume(Delimiter.LPAREN, "Expect '(' after method name");
@@ -191,13 +237,13 @@ public class ClassParser extends ParserBase {
 
         consume(Delimiter.RPAREN, "Expect ')' after parameters");
         var decl = new ClassMethodDeclaration(line, column, returnType, name, parameters, null, accessModifier);
-        this.symbolTable.register(decl);  // Register method as symbol
+        this.symbolTable.register(decl); // Register method as symbol
         
         var methodScope = enterScope();
         this.symbolTable = methodScope;
         
         this.declarationParser = new DeclarationParser(state, this.symbolTable);
-        for (var param : parameters) this.symbolTable.register(param);  // Register parameters as symbols
+        for (var param : parameters) this.symbolTable.register(param); // Register parameters as symbols
 
         consume(Delimiter.LBRACE, "Expect '{' before method body");
 
@@ -212,11 +258,18 @@ public class ClassParser extends ParserBase {
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
         return new ClassMethodDeclaration(line, column, returnType, name, parameters, body, accessModifier);
     }
-    
-    /**
-     * Parse constructor: ClassName(params) { ... }
-     */
-    private ClassConstructorDeclaration parseConstructor(String className, int line, int column, AccessModifier accessModifier) {
+
+    /// Parses a class constructor declaration, including its parameters and body.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// constructor → accessModifier? CLASSNAME "(" parameters? ")" "{" declaration* "}"
+    /// ```
+    /// @param line The line number where the constructor is declared, used for error reporting and AST node construction.
+    /// @param column The column number where the constructor is declared, used for error reporting and AST node construction.
+    /// @param accessModifier The access modifier of the constructor (e.g., public, private), which should have been parsed before calling this method.
+    /// @return A ClassConstructorDeclaration representing the parsed constructor declaration.
+    private ClassConstructorDeclaration parseConstructor(int line, int column, AccessModifier accessModifier) {
 
         consume(Delimiter.LPAREN, "Expect '(' after constructor name");
 

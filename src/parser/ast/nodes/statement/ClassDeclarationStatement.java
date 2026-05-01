@@ -4,11 +4,10 @@ import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import src.token.ReturnType;
 import src.token.family.AccessModifier;
-import src.token.family.GenericParameterType;
-import src.parser.ast.nodes.ExpressionNode;
 import src.parser.ast.nodes.Symbol;
 import src.parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 
+/// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
 public class ClassDeclarationStatement extends Symbol {
 
     private final ClassMethodDeclaration[] methods;
@@ -19,6 +18,18 @@ public class ClassDeclarationStatement extends Symbol {
     private final AccessModifier accessModifier;
     private final ClassConstructorDeclaration[] constructors;
 
+    /// Constructs a new ClassDeclarationStatement.
+    ///
+    /// @param line The line number where the class is declared.
+    /// @param column The column number where the class is declared.
+    /// @param name The name of the class.
+    /// @param methods The methods declared within the class.
+    /// @param fields The fields declared within the class.
+    /// @param superClasses The superclasses that the class extends or implements.
+    /// @param genericClassParameter The generic parameter of the class, if any.
+    /// @param innerClasses The inner classes declared within the class.
+    /// @param accessModifier The access modifier of the class (e.g., public, private).
+    /// @param constructors The constructors declared within the class.
     public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, ReturnType[] superClasses, ReturnType genericClassParameter, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
 
         super(line, column, name);
@@ -31,13 +42,31 @@ public class ClassDeclarationStatement extends Symbol {
         this.constructors = constructors;
     }
 
+    /// Returns the methods declared within the class.
+    /// @return An array of ClassMethodDeclaration objects representing the methods declared within the class.
     public ClassMethodDeclaration[] getMethods() { return methods; }
-    public ClassFieldDeclaration[] getFields() { return fields; }
-    public AccessModifier getAccessModifier() { return accessModifier; }
-    public ReturnType[] getSuperClasses() { return superClasses; }
-    public ReturnType getGenericClassParameter() { return genericClassParameter; }
-    public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
-    public ClassConstructorDeclaration[] getConstructors() { return constructors; }
 
-    public ReturnType getReturnType() { return new ReturnType(new GenericParameterType(getName()), new ExpressionNode[0], superClasses, genericClassParameter); }
+    /// Returns the fields declared within the class.
+    /// @return An array of ClassFieldDeclaration objects representing the fields declared within the class.
+    public ClassFieldDeclaration[] getFields() { return fields; }
+
+    /// Returns the access modifier of the class.
+    /// @return The access modifier of the class (e.g., public, private).
+    public AccessModifier getAccessModifier() { return accessModifier; }
+
+    /// Returns the superclasses that the class extends or implements.
+    /// @return An array of ReturnType objects representing the superclasses that the class extends or implements.
+    public ReturnType[] getSuperClasses() { return superClasses; }
+
+    /// Returns the generic parameter of the class, if any.
+    /// @return A ReturnType object representing the generic parameter of the class, or null if the class does not have a generic parameter.
+    public ReturnType getGenericClassParameter() { return genericClassParameter; }
+
+    /// Returns the inner classes declared within the class.
+    /// @return An array of ClassDeclarationStatement objects representing the inner classes declared within the class.
+    public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
+
+    /// Returns the constructors declared within the class.
+    /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.
+    public ClassConstructorDeclaration[] getConstructors() { return constructors; }
 }

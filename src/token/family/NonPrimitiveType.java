@@ -3,22 +3,19 @@ package src.token.family;
 import src.parser.ast.nodes.statement.ClassDeclarationStatement;
 import src.token.TokenFamily;
 
-/**
- * Represents a custom class type (user-defined).
- * Only stores the class name - the full ClassDeclarationStatement 
- * can be retrieved from TypeRegistry if needed.
- */
+/// Represents a non-primitive type in the token family, which is associated with a class declaration.
 public class NonPrimitiveType implements TokenFamily {
 
     private final ClassDeclarationStatement classDecl;
 
-    /**
-     * Create a non-primitive type with a class name.
-     */
+    /// Constructs a new NonPrimitiveType with the specified class declaration.
+    /// @param className The ClassDeclarationStatement representing the class associated with this non-primitive type.
     public NonPrimitiveType(ClassDeclarationStatement className) { this.classDecl = className; }
 
     @Override
     public String get() { return classDecl.getName(); }
 
+    /// Returns the ClassDeclarationStatement associated with this non-primitive type.
+    /// @return The ClassDeclarationStatement representing the class associated with this non-primitive type.
     public ClassDeclarationStatement getClassDeclaration() { return classDecl; }
 }

@@ -28,14 +28,20 @@ import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import src.token.ReturnType;
 
-/**
- * Rewritten src.printer.AstPrinter that uses a simple depth-based indentation scheme
- * consistent with src.printer.SymbolTablePrinter. Each indent level is three spaces.
- */
+/// A utility class for printing the Abstract Syntax Tree (AST) of a program in a readable format.
 public class AstPrinter {
 
+    /// Prints the AST starting from the given node with the specified header.
+    /// @param node The root node of the AST to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param header A string to prefix the root node, typically used for visual structure.
     public static void printASTNode(AstNode node, List<String> spacers, String header) { printASTNode(node, spacers, header, false); }
 
+    /// A recursive helper method that prints the AST node and its children with proper indentation and visual structure.
+    /// @param node The AST node to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param header A string to prefix the node, typically used for visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for child nodes.
     private static void printASTNode(AstNode node, List<String> spacers, String header, boolean vLine) {
 
         if (node == null) return;
@@ -75,6 +81,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print a line of text with the appropriate indentation based on the spacers list.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param text The text to print, which typically includes information about the AST node.
     private static void printLine(List<String> spacers, String text) {
 
         var prefix = new StringBuilder();
@@ -82,8 +91,17 @@ public class AstPrinter {
         System.out.println(prefix + text);
     }
 
+    /// A helper method to print an array of child AST nodes with a header and proper indentation.
+    /// @param nodes An array of child AST nodes to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param header A string to prefix the child nodes, typically used for visual structure.
     private static void printChildNodes(AstNode[] nodes, List<String> spacers, String header) { printChildNodes(nodes, spacers, header, false); }
 
+    /// A helper method to print an array of child AST nodes with a header and proper indentation, optionally including vertical lines for visual structure.
+    /// @param nodes An array of child AST nodes to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param header A string to prefix the child nodes, typically used for visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes.
     private static void printChildNodes(AstNode[] nodes, List<String> spacers, String header, boolean vLine) {
 
         printLine(spacers, header + nodes.length);
@@ -94,12 +112,20 @@ public class AstPrinter {
         }
     }
 
+    /// A helper method to print the details of a function declaration, including its return type, parameters, name, and body.
+    /// @param fds The FunctionDeclarationStatement node representing the function declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the function declaration.
     private static void printFunctionDeclaration(FunctionDeclarationStatement fds, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
         printFunctionElements(fds, spacers);
     }
 
+    /// A helper method to print the common elements of a function declaration, such as its return type, parameters, name, and body.
+    /// This method is used by both regular function declarations and class method declarations to avoid code duplication.
+    /// @param fds The FunctionDeclarationStatement node representing the function declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printFunctionElements(FunctionDeclarationStatement fds, List<String> spacers) {
 
         var returnType = fds.getDeclaredType();
@@ -113,6 +139,11 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a class declaration, including its name, superclasses, access modifier,
+    /// generic parameter, constructors, inner classes, fields, and methods.
+    /// @param cds The ClassDeclarationStatement node representing the class declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the class declaration.
     private static void printClassDeclaration(ClassDeclarationStatement cds, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -135,6 +166,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a class field declaration, including its name, type, access modifier, and initializer if present.
+    /// @param cfd The ClassFieldDeclaration node representing the class field declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the class field declaration.
     private static void printFieldDeclaration(ClassFieldDeclaration cfd, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -149,6 +184,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a class method declaration, including its return type, parameters, name, body, and access modifier.
+    /// @param cmd The ClassMethodDeclaration node representing the class method declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the class method declaration.
     private static void printMethodDeclaration(ClassMethodDeclaration cmd, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -156,6 +195,10 @@ public class AstPrinter {
         printFunctionElements(cmd, spacers);
     }
 
+    /// A helper method to print the details of a class constructor declaration, including its parameters, body, and access modifier.
+    /// @param ccd The ClassConstructorDeclaration node representing the class constructor declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the class constructor declaration.
     private static void printConstructorDeclaration(ClassConstructorDeclaration ccd, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -167,6 +210,9 @@ public class AstPrinter {
         printParameters(params, spacers);
     }
 
+    /// A helper method to print the details of a return statement, including its return value if present.
+    /// @param rs The ReturnStatement node representing the return statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printReturnStatement(ReturnStatement rs, List<String> spacers) {
 
         spacers.add("   ");
@@ -178,6 +224,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a block statement, including its child statements.
+    /// @param bs The BlockStatement node representing the block statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printBlockStatement(BlockStatement bs, List<String> spacers) {
 
         spacers.add("   ");
@@ -185,6 +234,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of an if statement, including its condition, then block, and else block if present.
+    /// @param is The IfStatement node representing the if statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the if statement.
     private static void printIfStatement(IfStatement is, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -204,6 +257,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a while statement, including its condition and body.
+    /// @param ws The WhileStatement node representing the while statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the while statement.
     private static void printWhileStatement(WhileStatement ws, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -214,6 +271,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a for statement, including its condition, initializer, increment, and body.
+    /// @param fs The ForStatement node representing the for statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the for statement.
     private static void printForStatement(ForStatement fs, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -234,6 +295,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a variable declaration statement, including its name, type, and initializer if present.
+    /// @param vds The VariableDeclarationStatement node representing the variable declaration to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the variable declaration statement.
     private static void printVariableDeclaration(VariableDeclarationStatement vds, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -247,6 +312,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of an expression statement, including its expression if present.
+    /// @param es The ExpressionStatement node representing the expression statement to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the expression statement.
     private static void printExpressionStatement(ExpressionStatement es, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -258,6 +327,10 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of an assignment expression, including its target and value.
+    /// @param ae The AssignmentExpression node representing the assignment expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
+    /// @param vLine A boolean indicating whether to include vertical lines in the visual structure for the child nodes of the assignment expression.
     private static void printAssignmentExpression(AssignmentExpression ae, List<String> spacers, boolean vLine) {
 
         spacers.add(vLine ? "│  " : "   ");
@@ -268,6 +341,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a binary expression, including its operator, left operand, and right operand.
+    /// @param be The BinaryExpression node representing the binary expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printBinaryExpression(BinaryExpression be, List<String> spacers) {
 
         spacers.add("   ");
@@ -279,6 +355,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a unary expression, including its operator and operand.
+    /// @param ue The UnaryExpression node representing the unary expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printUnaryExpression(UnaryExpression ue, List<String> spacers) {
 
         spacers.add("   ");
@@ -288,6 +367,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a call expression, including its callee and arguments.
+    /// @param ce The CallExpression node representing the call expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printCallExpression(CallExpression ce, List<String> spacers) {
 
         spacers.add("   ");
@@ -297,6 +379,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a member access expression, including the member name and the object being accessed.
+    /// @param mae The MemberAccessExpression node representing the member access expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printMemberAccess(MemberAccessExpression mae, List<String> spacers) {
 
         spacers.add("   ");
@@ -306,6 +391,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of an array access expression, including the array being accessed and the index.
+    /// @param aae The ArrayAccessExpression node representing the array access expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printArrayAccess(ArrayAccessExpression aae, List<String> spacers) {
 
         spacers.add("   ");
@@ -316,6 +404,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of an identifier literal expression, including its name.
+    /// @param ile The IdentifierLiteralExpression node representing the identifier literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printIdentifier(IdentifierLiteralExpression ile, List<String> spacers) {
 
         spacers.add("   ");
@@ -323,6 +414,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a number literal expression, including its value.
+    /// @param nle The NumberLiteralExpression node representing the number literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printNumberLiteral(NumberLiteralExpression nle, List<String> spacers) {
 
         spacers.add("   ");
@@ -330,6 +424,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a string literal expression, including its value.
+    /// @param sle The StringLiteralExpression node representing the string literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printStringLiteral(StringLiteralExpression sle, List<String> spacers) {
 
         spacers.add("   ");
@@ -337,6 +434,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of a boolean literal expression, including its value.
+    /// @param ble The BoolLiteralExpression node representing the boolean literal expression to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printBoolLiteral(BoolLiteralExpression ble, List<String> spacers) {
 
         spacers.add("   ");
@@ -344,6 +444,9 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to print the details of function parameters, including their names and types.
+    /// @param params An array of FunctionParameter objects representing the parameters to print.
+    /// @param spacers A list of strings used for indentation and visual structure.
     private static void printParameters(FunctionParameter[] params, List<String> spacers) {
 
         spacers.add("│  ");
@@ -357,11 +460,14 @@ public class AstPrinter {
         spacers.removeLast();
     }
 
+    /// A helper method to build a string representation of a return type, including its base type and any array sizes if applicable.
+    /// @param type The ReturnType object representing the return type to build a string for.
+    /// @return A string representation of the return type, including its base type and any array sizes if applicable.
     public static String buildTypeStringWithSizes(ReturnType type) {
 
         if (type == null) return "null";
         var baseType = type.getBaseType();
-        String baseTypeStr = baseType.get();
+        var baseTypeStr = baseType.get();
 
         var sizes = type.getSizes();
         if (sizes == null || sizes.length == 0) return baseTypeStr;

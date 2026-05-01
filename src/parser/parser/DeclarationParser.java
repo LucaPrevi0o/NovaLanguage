@@ -22,50 +22,73 @@ import src.token.family.Operator;
 import src.token.family.PrimitiveType;
 import java.util.ArrayList;
 
-/**
- * Unified parser for declarations and statements.
- * Handles:
- * - Declarations (variables, functions, classes)
- * - Statements (control flow, blocks, expressions)
- * - Type parsing (primitives and custom classes)
- * 
- * This combines the functionality of the former DeclarationParser and StatementParser
- * to eliminate circular dependencies.
- */
+/// Unified parser for declarations and statements.
+/// Handles:
+/// - Declarations (variables, functions, classes)
+/// - Statements (control flow, blocks, expressions)
+/// - Type parsing (primitives and custom classes)
+///
+/// <hr>
+///
+/// GRAMMAR FOR DECLARATIONS AND STATEMENTS
+///
+/// Declarations:
+/// ```
+/// declaration     → accessModifier? classDecl | functionDecl | varDecl | statement
+///
+/// functionDecl    → type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
+/// parameters      → type IDENTIFIER ("," type IDENTIFIER)*
+///
+/// varDecl         → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"
+/// ```
+///
+/// Statements:
+/// ```
+/// statement       → exprStmt | ifStmt | whileStmt | forStmt | returnStmt | block
+///
+/// ifStmt          → "if" "(" expression ")" statement ("else" statement)?
+/// whileStmt       → "while" "(" expression ")" statement
+/// forStmt         → "for" "(" (varDecl | exprStmt | ";") expression? ";" expression? ")" statement
+/// returnStmt      → "return" expression? ";"
+///
+/// block           → "{" declaration* "}"
+/// exprStmt        → expression ";"
+/// ```
+///
+/// Type System:
+/// ```
+/// type            → (primitiveType | CLASSNAME) arrayDimensions?
+/// arrayDimensions → "[" expression? "]" (arrayDimensions)?
+///
+/// primitiveType   → "int" | "float" | "double" | "long" | "boolean" | "byte" | ...
+/// accessModifier  → "public" | "private" | "protected"
+/// ```
+///
+/// @see ClassParser
+/// @see ExpressionParser
 public class DeclarationParser extends ParserBase {
     
     private ExpressionParser expressionParser;
-    private ClassParser classParser;
-    
-    public DeclarationParser(ParserState state) {
+    private final ClassParser classParser;
 
-        super(state);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable);
-        this.classParser = new ClassParser(this);
-    }
-    
-    /**
-     * Constructor for child parsers (shares symbol table).
-     */
+    /// Constructs a new DeclarationParser with the given parser state and symbol table.
+    /// @param state The parser state containing the tokens to parse.
+    /// @param symbolTable The symbol table for tracking declared symbols (variables, functions, classes).
     public DeclarationParser(ParserState state, SymbolTable symbolTable) {
 
         super(state, symbolTable);
         this.expressionParser = new ExpressionParser(state, symbolTable);
         this.classParser = new ClassParser(this);
     }
-    
-    // ============================================================================
-    // TYPE PARSING (formerly TypeParser)
-    // ============================================================================
-    
-    /**
-     * Parse array dimensions: [] or [size] or [][]...
-     * Returns a list of size expressions (null for unsized dimensions).
-     */
+
+    /// Parses array dimensions for a type, returning an array of ExpressionNode representing the sizes of each dimension.
+    ///
+    /// Grammar rule:
+    /// `arrayDimensions → "[" expression? "]" (arrayDimensions)?`
+    /// @return An array of ExpressionNode representing the sizes of each array dimension, or null for unspecified dimensions.
     private ExpressionNode[] parseArrayDimensions() {
 
         var arraySizes = new ArrayList<ExpressionNode>();
-        
         while (match(Delimiter.LSQUARE)) {
             
             if (!check(Delimiter.RSQUARE)) {
@@ -77,16 +100,17 @@ public class DeclarationParser extends ParserBase {
         }
         return arraySizes.toArray(new ExpressionNode[0]);
     }
-    
-    /**
-     * Check if the current token can be used as a type (primitive type or class name).
-     */
+
+    /// Checks if a token is a valid type token (either a primitive type or a class name).
+    /// @param token The token to check.
+    /// @return True if the token is a valid type token (primitive or class name), false otherwise.
     public boolean isValidType(Token token) { return isTypeToken(token) || isClassName(token); }
-    
-    /**
-     * Parse a type token (primitive or class name) and return a TokenFamily.
-     * This handles both built-in types (int, float, etc.) and user-defined class types.
-     */
+
+    /// Parses a type, which can be either a primitive type or a class name, along with any array dimensions.
+    ///
+    /// Grammar rule:
+    /// `type → (primitiveType | CLASSNAME) arrayDimensions?`
+    /// @return A ReturnType representing the parsed type, including base type, array dimensions, super types, and generic parameters as applicable.
     protected ReturnType parseType() {
 
         var token = peek();
@@ -104,20 +128,19 @@ public class DeclarationParser extends ParserBase {
             var classType = TypeRegistry.getReturnType(className);
             var superTypes = classType.getSuperTypes();
             var genericParamType = classType.getGenericParameterType();
-            if (classType != null) {
 
-                var arrayDims = parseArrayDimensions();
-                if (arrayDims.length == 0) return classType;
-                return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType);
-            }
+            var arrayDims = parseArrayDimensions();
+            if (arrayDims.length == 0) return classType;
+            return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType);
         } 
 
         throw new ParseException("Expect type (primitive or class name)", token);
     }
-    
-    /**
-     * Check if a token represents a class name (i.e., an identifier that matches a registered class).
-     */
+
+    /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
+    /// a registered custom class in the TypeRegistry.
+    /// @param token The token to check.
+    /// @return True if the token is a valid class name, false otherwise.
     private boolean isClassName(Token token) {
 
         if (!(token instanceof LiteralToken)) return false;
@@ -126,19 +149,17 @@ public class DeclarationParser extends ParserBase {
         var name = ((LiteralToken) token).getValue();
         return TypeRegistry.isCustomClass(name);
     }
-    
-    // ============================================================================
-    // PUBLIC METHODS - Used by ClassParser
-    // ============================================================================
-    
-    /**
-     * Parse an expression (exposed for ClassParser).
-     */
+
+    /// Parses an expression using the ExpressionParser.
+    /// This is exposed for use in parsing variable initializers and other contexts where an expression is expected.
+    /// @return An ExpressionNode representing the parsed expression.
     public ExpressionNode parseExpression() { return expressionParser.parseExpression(); }
-    
-    /**
-     * Parse function/method parameters (exposed for ClassParser).
-     */
+
+    /// Parses a list of function parameters, which consist of a type and an identifier for each parameter, separated by commas.
+    ///
+    /// Grammar rule:
+    /// `parameters → type IDENTIFIER ("," type IDENTIFIER)*`
+    /// @return An array of FunctionParameter objects representing the parsed function parameters.
     public FunctionParameter[] parseParameters() {
 
         var parameters = new ArrayList<FunctionParameter>();
@@ -152,14 +173,13 @@ public class DeclarationParser extends ParserBase {
         } while (match(Delimiter.COMMA));
         return parameters.toArray(new FunctionParameter[0]);
     }
-    
-    // ============================================================================
-    // DECLARATION PARSING
-    // ============================================================================
-    
-    /**
-     * declaration → classDecl | functionDecl | varDecl | statement
-     */
+
+    /// Parses a declaration, which can be an access modifier followed by a class declaration, a function declaration,
+    /// a variable declaration, or a statement.
+    ///
+    /// Grammar rule:
+    /// `declaration → accessModifier? classDecl | functionDecl | varDecl | statement`
+    /// @return A StatementNode representing the parsed declaration or statement.
     public StatementNode parseDeclaration() {
 
         var accessModifier = parseAccessModifier();
@@ -183,9 +203,16 @@ public class DeclarationParser extends ParserBase {
         }
         return parseStatement();
     }
-    /**
-     * functionDecl → type[]* IDENTIFIER "(" parameters? ")" block
-     */
+
+    /// Parses a function declaration, which consists of a return type, a name, a parameter list, and a body enclosed in braces.
+    ///
+    /// Grammar rule:
+    /// `functionDecl → type IDENTIFIER "(" parameters? ")" "{" declaration* "}"`
+    /// @param returnType The return type of the function, already parsed.
+    /// @param name The name of the function.
+    /// @param line The line number where the function is declared (for error reporting and AST node construction).
+    /// @param column The column number where the function is declared (for error reporting and AST node construction).
+    /// @return A FunctionDeclarationStatement representing the parsed function declaration.
     private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
 
         consume(Delimiter.LPAREN, "Expect '(' after function name");
@@ -203,21 +230,23 @@ public class DeclarationParser extends ParserBase {
         this.expressionParser = new ExpressionParser(state, this.symbolTable);
         
         consume(Delimiter.LBRACE, "Expect '{' before function body");
-        
-        var bodyStatements = new ArrayList<StatementNode>();
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) bodyStatements.add(parseDeclaration());
 
-        consume(Delimiter.RBRACE, "Expect '}' after block");
-        this.symbolTable = exitScope(functionScope);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable);
-        
+        var bodyStatements = getStatementList(functionScope);
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
         return new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
     }
-    
-    /**
-     * varDecl → type[size?]* IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"
-     */
+
+    /// Parses a variable declaration, which consists of a type, a name, an optional initializer, and may include multiple declarations separated by commas.
+    ///
+    /// Grammar rule:
+    /// `varDecl → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"`
+    /// @param type The return type of the variable, already parsed.
+    /// @param name The name of the variable.
+    /// @param line The line number where the variable is declared (for error reporting and AST node construction).
+    /// @param column The column number where the variable is declared (for error reporting and AST node construction).
+    /// @return A StatementNode representing the parsed variable declaration(s).
+    /// - If there is only one variable declared, returns a VariableDeclarationStatement.
+    /// - If there are multiple variables declared in the same statement, returns a BlockStatement containing multiple VariableDeclarationStatements.
     private StatementNode parseVariableDeclaration(ReturnType type, String name, int line, int column) {
 
         ExpressionNode initializer = null;
@@ -250,24 +279,24 @@ public class DeclarationParser extends ParserBase {
         this.symbolTable.register(firstDecl);  // Register variable as symbol
         return firstDecl;
     }
-    
-    /**
-     * Parse optional access modifier (public, private, protected).
-     * Returns null if no access modifier is present.
-     */
+
+    /// Parses an access modifier, which can be "public", "private", or "protected".
+    /// If no access modifier is present, returns null (indicating package-private).
+    ///
+    /// Grammar rule:
+    /// `accessModifier → "public" | "private" | "protected"`
+    /// @return An AccessModifier enum value representing the parsed access modifier, or null if no access modifier is present (indicating package-private).
     private AccessModifier parseAccessModifier() {
 
         for (var modifier : AccessModifier.values()) if (match(modifier)) return modifier;
         return null;  // No access modifier (package-private)
     }
-    
-    // ============================================================================
-    // STATEMENT PARSING (formerly StatementParser)
-    // ============================================================================
-    
-    /**
-     * statement → exprStmt | ifStmt | whileStmt | forStmt | returnStmt | block
-     */
+
+    /// Parses a statement, which can be an if statement, while loop, for loop, return statement, block, or expression statement.
+    ///
+    /// Grammar rule:
+    /// `statement → exprStmt | ifStmt | whileStmt | forStmt | returnStmt | block`
+    /// @return A StatementNode representing the parsed statement.
     public StatementNode parseStatement() {
 
         if (match(Keyword.IF)) return parseIfStatement();
@@ -277,10 +306,12 @@ public class DeclarationParser extends ParserBase {
         if (match(Delimiter.LBRACE)) return parseBlock();
         return parseExpressionStatement();
     }
-    
-    /**
-     * ifStmt → "if" "(" expression ")" statement ("else" statement)?
-     */
+
+    /// Parses an if statement, which consists of an "if" keyword, a condition enclosed in parentheses, a then branch statement, and an optional else branch statement.
+    ///
+    /// Grammar rule:
+    /// `ifStmt → "if" "(" expression ")" statement ("else" statement)?`
+    /// @return An IfStatement representing the parsed if statement, including condition, then branch, and optional else branch.
     private IfStatement parseIfStatement() {
 
         var ifToken = previous();
@@ -295,10 +326,12 @@ public class DeclarationParser extends ParserBase {
         if (match(Keyword.ELSE)) elseBranch = parseStatement();
         return new IfStatement(ifToken.getLine(), ifToken.getColumn(), condition, thenBranch, elseBranch);
     }
-    
-    /**
-     * whileStmt → "while" "(" expression ")" statement
-     */
+
+    /// Parses a while statement, which consists of a "while" keyword, a condition enclosed in parentheses, and a body statement.
+    ///
+    /// Grammar rule:
+    /// `whileStmt → "while" "(" expression ")" statement`
+    /// @return A WhileStatement representing the parsed while loop, including condition and body.
     private WhileStatement parseWhileStatement() {
 
         var whileToken = previous();
@@ -310,10 +343,12 @@ public class DeclarationParser extends ParserBase {
         var body = parseStatement();
         return new WhileStatement(whileToken.getLine(), whileToken.getColumn(), condition, body);
     }
-    
-    /**
-     * forStmt → "for" "(" (varDecl | exprStmt | ";") expression? ";" expression? ")" statement
-     */
+
+    /// Parses a for statement, which consists of a "for" keyword, an initialization clause, a condition clause, an increment clause, and a body statement.
+    ///
+    /// Grammar rule:
+    /// `forStmt → "for" "(" (varDecl | exprStmt | ";") expression? ";" expression? ")" statement`
+    /// @return A ForStatement representing the parsed for loop, including initialization, condition, increment, and body.
     private ForStatement parseForStatement() {
 
         var forToken = previous();
@@ -323,7 +358,7 @@ public class DeclarationParser extends ParserBase {
         this.symbolTable = forScope;
         this.expressionParser = new ExpressionParser(state, this.symbolTable);
         
-        StatementNode initializer = null;
+        StatementNode initializer;
         if (match(Delimiter.SEMICOLON)) initializer = null;
         else if (isTypeToken(peek())) {
 
@@ -369,10 +404,13 @@ public class DeclarationParser extends ParserBase {
         this.expressionParser = new ExpressionParser(state, this.symbolTable);
         return new ForStatement(forToken.getLine(), forToken.getColumn(), initializer, condition, increment, body);
     }
-    
-    /**
-     * returnStmt → "return" expression? ";"
-     */
+
+    /// Parses a return statement, which consists of a "return" keyword, an optional return value expression, and a terminating semicolon.
+    ///
+    /// Grammar rule:
+    /// `returnStmt → "return" expression? ";"`
+    /// @return A ReturnStatement representing the parsed return statement, including the optional return value expression
+    /// (which may be null if no return value is provided).
     private ReturnStatement parseReturnStatement() {
 
         var returnToken = previous();
@@ -383,10 +421,12 @@ public class DeclarationParser extends ParserBase {
         consume(Delimiter.SEMICOLON, "Expect ';' after return value");
         return new ReturnStatement(returnToken.getLine(), returnToken.getColumn(), value);
     }
-    
-    /**
-     * block → "{" statement* "}"
-     */
+
+    /// Parses a block statement, which consists of a left brace, zero or more declarations or statements, and a right brace.
+    ///
+    /// Grammar rule:
+    /// `block → "{" declaration* "}"`
+    /// @return A BlockStatement representing the parsed block, containing an array of StatementNode objects for each declaration or statement within the block.
     public BlockStatement parseBlock() {
 
         var lbrace = previous();
@@ -394,20 +434,32 @@ public class DeclarationParser extends ParserBase {
         var blockScope = enterScope();
         this.symbolTable = blockScope;
         this.expressionParser = new ExpressionParser(state, this.symbolTable);
-        
-        var statements = new ArrayList<StatementNode>();
-        
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) statements.add(parseDeclaration());
-        consume(Delimiter.RBRACE, "Expect '}' after block");
-        
-        this.symbolTable = exitScope(blockScope);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+
+        var statements = getStatementList(blockScope);
         return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
     }
-    
-    /**
-     * exprStmt → expression ";"
-     */
+
+    /// Helper method to parse a list of statements within a block, until the closing right brace is encountered.
+    /// This method is used by parseBlock() to collect all statements and declarations within the block and to manage the scope of the block.
+    /// @param blockScope The symbol table representing the scope of the block, which is entered before parsing the statements and exited after parsing is complete.
+    /// @return An ArrayList of StatementNode objects representing the statements and declarations parsed within the block.
+    private ArrayList<StatementNode> getStatementList(SymbolTable blockScope) {
+
+        var statements = new ArrayList<StatementNode>();
+
+        while (!check(Delimiter.RBRACE) && !isAtEnd()) statements.add(parseDeclaration());
+        consume(Delimiter.RBRACE, "Expect '}' after block");
+
+        this.symbolTable = exitScope(blockScope);
+        this.expressionParser = new ExpressionParser(state, this.symbolTable);
+        return statements;
+    }
+
+    /// Parses an expression statement, which consists of an expression followed by a semicolon.
+    ///
+    /// Grammar rule:
+    /// `exprStmt → expression ";"`
+    /// @return An ExpressionStatement representing the parsed expression statement, containing the expression and its source location (line and column).
     private ExpressionStatement parseExpressionStatement() {
 
         var expr = expressionParser.parseExpression();

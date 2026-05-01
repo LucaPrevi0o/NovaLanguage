@@ -5,12 +5,13 @@ import src.token.TokenFamily;
 import src.token.family.AccessModifier;
 import src.token.family.Keyword;
 
-/**
- * Token representing a language keyword (if, else, while, etc.).
- * The value is implicit from the TokenType.
- */
+ /// Token representing a language keyword ({@code if}, {@code else}, {@code while}, etc.).
 public class KeywordToken extends Token {
 
+    /// Constructs a KeywordToken with the given type, line, and column.
+    /// @param type The specific keyword type.
+    /// @param line The line number where the token appears.
+    /// @param column The column number where the token starts.
     public KeywordToken(TokenFamily type, int line, int column) {
 
         super(type, line, column);

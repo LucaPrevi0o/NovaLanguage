@@ -1,11 +1,15 @@
 import src.lexer.Lexer;
 import src.parser.Parser;
+import src.printer.AstPrinter;
+import src.printer.SymbolTablePrinter;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class Main {
+
     public static void main(String[] args) {
 
         String sourceCode;
@@ -41,10 +45,10 @@ public class Main {
             System.out.println("Total AST nodes: " + ast.size());
 
             System.out.println("\n=== AST STRUCTURE ===\n");
-            for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.get(ast.size() - 1)) ? "├─ " : "└─ ");
+            for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
 
             System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableGrouped(parser.getSymbolTable(), ast);
+            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable(), new ArrayList<>());
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");

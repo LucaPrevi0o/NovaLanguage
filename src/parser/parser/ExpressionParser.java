@@ -18,41 +18,78 @@ import src.token.family.Literal;
 import src.token.family.Operator;
 import java.util.ArrayList;
 
-/**
- * Parser for expressions following operator precedence.
- * 
- * Grammar:
- * expression     → assignment
- * assignment     → IDENTIFIER "=" assignment | logicOr
- * logicOr        → logicAnd ("||" logicAnd)*
- * logicAnd       → equality ("&&" equality)*
- * equality       → comparison (("==" | "!=") comparison)*
- * comparison     → term (("<" | ">" | "<=" | ">=") term)*
- * term           → factor (("+" | "-") factor)*
- * factor         → unary (("*" | "/") unary)*
- * unary          → ("!" | "-" | "++") unary | call
- * call           → primary ("(" arguments? ")")*
- * primary        → NUMBER | STRING | "true" | "false" | IDENTIFIER | "(" expression ")"
- */
+/// Parser for expressions, handling operator precedence and associativity. It constructs an AST for expressions based
+/// on the defined grammar.
+/// The parser supports various expression types, including literals, identifiers, binary operations, unary operations,
+/// function calls, member access, and array access. It also handles assignment expressions with proper validation of assignment targets.
+///
+/// <hr>
+///
+/// GRAMMAR FOR EXPRESSIONS
+///
+/// ```
+/// - expression → assignment
+/// - assignment → (lValue) "=" assignment | logicOr
+///     where lValue is: IDENTIFIER | arrayAccess | memberAccess
+/// - logicOr    → logicAnd ("||" logicAnd)*
+/// - logicAnd   → equality ("&&" equality)*
+/// - equality   → comparison (("==" | "!=") comparison)*
+/// - comparison → term (("<" | ">" | "<=" | ">=") term)*
+/// - term       → factor (("+" | "-") factor)*
+/// - factor     → unary (("*" | "/") unary)*
+/// - unary      → ("!" | "-" | "++" | "--") unary | call
+/// - call       → primary (postfixOp)*
+///     where postfixOp is: "(" arguments? ")" | "." IDENTIFIER | "[" expression "]" | "++" | "--"
+/// - primary    → NUMBER | STRING | "true" | "false" | IDENTIFIER | "(" expression ")"
+/// ```
+///
+/// TOKEN DEFINITIONS
+///
+/// ```
+/// - IDENTIFIER: A sequence starting with a letter or underscore, followed by any combination of letters, digits, or underscores.
+///   Pattern: [a-zA-Z_][a-zA-Z0-9_]*
+///   Example: myVariable, _private, x1
+///
+/// - NUMBER: A sequence of digits with an optional decimal point, possibly followed by a type suffix (l, f, d).
+///   Pattern: \d+(\.\d+)?([lLfFdD])?
+///   Example: 42, 3.14, 100L, 2.5f, 1.0d
+///
+/// - STRING: A sequence of characters enclosed in double quotes, with escape sequences supported.
+///   Pattern: "([^"\\]|\\.)*"
+///   Example: "hello", "line 1\nline 2"
+///
+/// - true, false: Boolean literal keywords, recognized as KEYWORDS by the Lexer.
+///
+/// - OPERATORS: Single or two-character operators recognized by the Lexer.
+///   Example: +, -, *, /, ==, !=, &&, ||, ++, --, =, etc.
+///
+/// - DELIMITERS: Single or two-character delimiters recognized by the Lexer.
+///   Example: (, ), [, ], {, }, ., ,, :, etc.
+/// ```
+///
+/// The parser implements recursive descent parsing, where each method corresponds to a production rule in the grammar.
+/// It ensures correct operator precedence and associativity while constructing the AST for expressions.
 public class ExpressionParser extends ParserBase {
 
-    /**
-     * Constructor that shares the symbol table with parent parser.
-     */
+    /// Constructs a new ExpressionParser with the given parser state and symbol table.
+    /// @param state The current state of the parser, including the list of tokens and the current position.
+    /// @param symbolTable The symbol table for managing variable and function scopes during parsing.
     public ExpressionParser(ParserState state, SymbolTable symbolTable) { super(state, symbolTable); }
 
-    /**
-     * expression → assignment
-     */
+    /// Parses an expression according to the defined grammar and returns the corresponding AST node.
+    ///
+    /// Grammar rule: `expression → assignment`
+    /// @return An ExpressionNode representing the parsed expression in the abstract syntax tree (AST).
     public ExpressionNode parseExpression() { return assignment(); }
-    
-    /**
-     * assignment → (IDENTIFIER | arrayAccess | memberAccess) "=" assignment | logicOr
-     */
+
+    /// Parses an assignment expression, handling both simple assignments and compound assignments.
+    ///
+    /// Grammar rule: `assignment → (lValue) "=" assignment | logicOr`,
+    /// where `lValue` can be an identifier, array access, or member access.
+    /// @return An ExpressionNode representing the parsed assignment expression in the AST, or a logical OR expression if no assignment is present.
     private ExpressionNode assignment() {
 
         var expr = logicOr();
-        
         if (match(Operator.ASSIGN)) {
 
             var equals = previous();
@@ -61,22 +98,22 @@ public class ExpressionParser extends ParserBase {
             // Valid assignment targets: identifier, array access, member access
             if (expr instanceof IdentifierLiteralExpression || 
             expr instanceof ArrayAccessExpression ||
-            expr instanceof MemberAccessExpression)
-                return new AssignmentExpression(
-                    equals.getLine(), 
-                    equals.getColumn(), 
-                    expr,  // target
-                    value
-                );
+            expr instanceof MemberAccessExpression) return new AssignmentExpression(
+                equals.getLine(),
+                equals.getColumn(),
+                expr, // target
+                value
+            );
             throw new ParseException("Invalid assignment target", equals);
         }
         
         return expr;
     }
-    
-    /**
-     * logicOr → logicAnd ("||" logicAnd)*
-     */
+
+    /// Parses logical OR expressions, handling the "||" operator with left associativity.
+    ///
+    /// Grammar rule: `logicOr → logicAnd ("||" logicAnd)*`
+    /// @return An ExpressionNode representing the parsed logical OR expression in the AST.
     private ExpressionNode logicOr() {
 
         var expr = logicAnd();
@@ -88,10 +125,11 @@ public class ExpressionParser extends ParserBase {
         }
         return expr;
     }
-    
-    /**
-     * logicAnd → equality ("&&" equality)*
-     */
+
+    /// Parses logical AND expressions, handling the "&&" operator with left associativity.
+    ///
+    /// Grammar rule: `logicAnd → equality ("&&" equality)*`
+    /// @return An ExpressionNode representing the parsed logical AND expression in the AST.
     private ExpressionNode logicAnd() {
 
         var expr = equality();
@@ -103,10 +141,11 @@ public class ExpressionParser extends ParserBase {
         }
         return expr;
     }
-    
-    /**
-     * equality → comparison (("==" | "!=") comparison)*
-     */
+
+    /// Parses equality expressions, handling the "==" and "!=" operators with left associativity.
+    ///
+    /// Grammar rule: `equality → comparison (("==" | "!=") comparison)*`
+    /// @return An ExpressionNode representing the parsed equality expression in the AST.
     private ExpressionNode equality() {
 
         var expr = comparison();
@@ -118,10 +157,11 @@ public class ExpressionParser extends ParserBase {
         }
         return expr;
     }
-    
-    /**
-     * comparison → term (("<" | ">" | "<=" | ">=") term)*
-     */
+
+    /// Parses comparison expressions, handling the "<", ">", "<=", and ">=" operators with left associativity.
+    ///
+    /// Grammar rule: `comparison → term (("<" | ">" | "<=" | ">=") term)*`
+    /// @return An ExpressionNode representing the parsed comparison expression in the AST.
     private ExpressionNode comparison() {
 
         var expr = term();
@@ -133,10 +173,11 @@ public class ExpressionParser extends ParserBase {
         }
         return expr;
     }
-    
-    /**
-     * term → factor (("+" | "-") factor)*
-     */
+
+    /// Parses term expressions, handling the "+" and "-" operators with left associativity.
+    ///
+    /// Grammar rule: `term → factor (("+" | "-") factor)*`
+    /// @return An ExpressionNode representing the parsed term expression in the AST.
     private ExpressionNode term() {
 
         var expr = factor();
@@ -149,15 +190,16 @@ public class ExpressionParser extends ParserBase {
         
         return expr;
     }
-    
-    /**
-     * factor → unary (("*" | "/") unary)*
-     */
+
+    /// Parses factor expressions, handling the "*" and "/" operators with left associativity.
+    ///
+    /// Grammar rule: `factor → unary (("*" | "/") unary)*`
+    /// @return An ExpressionNode representing the parsed factor expression in the AST.
     private ExpressionNode factor() {
 
         var expr = unary();
-        
         while (match(Operator.MULTIPLY, Operator.DIVIDE)) {
+
             var operator = previous();
             var right = unary();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, (OperatorToken) operator, right);
@@ -165,10 +207,11 @@ public class ExpressionParser extends ParserBase {
         
         return expr;
     }
-    
-    /**
-     * unary → ("!" | "-" | "++") unary | call
-     */
+
+    /// Parses unary expressions, handling the "!", "-", "++", and "--" operators with right associativity.
+    ///
+    /// Grammar rule: `unary → ("!" | "-" | "++" | "--") unary | call`
+    /// @return An ExpressionNode representing the parsed unary expression in the AST, or a call expression if no unary operator is present.
     private ExpressionNode unary() {
 
         if (match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
@@ -179,38 +222,38 @@ public class ExpressionParser extends ParserBase {
         }
         return call();
     }
-    
-    /**
-     * call → primary ( "(" arguments? ")" | "." IDENTIFIER | "[" expression "]" | "++" | "--" )*
-     */
+
+    /// Parses call expressions, handling function calls, member access, array access, and postfix increment/decrement.
+    ///
+    /// Grammar rule: `call → primary (postfixOp)*`, where `postfixOp` can be a function call, member access, array access, or postfix increment/decrement.
+    /// @return An ExpressionNode representing the parsed call expression in the AST, which may include nested member access, array access, and function calls.
     private ExpressionNode call() {
 
         var expr = primary();
         
-        while (true)
-            if (match(Delimiter.LPAREN)) expr = finishCall(expr);
-            else if (match(Delimiter.DOT)) {
+        while (true) if (match(Delimiter.LPAREN)) expr = finishCall(expr);
+        else if (match(Delimiter.DOT)) {
 
-                var nameToken = consume(new Literal.IdentifierLiteral(), "Expect property name after '.'");
-                var memberName = getLiteralValue(nameToken);
-                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, memberName);
-            } else if (match(Delimiter.LSQUARE)) {
+            var nameToken = consume(new Literal.IdentifierLiteral(), "Expect property name after '.'");
+            var memberName = getLiteralValue(nameToken);
+            expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, memberName);
+        } else if (match(Delimiter.LSQUARE)) {
 
-                var index = parseExpression();
-                var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
-                expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
-            } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
+            var index = parseExpression();
+            var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
+            expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
+        } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
 
-                var operator = previous();
-                expr = new UnaryExpression(operator.getLine(), operator.getColumn(), (OperatorToken) operator, expr);
-            } else break;
+            var operator = previous();
+            expr = new UnaryExpression(operator.getLine(), operator.getColumn(), (OperatorToken) operator, expr);
+        } else break;
         
         return expr;
     }
-    
-    /**
-     * Parse function call arguments.
-     */
+
+    /// Finishes parsing a function call expression by parsing the arguments and constructing a CallExpression node.
+    /// @param callee The expression representing the function or method being called.
+    /// @return A CallExpression node representing the function call with the parsed arguments.
     private ExpressionNode finishCall(ExpressionNode callee) {
 
         var arguments = new ArrayList<ExpressionNode>();
@@ -223,10 +266,11 @@ public class ExpressionParser extends ParserBase {
         var paren = consume(Delimiter.RPAREN, "Expect ')' after arguments");
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
-    
-    /**
-     * primary → NUMBER | STRING | "true" | "false" | IDENTIFIER | "(" expression ")"
-     */
+
+    /// Parses primary expressions, which can be literals, identifiers, or parenthesized expressions.
+    ///
+    /// Grammar rule: `primary → NUMBER | STRING | "true" | "false" | IDENTIFIER | "(" expression ")"`
+    /// @return An ExpressionNode representing the parsed primary expression in the AST.
     private ExpressionNode primary() {
 
         var token = peek();
@@ -265,10 +309,11 @@ public class ExpressionParser extends ParserBase {
         
         throw new ParseException("Expect expression", peek());
     }
-    
-    /**
-     * Parse a number literal and determine its type.
-     */
+
+    /// Parses a number literal token and returns the corresponding NumberLiteralExpression node based on the value and type suffix.
+    /// @param token The LiteralToken representing the number literal to be parsed.
+    /// @return A NumberLiteralExpression node representing the parsed number literal in the AST, with the appropriate
+    /// type (integer, long, float, byte, or double) based on the value and suffix.
     private NumberLiteralExpression parseNumber(LiteralToken token) {
 
         var value = token.getValue();
@@ -282,16 +327,18 @@ public class ExpressionParser extends ParserBase {
 
                 var val = Long.parseLong(value.substring(0, value.length() - 1));
                 return new NumberLiteralExpression.LongLiteralExpression(line, column, val);
-            }
-            if (lower.endsWith("f")) {
+            } else if (lower.endsWith("f")) {
 
                 var val = Float.parseFloat(value);
                 return new NumberLiteralExpression.FloatLiteralExpression(line, column, val);
-            }
-            if (lower.endsWith("d") || value.contains(".")) {
+            } else if (lower.endsWith("d") || value.contains(".")) {
 
                 var val = Double.parseDouble(value.replaceAll("[dD]", ""));
                 return new NumberLiteralExpression.DoubleLiteralExpression(line, column, val);
+            } else if (lower.endsWith("b")) {
+
+                var val = Byte.parseByte(value.substring(0, value.length() - 1));
+                return new NumberLiteralExpression.ByteLiteralExpression(line, column, val);
             }
             
             var val = Integer.parseInt(value);
