@@ -282,18 +282,6 @@ public class DeclarationParser extends ParserBase {
         return firstDecl;
     }
 
-    /// Parses an access modifier, which can be "public", "private", or "protected".
-    /// If no access modifier is present, returns null (indicating package-private).
-    ///
-    /// Grammar rule:
-    /// `accessModifier → "public" | "private" | "protected"`
-    /// @return An AccessModifier enum value representing the parsed access modifier, or null if no access modifier is present (indicating package-private).
-    private AccessModifier parseAccessModifier() {
-
-        for (var modifier : AccessModifier.values()) if (match(modifier)) return modifier;
-        return null;  // No access modifier (package-private)
-    }
-
     /// Parses a statement, which can be an if statement, while loop, for loop, return statement, block, or expression statement.
     ///
     /// Grammar rule:

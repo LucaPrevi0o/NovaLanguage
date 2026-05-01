@@ -3,6 +3,7 @@ package src.parser.parser.util;
 import src.lexer.Token;
 import src.parser.ast.SymbolTable;
 import src.token.TokenFamily;
+import src.token.family.AccessModifier;
 
 import java.util.ArrayList;
 
@@ -90,8 +91,20 @@ public abstract class ParserBase {
     /// @return True if the token is a type token; otherwise, false.
     protected boolean isTypeToken(Token token) { return state.isTypeToken(token); }
 
-    /// Retrieves the literal value associated with the specified token, if applicable.
-    /// @param token The token for which to retrieve the literal value.
-    /// @return The literal value associated with the specified token, or null if the token does not have a literal value.
-    protected String getLiteralValue(Token token) { return state.getLiteralValue(token); }
+     /// Retrieves the literal value associated with the specified token, if applicable.
+     /// @param token The token for which to retrieve the literal value.
+     /// @return The literal value associated with the specified token, or null if the token does not have a literal value.
+     protected String getLiteralValue(Token token) { return state.getLiteralValue(token); }
+
+     /// Parses an access modifier, which can be "public", "private", or "protected".
+     /// If no access modifier is present, returns null (indicating package-private).
+     ///
+     /// Grammar rule:
+     /// `accessModifier → "public" | "private" | "protected"`
+     /// @return An AccessModifier enum value representing the parsed access modifier, or null if no access modifier is present (indicating package-private).
+     protected AccessModifier parseAccessModifier() {
+
+         for (var modifier : AccessModifier.values()) if (match(modifier)) return modifier;
+         return null;  // No access modifier (package-private)
+     }
 }

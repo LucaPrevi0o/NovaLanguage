@@ -177,24 +177,9 @@ public class ClassParser extends ParserBase {
             classAccessModifier,
             constructors.toArray(new ClassConstructorDeclaration[0])
         );
-    }
+         }
 
-    /// Parses an access modifier if present. If no access modifier is found, returns null.
-    ///
-    /// Grammar rule:
-    /// ```
-    /// accessModifier → "public" | "private" | "protected"
-    /// ```
-    /// @return The AccessModifier if an access modifier keyword is present; otherwise, null.
-    private AccessModifier parseAccessModifier() {
-
-        if (match(AccessModifier.PUBLIC)) return AccessModifier.PUBLIC;
-        if (match(AccessModifier.PRIVATE)) return AccessModifier.PRIVATE;
-        if (match(AccessModifier.PROTECTED)) return AccessModifier.PROTECTED;
-        return null;
-    }
-
-    /// Parses a class field declaration, which may optionally include an initializer.
+     /// Parses a class field declaration, which may optionally include an initializer.
     ///
     /// Grammar rule:
     /// ```
