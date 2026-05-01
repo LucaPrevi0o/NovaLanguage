@@ -337,6 +337,29 @@ public class ExpressionParser extends ParserBase {
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
         
+        if (match(Keyword.NEW)) {
+
+            var newToken = previous();
+            var classNameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'new'");
+            var className = getLiteralValue(classNameToken);
+
+            // Validate that the class exists in TypeRegistry
+            if (!src.token.TypeRegistry.isCustomClass(className)) {
+                throw new ParseException("Class '" + className + "' not found", classNameToken);
+            }
+
+            consume(Delimiter.LPAREN, "Expect '(' after class name");
+            var arguments = new ArrayList<ExpressionNode>();
+
+            if (!check(Delimiter.RPAREN)) do {
+
+                arguments.add(parseExpression());
+            } while (match(Delimiter.COMMA));
+
+            consume(Delimiter.RPAREN, "Expect ')' after arguments");
+            return new ObjectCreationExpression(newToken.getLine(), newToken.getColumn(), className, arguments.toArray(new ExpressionNode[0]));
+        }
+
         if (match(Delimiter.LPAREN)) {
 
             var expr = parseExpression();
