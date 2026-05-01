@@ -4,6 +4,7 @@ import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import src.token.ReturnType;
 import src.token.family.AccessModifier;
+import src.token.family.NonPrimitiveType;
 import src.parser.ast.nodes.Symbol;
 import src.parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 
@@ -65,6 +66,11 @@ public class ClassDeclarationStatement extends Symbol {
     /// Returns the inner classes declared within the class.
     /// @return An array of ClassDeclarationStatement objects representing the inner classes declared within the class.
     public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
+
+    /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
+    /// This ReturnType is consistent with how the class is registered in TypeRegistry.
+    /// @return A ReturnType representing the type of this class.
+    public ReturnType getReturnType() { return new ReturnType(new NonPrimitiveType(this)); }
 
     /// Returns the constructors declared within the class.
     /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.
