@@ -51,17 +51,12 @@ public class SymbolTablePrinter {
         if (symbols.isEmpty()) return "Block Scope (empty)";
         var hasFields = false;
         var hasMethods = false;
-        String className = null;
         for (var symbol : symbols) {
 
             if (symbol instanceof ClassFieldDeclaration) hasFields = true;
-            if (symbol instanceof ClassMethodDeclaration cmd) {
-
-                hasMethods = true;
-                if (className == null) className = cmd.getName();
-            }
+            if (symbol instanceof ClassMethodDeclaration) hasMethods = true;
         }
-        if (hasFields || hasMethods) return className != null ? "Class Scope (" + className + ")" : "Class Scope";
+        if (hasFields || hasMethods) return "Class Scope";
         for (var symbol : symbols)
             if (symbol instanceof FunctionParameter) return "Function/Method Scope";
         return "Block Scope";
