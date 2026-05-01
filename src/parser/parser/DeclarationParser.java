@@ -215,28 +215,28 @@ public class DeclarationParser extends ParserBase {
     /// @param line The line number where the function is declared (for error reporting and AST node construction).
     /// @param column The column number where the function is declared (for error reporting and AST node construction).
     /// @return A FunctionDeclarationStatement representing the parsed function declaration.
-    private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
+     private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after function name");
-        
-        var parameters = parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
-        
-        var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
-        this.symbolTable.register(decl);  // Register function as symbol
-        
-        var functionScope = enterScope();
-        this.symbolTable = functionScope;
-        
-        for (FunctionParameter param : parameters) this.symbolTable.register(param);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable);
-        
-        consume(Delimiter.LBRACE, "Expect '{' before function body");
+         consume(Delimiter.LPAREN, "Expect '(' after function name");
 
-        var bodyStatements = getStatementList(functionScope);
-        var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
-        return new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
-    }
+         var parameters = parseParameters();
+         consume(Delimiter.RPAREN, "Expect ')' after parameters");
+
+         var functionScope = enterScope();
+         this.symbolTable = functionScope;
+
+         for (FunctionParameter param : parameters) this.symbolTable.register(param);
+         this.expressionParser = new ExpressionParser(state, this.symbolTable);
+
+         consume(Delimiter.LBRACE, "Expect '{' before function body");
+
+         var bodyStatements = getStatementList(functionScope);
+         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+
+         var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
+         this.symbolTable.register(decl);  // Register function with compiled body as symbol
+         return decl;
+     }
 
     /// Parses a variable declaration, which consists of a type, a name, an optional initializer, and may include multiple declarations separated by commas.
     ///
