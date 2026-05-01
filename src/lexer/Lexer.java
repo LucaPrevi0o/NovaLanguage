@@ -161,18 +161,35 @@ public class Lexer {
         var startColumn = column;
         var string = new StringBuilder();
         advance(); // skip opening quote
-        while (currentChar != '\0' && currentChar != '"') if (currentChar == '\\' && peek() == '"') {
 
-            advance(); // skip backslash
-            string.append(currentChar);
-            advance();
-        } else {
+        while (currentChar != '\0' && currentChar != '"') {
 
-            string.append(currentChar);
-            advance();
+            if (currentChar == '\\') {
+
+                advance(); // skip backslash
+                if (currentChar != '\0') {
+
+                    // Handle escape sequences
+                    char escapedChar = switch (currentChar) {
+                        case 'n' -> '\n';
+                        case 't' -> '\t';
+                        case 'r' -> '\r';
+                        case '"' -> '"';
+                        case '\'' -> '\'';
+                        case '\\' -> '\\';
+                        default -> currentChar;  // Unrecognized escape: pass through verbatim
+                    };
+                    string.append(escapedChar);
+                    advance();
+                }
+            } else {
+
+                string.append(currentChar);
+                advance();
+            }
         }
         
-        if (currentChar == '"')  advance(); // skip closing quote
+        if (currentChar == '"') advance(); // skip closing quote
         return new LiteralToken(new Literal.StringLiteral(string.toString()), startLine, startColumn);
     }
 
