@@ -282,16 +282,28 @@ public class DeclarationParser extends ParserBase {
         return firstDecl;
     }
 
-    /// Parses a statement, which can be an if statement, while loop, for loop, return statement, block, or expression statement.
-    ///
-    /// Grammar rule:
-    /// `statement → exprStmt | ifStmt | whileStmt | forStmt | returnStmt | block`
-    /// @return A StatementNode representing the parsed statement.
-    public StatementNode parseStatement() {
+     /// Parses a statement, which can be an if statement, while loop, for loop, return statement, block, break, continue, or expression statement.
+     ///
+     /// Grammar rule:
+     /// `statement → exprStmt | ifStmt | whileStmt | forStmt | returnStmt | breakStmt | continueStmt | block`
+     /// @return A StatementNode representing the parsed statement.
+     public StatementNode parseStatement() {
 
-        if (match(Keyword.IF)) return parseIfStatement();
-        if (match(Keyword.WHILE)) return parseWhileStatement();
-        if (match(Keyword.FOR)) return parseForStatement();
+         if (match(Keyword.IF)) return parseIfStatement();
+         if (match(Keyword.WHILE)) return parseWhileStatement();
+         if (match(Keyword.FOR)) return parseForStatement();
+         if (match(Keyword.BREAK)) {
+
+             var breakToken = previous();
+             consume(Delimiter.SEMICOLON, "Expect ';' after break statement");
+             return new BreakStatement(breakToken.getLine(), breakToken.getColumn());
+         }
+         if (match(Keyword.CONTINUE)) {
+
+             var continueToken = previous();
+             consume(Delimiter.SEMICOLON, "Expect ';' after continue statement");
+             return new ContinueStatement(continueToken.getLine(), continueToken.getColumn());
+         }
         if (match(Keyword.RETURN)) return parseReturnStatement();
         if (match(Delimiter.LBRACE)) return parseBlock();
         return parseExpressionStatement();

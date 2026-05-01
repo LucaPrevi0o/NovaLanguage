@@ -24,7 +24,13 @@ public enum Keyword implements TokenFamily {
     RETURN("return"),
 
     /// The null keyword, used for the null literal value.
-    NULL("null");
+    NULL("null"),
+
+    /// The break keyword, used to exit from a loop prematurely.
+    BREAK("break"),
+
+    /// The continue keyword, used to skip the current iteration and continue with the next one in a loop.
+    CONTINUE("continue");
 
     private final String keyword;
 

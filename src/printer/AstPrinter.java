@@ -19,6 +19,8 @@ import src.parser.ast.nodes.statement.BlockStatement;
 import src.parser.ast.nodes.statement.ClassDeclarationStatement;
 import src.parser.ast.nodes.statement.ExpressionStatement;
 import src.parser.ast.nodes.statement.ReturnStatement;
+import src.parser.ast.nodes.statement.conditional.BreakStatement;
+import src.parser.ast.nodes.statement.conditional.ContinueStatement;
 import src.parser.ast.nodes.statement.conditional.ForStatement;
 import src.parser.ast.nodes.statement.conditional.IfStatement;
 import src.parser.ast.nodes.statement.conditional.WhileStatement;
@@ -66,6 +68,8 @@ public class AstPrinter {
                 case IfStatement is -> printIfStatement(is, spacers, !header.equals("└─ "));
                 case WhileStatement ws -> printWhileStatement(ws, spacers, !header.equals("└─ "));
                 case ForStatement fs -> printForStatement(fs, spacers, !header.equals("└─ "));
+                case BreakStatement bs -> printLine(spacers, "└─ break");
+                case ContinueStatement cs -> printLine(spacers, "└─ continue");
                 case ExpressionStatement es -> printExpressionStatement(es, spacers, !header.equals("└─ "));
                 case AssignmentExpression ae -> printAssignmentExpression(ae, spacers, !header.equals("└─ "));
                 case BinaryExpression be -> printBinaryExpression(be, spacers);
