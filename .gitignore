@@ -1,7 +1,8 @@
-/java/**
-/java
-.idea/**
+# Folders
 .idea
+out
+docs
+
+# Files
 *.txt
-*.class
 *.iml
