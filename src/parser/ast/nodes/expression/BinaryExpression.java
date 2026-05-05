@@ -1,7 +1,5 @@
 package parser.ast.nodes.expression;
 
-import parser.ast.nodes.ExpressionNode;
-import lexer.token.OperatorToken;
 
 /// Represents a binary expression in the AST, consisting of a left expression, an operator, and a right expression.
 public class BinaryExpression extends ExpressionNode {
@@ -35,4 +33,7 @@ public class BinaryExpression extends ExpressionNode {
     /// Returns the right-hand side expression of the binary operation.
     /// @return The right expression.
     public ExpressionNode getRight() { return right; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBinary(this); }
 }

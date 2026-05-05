@@ -5,6 +5,7 @@ import parser.ast.nodes.statement.declaration.FunctionParameter;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.StatementNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a method declaration within a class, including its access modifier.
 public class ClassMethodDeclaration extends FunctionDeclarationStatement {
@@ -28,4 +29,7 @@ public class ClassMethodDeclaration extends FunctionDeclarationStatement {
     /// Returns the access modifier of the method.
     /// @return The access modifier of the method (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassMethod(this); }
 }

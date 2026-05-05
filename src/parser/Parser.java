@@ -2,12 +2,16 @@ package parser;
 
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.parser.DeclarationParser;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import parser.parser.ClassParser;
 import parser.parser.ExpressionParser;
+import token.ReturnType;
 import token.TypeRegistry;
+import token.family.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,14 +41,34 @@ public class Parser extends ParserBase {
     
     private final DeclarationParser declarationParser;
 
-     /// Constructs a new Parser with the given list of tokens. Initializes the parser state and the declaration parser.
+     /// Constructs a new Parser with the given list of tokens.
+     /// Creates a fresh per-session {@link TypeRegistry}, pre-populates the global symbol table
+     /// with built-in stdlib functions, and initialises the declaration parser.
      /// @param tokens The list of tokens to be parsed into an AST.
      public Parser(List<Token> tokens) {
 
-         super(new ParserState(tokens));
-         TypeRegistry.reset();  // Clear any previously registered custom classes
-         this.declarationParser = new DeclarationParser(state, this.symbolTable);
+         super(new ParserState(tokens), new TypeRegistry());
+         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
+         registerStdLib();
      }
+
+    /// Pre-registers built-in standard-library functions ({@code print}, {@code println}) in the
+    /// global symbol table so user code can call them without declaring them.
+    private void registerStdLib() {
+
+        var voidType = new ReturnType(PrimitiveType.VOID);
+        var stringType = new ReturnType(PrimitiveType.STRING);
+
+        // print(string value) -> void
+        var printParam = new FunctionParameter(0, 0, "value", stringType);
+        var printDecl = new FunctionDeclarationStatement(0, 0, voidType, "print", new FunctionParameter[]{printParam}, null);
+        symbolTable.register(printDecl);
+
+        // println(string value) -> void
+        var printlnParam = new FunctionParameter(0, 0, "value", stringType);
+        var printlnDecl = new FunctionDeclarationStatement(0, 0, voidType, "println", new FunctionParameter[]{printlnParam}, null);
+        symbolTable.register(printlnDecl);
+    }
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     /// Continues parsing declarations until the end of the token list is reached.

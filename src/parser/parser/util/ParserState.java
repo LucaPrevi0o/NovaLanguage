@@ -96,4 +96,13 @@ public class ParserState {
         if (token instanceof LiteralToken lit) return lit.getValue();
         throw new ParseException("Expected literal token", token);
     }
+
+    /// Returns the current token stream position.
+    /// Used to save and restore the position for backtracking during ambiguous parses (e.g. for vs for-each).
+    /// @return The current position index.
+    public int getCurrentPosition() { return current; }
+
+    /// Restores a previously saved token stream position for backtracking.
+    /// @param position The position to restore to.
+    public void setCurrentPosition(int position) { current = position; }
 }

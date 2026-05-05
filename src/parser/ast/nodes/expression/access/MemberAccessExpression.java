@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.access;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents an expression that accesses a member of an object.
 ///
@@ -29,4 +28,7 @@ public class MemberAccessExpression extends ExpressionNode {
     /// Returns the name of the member being accessed.
     /// @return The member name.
     public String getMemberName() { return memberName; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitMemberAccess(this); }
 }

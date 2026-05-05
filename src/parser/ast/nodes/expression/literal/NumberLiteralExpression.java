@@ -3,6 +3,7 @@ package parser.ast.nodes.expression.literal;
 import parser.ast.nodes.ExpressionNode;
 import token.family.PrimitiveType;
 import lexer.token.TypeToken;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a numeric literal expression in the AST, which can be an integer, long, float, double, or byte literal.
 public abstract class NumberLiteralExpression extends ExpressionNode {
@@ -98,4 +99,7 @@ public abstract class NumberLiteralExpression extends ExpressionNode {
     /// Returns the numeric value of this literal expression.
     /// @return The numeric value.
     public abstract Number getValue();
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitNumberLiteral(this); }
 }

@@ -3,6 +3,7 @@ package parser.ast.nodes.statement.declaration;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.DeclarationStatement;
 import token.ReturnType;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a variable declaration statement in the abstract syntax tree (AST).
 public class VariableDeclarationStatement extends DeclarationStatement {
@@ -24,4 +25,7 @@ public class VariableDeclarationStatement extends DeclarationStatement {
     /// Returns the initial value of the variable, if any.
     /// @return An ExpressionNode representing the initial value of the variable, or null if no initial value is provided.
     public ExpressionNode getInitialValue() { return initialValue; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitVariableDeclaration(this); }
 }

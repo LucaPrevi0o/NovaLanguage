@@ -2,6 +2,7 @@ package parser.ast.nodes.statement.conditional;
 
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents an if statement in the AST.
 ///
@@ -32,4 +33,7 @@ public class IfStatement extends ConditionalStatement {
     /// Returns the statement that represents the code to execute if the condition is false (optional).
     /// @return The else block statement, or null if there is no else block.
     public StatementNode getElseBlock() { return elseBlock; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIf(this); }
 }

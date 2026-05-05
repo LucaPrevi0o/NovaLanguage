@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.access;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents an array access expression.
 ///
@@ -29,4 +28,7 @@ public class ArrayAccessExpression extends ExpressionNode {
     /// Returns the expression representing the index being accessed.
     /// @return The index expression.
     public ExpressionNode getIndex() { return index; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitArrayAccess(this); }
 }

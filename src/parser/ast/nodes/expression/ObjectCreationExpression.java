@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents an object creation expression (new expression), used to instantiate a class.
 public class ObjectCreationExpression extends ExpressionNode {
@@ -27,5 +26,7 @@ public class ObjectCreationExpression extends ExpressionNode {
     /// Returns the constructor arguments.
     /// @return An array of ExpressionNode objects representing the constructor arguments.
     public ExpressionNode[] getArguments() { return arguments; }
-}
 
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitObjectCreation(this); }
+}

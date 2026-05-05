@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression;
 
-import parser.ast.nodes.*;
 
 /// Represents an assignment expression in the AST, where a value is assigned to a target (which can be a variable,
 /// array element, or object property).
@@ -28,4 +27,7 @@ public class AssignmentExpression extends ExpressionNode {
     /// Returns the expression representing the value being assigned to the target.
     /// @return The value expression.
     public ExpressionNode getValue() { return value; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitAssignment(this); }
 }

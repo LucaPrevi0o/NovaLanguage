@@ -16,6 +16,17 @@ public class ParseException extends RuntimeException {
         this.token = token;
     }
 
+    /// Constructs a new ParseException with a specific source location but no Token object.
+    /// Useful for errors detected outside the parser where only a line and column are available.
+    /// @param message The error message describing the error.
+    /// @param line    The source line where the error occurred.
+    /// @param column  The source column where the error occurred.
+    public ParseException(String message, int line, int column) {
+
+        super(String.format("Parse error at line %d, column %d: %s", line, column, message));
+        this.token = null;
+    }
+
     /// Formats the error message to include the line and column information from the token, if available.
     /// @param message The error message describing the parsing error.
     /// @param token The Token object representing the location in the source code where the parsing error was detected.

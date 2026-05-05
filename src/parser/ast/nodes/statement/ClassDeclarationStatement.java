@@ -7,6 +7,7 @@ import token.family.AccessModifier;
 import token.family.NonPrimitiveType;
 import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
 public class ClassDeclarationStatement extends Symbol {
@@ -75,4 +76,7 @@ public class ClassDeclarationStatement extends Symbol {
     /// Returns the constructors declared within the class.
     /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.
     public ClassConstructorDeclaration[] getConstructors() { return constructors; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassDeclaration(this); }
 }

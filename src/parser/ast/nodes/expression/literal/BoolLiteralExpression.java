@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.literal;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents a boolean literal expression in the AST.
 public class BoolLiteralExpression extends ExpressionNode {
@@ -20,4 +19,7 @@ public class BoolLiteralExpression extends ExpressionNode {
     /// Returns the boolean value of this literal expression.
     /// @return The boolean value.
     public boolean getValue() { return value; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBoolLiteral(this); }
 }

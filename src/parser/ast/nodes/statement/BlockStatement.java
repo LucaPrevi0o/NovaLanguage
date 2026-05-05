@@ -1,6 +1,7 @@
 package parser.ast.nodes.statement;
 
 import parser.ast.nodes.*;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a block statement in the abstract syntax tree (AST), which contains a sequence of statements.
 public class BlockStatement extends StatementNode {
@@ -20,4 +21,7 @@ public class BlockStatement extends StatementNode {
     /// Returns the array of statements contained within this block statement.
     /// @return An array of StatementNode objects representing the statements in this block.
     public StatementNode[] getStatements() { return statements; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBlock(this); }
 }

@@ -4,6 +4,7 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a field declaration within a class, including its access modifier.
 public class ClassFieldDeclaration extends VariableDeclarationStatement {
@@ -26,4 +27,7 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
     /// Returns the access modifier of the field.
     /// @return The access modifier of the field (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassField(this); }
 }

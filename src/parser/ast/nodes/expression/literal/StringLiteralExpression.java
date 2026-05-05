@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.literal;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents a string literal expression in the AST.
 public class StringLiteralExpression extends ExpressionNode {
@@ -20,4 +19,7 @@ public class StringLiteralExpression extends ExpressionNode {
     /// Returns the string value of this literal expression.
     /// @return The string value.
     public String getValue() { return value; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitStringLiteral(this); }
 }

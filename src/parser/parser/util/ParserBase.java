@@ -3,6 +3,7 @@ package parser.parser.util;
 import lexer.Token;
 import parser.ast.SymbolTable;
 import token.TokenFamily;
+import token.TypeRegistry;
 import token.family.AccessModifier;
 
 import java.util.ArrayList;
@@ -12,22 +13,27 @@ public abstract class ParserBase {
     
     protected final ParserState state;
     protected SymbolTable symbolTable;  // Current scope
+    protected final TypeRegistry typeRegistry;
 
     /// Constructor for root parser (starts with global scope).
-    /// @param state The parser state to use for token management.
-    protected ParserBase(ParserState state) { 
+    /// @param state        The parser state to use for token management.
+    /// @param typeRegistry The per-session type registry to use.
+    protected ParserBase(ParserState state, TypeRegistry typeRegistry) { 
 
         this.state = state;
+        this.typeRegistry = typeRegistry;
         this.symbolTable = new SymbolTable(null, new ArrayList<>(), new ArrayList<>());
     }
 
     /// Constructor for child parsers (inherits current scope).
-    /// @param state The parser state to use for token management.
-    /// @param symbolTable The symbol table representing the current scope to inherit.
-    protected ParserBase(ParserState state, SymbolTable symbolTable) { 
+    /// @param state        The parser state to use for token management.
+    /// @param symbolTable  The symbol table representing the current scope to inherit.
+    /// @param typeRegistry The per-session type registry to use.
+    protected ParserBase(ParserState state, SymbolTable symbolTable, TypeRegistry typeRegistry) { 
 
         this.state = state;
         this.symbolTable = symbolTable;
+        this.typeRegistry = typeRegistry;
     }
 
     /// Returns the current parser state.
@@ -37,6 +43,10 @@ public abstract class ParserBase {
     /// Returns the current symbol table, representing the current scope.
     /// @return The current symbol table.
     public SymbolTable getSymbolTable() { return symbolTable; }
+
+    /// Returns the type registry for this parse session.
+    /// @return The type registry.
+    public TypeRegistry getTypeRegistry() { return typeRegistry; }
 
     /// Enters a new scope by creating a child symbol table of the current scope.
     /// @return The new child symbol table representing the new scope.

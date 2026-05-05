@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.literal;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents an identifier literal expression in the AST.
 ///
@@ -23,4 +22,7 @@ public class IdentifierLiteralExpression extends ExpressionNode {
     /// Returns the name of the identifier being referenced by this expression.
     /// @return The name of the identifier.
     public String getName() { return name; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIdentifierLiteral(this); }
 }

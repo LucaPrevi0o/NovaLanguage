@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents a function or method call expression in the AST.
 ///
@@ -33,4 +32,7 @@ public class CallExpression extends ExpressionNode {
     /// Returns an array of expressions representing the arguments passed to the callee.
     /// @return An array of argument expressions.
     public ExpressionNode[] getArguments() { return arguments; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitCall(this); }
 }

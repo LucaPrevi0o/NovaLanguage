@@ -1,6 +1,5 @@
 package parser.ast.nodes.expression.literal;
 
-import parser.ast.nodes.ExpressionNode;
 
 /// Represents a null literal expression, used to represent the absence of a value.
 public class NullLiteralExpression extends ExpressionNode {
@@ -12,5 +11,7 @@ public class NullLiteralExpression extends ExpressionNode {
 
         super(line, column);
     }
-}
 
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitNullLiteral(this); }
+}

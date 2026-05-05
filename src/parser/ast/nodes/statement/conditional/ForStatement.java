@@ -2,6 +2,7 @@ package parser.ast.nodes.statement.conditional;
 
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a for loop statement in the AST.
 ///
@@ -40,4 +41,7 @@ public class ForStatement extends ConditionalStatement {
     /// Returns the statement that represents the body of the loop, which is executed if the condition is true.
     /// @return The body statement.
     public StatementNode getBody() { return body; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitFor(this); }
 }

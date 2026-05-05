@@ -33,7 +33,19 @@ public enum Keyword implements TokenFamily {
     CONTINUE("continue"),
 
     /// The new keyword, used for creating instances of classes.
-    NEW("new");
+    NEW("new"),
+
+    /// The switch keyword, used for multi-way branching.
+    SWITCH("switch"),
+
+    /// The case keyword, used for individual arms inside a switch statement.
+    CASE("case"),
+
+    /// The default keyword, used for the fallback arm inside a switch statement.
+    DEFAULT("default"),
+
+    /// The import keyword, reserved for future module import support.
+    IMPORT("import");
 
     private final String keyword;
 
