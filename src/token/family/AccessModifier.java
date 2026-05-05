@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents access modifiers in the programming language, such as public, private, and protected.
 public enum AccessModifier implements TokenFamily { 

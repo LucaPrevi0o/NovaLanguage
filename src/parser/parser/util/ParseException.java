@@ -1,6 +1,6 @@
-package src.parser.parser.util;
+package parser.parser.util;
 
-import src.lexer.Token;
+import lexer.Token;
 
 /// Represents an exception that occurs during parsing when the input does not conform to the expected grammar.
 public class ParseException extends RuntimeException {

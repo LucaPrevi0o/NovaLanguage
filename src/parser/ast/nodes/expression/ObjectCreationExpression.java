@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.expression;
+package parser.ast.nodes.expression;
 
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents an object creation expression (new expression), used to instantiate a class.
 public class ObjectCreationExpression extends ExpressionNode {

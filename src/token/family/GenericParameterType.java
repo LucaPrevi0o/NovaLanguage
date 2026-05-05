@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents a generic parameter type in the programming language, allowing for the use of type parameters in generic classes and functions.
 public class GenericParameterType implements TokenFamily {

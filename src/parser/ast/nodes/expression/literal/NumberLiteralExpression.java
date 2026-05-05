@@ -1,8 +1,8 @@
-package src.parser.ast.nodes.expression.literal;
+package parser.ast.nodes.expression.literal;
 
-import src.parser.ast.nodes.ExpressionNode;
-import src.token.family.PrimitiveType;
-import src.lexer.token.TypeToken;
+import parser.ast.nodes.ExpressionNode;
+import token.family.PrimitiveType;
+import lexer.token.TypeToken;
 
 /// Represents a numeric literal expression in the AST, which can be an integer, long, float, double, or byte literal.
 public abstract class NumberLiteralExpression extends ExpressionNode {

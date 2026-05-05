@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents delimiters in the programming language, such as parentheses, braces, and semicolons.
 public enum Delimiter implements TokenFamily {

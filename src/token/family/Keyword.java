@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents keywords in the programming language, such as if, else, while, for, class, and return.
 public enum Keyword implements TokenFamily {

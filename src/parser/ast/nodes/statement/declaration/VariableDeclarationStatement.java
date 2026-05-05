@@ -1,8 +1,8 @@
-package src.parser.ast.nodes.statement.declaration;
+package parser.ast.nodes.statement.declaration;
 
-import src.parser.ast.nodes.*;
-import src.parser.ast.nodes.statement.DeclarationStatement;
-import src.token.ReturnType;
+import parser.ast.nodes.*;
+import parser.ast.nodes.statement.DeclarationStatement;
+import token.ReturnType;
 
 /// Represents a variable declaration statement in the abstract syntax tree (AST).
 public class VariableDeclarationStatement extends DeclarationStatement {

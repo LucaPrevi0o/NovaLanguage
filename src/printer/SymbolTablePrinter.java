@@ -1,13 +1,13 @@
-package src.printer;
+package printer;
 
-import src.parser.ast.SymbolTable;
-import src.parser.ast.nodes.Symbol;
-import src.parser.ast.nodes.statement.ClassDeclarationStatement;
-import src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import src.parser.ast.nodes.statement.declaration.FunctionParameter;
-import src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
-import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import parser.ast.SymbolTable;
+import parser.ast.nodes.Symbol;
+import parser.ast.nodes.statement.ClassDeclarationStatement;
+import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import parser.ast.nodes.statement.declaration.FunctionParameter;
+import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
+import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 
 import java.util.List;
 

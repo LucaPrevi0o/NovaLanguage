@@ -1,11 +1,9 @@
-package src.test.java;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import src.lexer.Lexer;
-import src.parser.Parser;
-import src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import src.token.TypeRegistry;
+import lexer.Lexer;
+import parser.Parser;
+import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import token.TypeRegistry;
 import static org.junit.jupiter.api.Assertions.*;
 
 /// Test suite for the Parser class
@@ -40,7 +38,7 @@ public class ParserTest {
 
         // Check that function has a non-null body
         assertInstanceOf(FunctionDeclarationStatement.class, func);
-        var funcDecl = (src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement) func;
+        var funcDecl = (FunctionDeclarationStatement) func;
         assertNotNull(funcDecl.getBody());
     }
 

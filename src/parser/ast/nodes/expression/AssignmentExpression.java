@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.expression;
+package parser.ast.nodes.expression;
 
-import src.parser.ast.nodes.*;
+import parser.ast.nodes.*;
 
 /// Represents an assignment expression in the AST, where a value is assigned to a target (which can be a variable,
 /// array element, or object property).

@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.StatementNode;
+import parser.ast.nodes.StatementNode;
 
 public class BreakStatement extends StatementNode {
 

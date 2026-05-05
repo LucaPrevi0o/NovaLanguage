@@ -1,7 +1,7 @@
-package src.parser.ast.nodes.statement.declaration;
+package parser.ast.nodes.statement.declaration;
 
-import src.parser.ast.nodes.Symbol;
-import src.token.ReturnType;
+import parser.ast.nodes.Symbol;
+import token.ReturnType;
 
 /// Represents a parameter in a function declaration, including its type and name.
 public class FunctionParameter extends Symbol {

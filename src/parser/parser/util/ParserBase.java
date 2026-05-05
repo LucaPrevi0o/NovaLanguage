@@ -1,9 +1,9 @@
-package src.parser.parser.util;
+package parser.parser.util;
 
-import src.lexer.Token;
-import src.parser.ast.SymbolTable;
-import src.token.TokenFamily;
-import src.token.family.AccessModifier;
+import lexer.Token;
+import parser.ast.SymbolTable;
+import token.TokenFamily;
+import token.family.AccessModifier;
 
 import java.util.ArrayList;
 
@@ -62,9 +62,9 @@ public abstract class ParserBase {
     /// @return The previous token.
     protected Token previous() { return state.previous(); }
 
-    /// Checks if the parser has reached the end of the token stream.
-    /// @return True if the parser has reached the end of the token stream; otherwise, false.
-    protected boolean isAtEnd() { return state.isAtEnd(); }
+    /// Checks if the parser has not reached the end of the token stream.
+    /// @return True if the parser has not reached the end of the token stream; otherwise, false.
+    protected boolean isNotAtEnd() { return !state.isAtEnd(); }
 
     /// Advances the parser to the next token and returns the consumed token.
     /// @return The token that was consumed by advancing the parser.

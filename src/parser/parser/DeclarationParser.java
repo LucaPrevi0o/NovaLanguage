@@ -1,25 +1,22 @@
-package src.parser.parser;
+package parser.parser;
 
-import src.lexer.*;
-import src.lexer.token.LiteralToken;
-import src.parser.ast.SymbolTable;
-import src.parser.ast.nodes.ExpressionNode;
-import src.parser.ast.nodes.StatementNode;
-import src.parser.ast.nodes.statement.*;
-import src.parser.ast.nodes.statement.conditional.*;
-import src.parser.ast.nodes.statement.declaration.*;
-import src.parser.parser.util.ParseException;
-import src.parser.parser.util.ParserBase;
-import src.parser.parser.util.ParserState;
-import src.token.ReturnType;
-import src.token.TokenFamily;
-import src.token.TypeRegistry;
-import src.token.family.AccessModifier;
-import src.token.family.Delimiter;
-import src.token.family.Keyword;
-import src.token.family.Literal;
-import src.token.family.Operator;
-import src.token.family.PrimitiveType;
+import lexer.*;
+import lexer.token.LiteralToken;
+import parser.ast.SymbolTable;
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.*;
+import parser.ast.nodes.statement.conditional.*;
+import parser.ast.nodes.statement.declaration.*;
+import parser.parser.util.ParseException;
+import parser.parser.util.ParserBase;
+import parser.parser.util.ParserState;
+import token.ReturnType;
+import token.TypeRegistry;
+import token.family.Delimiter;
+import token.family.Keyword;
+import token.family.Literal;
+import token.family.Operator;
 import java.util.ArrayList;
 
 /// Unified parser for declarations and statements.
@@ -445,7 +442,7 @@ public class DeclarationParser extends ParserBase {
 
         var statements = new ArrayList<StatementNode>();
 
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) statements.add(parseDeclaration());
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) statements.add(parseDeclaration());
         consume(Delimiter.RBRACE, "Expect '}' after block");
 
         this.symbolTable = exitScope(blockScope);

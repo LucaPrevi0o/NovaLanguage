@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents primitive types in the programming language, such as int, long, byte, float, double, char, bool, and void.
 public enum PrimitiveType implements TokenFamily {

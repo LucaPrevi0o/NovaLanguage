@@ -1,6 +1,6 @@
-package src.token;
+package token;
 
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents the return type of a declaration, which can be a primitive type, a non-primitive type, an array type, or a generic type.
 public class ReturnType {

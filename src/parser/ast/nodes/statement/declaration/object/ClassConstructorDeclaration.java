@@ -1,8 +1,8 @@
-package src.parser.ast.nodes.statement.declaration.object;
+package parser.ast.nodes.statement.declaration.object;
 
-import src.parser.ast.nodes.StatementNode;
-import src.parser.ast.nodes.statement.declaration.FunctionParameter;
-import src.token.family.AccessModifier;
+import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.declaration.FunctionParameter;
+import token.family.AccessModifier;
 
 /// Represents a constructor declaration within a class.
 public class ClassConstructorDeclaration extends StatementNode {

@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.expression.access;
+package parser.ast.nodes.expression.access;
 
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents an array access expression.
 ///

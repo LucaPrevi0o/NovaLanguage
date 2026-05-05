@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.expression.literal;
+package parser.ast.nodes.expression.literal;
 
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents a null literal expression, used to represent the absence of a value.
 public class NullLiteralExpression extends ExpressionNode {

@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents literals in the programming language, such as string literals, number literals, boolean literals, and identifier literals.
 public abstract class Literal implements TokenFamily {

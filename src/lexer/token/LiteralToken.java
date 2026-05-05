@@ -1,7 +1,7 @@
-package src.lexer.token;
+package lexer.token;
 
-import src.lexer.Token;
-import src.token.TokenFamily;
+import lexer.Token;
+import token.TokenFamily;
 
  /// Token representing a literal value (number, identifier, string).
  /// Stores the actual value as a string.

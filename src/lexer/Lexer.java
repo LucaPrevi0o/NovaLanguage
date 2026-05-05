@@ -1,14 +1,14 @@
-package src.lexer;
+package lexer;
 
-import src.lexer.token.*;
-import src.token.TokenFamily;
-import src.token.family.AccessModifier;
-import src.token.family.Delimiter;
-import src.token.family.Keyword;
-import src.token.family.Literal;
-import src.token.family.Operator;
-import src.token.family.PrimitiveType;
-import src.token.family.Special;
+import lexer.token.*;
+import token.TokenFamily;
+import token.family.AccessModifier;
+import token.family.Delimiter;
+import token.family.Keyword;
+import token.family.Literal;
+import token.family.Operator;
+import token.family.PrimitiveType;
+import token.family.Special;
 
 import java.util.ArrayList;
 import java.util.HashMap;

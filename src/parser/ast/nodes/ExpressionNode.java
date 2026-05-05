@@ -1,6 +1,6 @@
-package src.parser.ast.nodes;
+package parser.ast.nodes;
 
-import src.parser.ast.AstNode;
+import parser.ast.AstNode;
 
 /// Represents an expression node in the abstract syntax tree (AST).
 public abstract class ExpressionNode extends AstNode {

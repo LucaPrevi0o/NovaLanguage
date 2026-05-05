@@ -1,8 +1,8 @@
-package src.token;
+package token;
 
-import src.parser.ast.nodes.statement.ClassDeclarationStatement;
-import src.token.family.NonPrimitiveType;
-import src.token.family.PrimitiveType;
+import parser.ast.nodes.statement.ClassDeclarationStatement;
+import token.family.NonPrimitiveType;
+import token.family.PrimitiveType;
 import java.util.ArrayList;
 import java.util.List;
 

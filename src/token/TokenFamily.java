@@ -1,4 +1,4 @@
-package src.token;
+package token;
 
 /// Represents a family of tokens in the programming language, providing a common interface for different types of tokens.
 public interface TokenFamily {

@@ -1,11 +1,11 @@
-package src.parser.parser.util;
+package parser.parser.util;
 
-import src.lexer.Token;
-import src.lexer.token.LiteralToken;
-import src.token.family.Literal;
-import src.lexer.token.TypeToken;
-import src.token.TokenFamily;
-import src.token.family.Special;
+import lexer.Token;
+import lexer.token.LiteralToken;
+import token.family.Literal;
+import lexer.token.TypeToken;
+import token.TokenFamily;
+import token.family.Special;
 
 import java.util.List;
 

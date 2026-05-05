@@ -1,8 +1,8 @@
-package src.parser.ast;
+package parser.ast;
 
 import java.util.ArrayList;
 import java.util.List;
-import src.parser.ast.nodes.Symbol;
+import parser.ast.nodes.Symbol;
 
 /// Represents a symbol table for managing variable and function scopes in the abstract syntax tree (AST).
 ///

@@ -1,4 +1,4 @@
-package src.parser.ast.nodes;
+package parser.ast.nodes;
 
 /// Represents a symbol in the abstract syntax tree (AST), which can be a variable, function, or object name.
 public abstract class Symbol extends StatementNode {

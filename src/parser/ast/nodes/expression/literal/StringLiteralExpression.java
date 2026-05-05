@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.expression.literal;
+package parser.ast.nodes.expression.literal;
 
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents a string literal expression in the AST.
 public class StringLiteralExpression extends ExpressionNode {

@@ -1,13 +1,13 @@
-package src.parser;
+package parser;
 
-import src.lexer.Token;
-import src.parser.ast.nodes.StatementNode;
-import src.parser.parser.DeclarationParser;
-import src.parser.parser.util.ParserBase;
-import src.parser.parser.util.ParserState;
-import src.parser.parser.ClassParser;
-import src.parser.parser.ExpressionParser;
-import src.token.TypeRegistry;
+import lexer.Token;
+import parser.ast.nodes.StatementNode;
+import parser.parser.DeclarationParser;
+import parser.parser.util.ParserBase;
+import parser.parser.util.ParserState;
+import parser.parser.ClassParser;
+import parser.parser.ExpressionParser;
+import token.TypeRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class Parser extends ParserBase {
     public List<StatementNode> parse() {
 
         var statements = new ArrayList<StatementNode>();
-        while (!isAtEnd()) statements.add(declarationParser.parseDeclaration());
+        while (isNotAtEnd()) statements.add(declarationParser.parseDeclaration());
         return statements;
     }
 }

@@ -1,21 +1,21 @@
-package src.parser.parser;
+package parser.parser;
 
-import src.parser.ast.SymbolTable;
-import src.parser.ast.nodes.ExpressionNode;
-import src.parser.ast.nodes.StatementNode;
-import src.parser.ast.nodes.statement.BlockStatement;
-import src.parser.ast.nodes.statement.ClassDeclarationStatement;
-import src.parser.ast.nodes.statement.declaration.object.*;
-import src.parser.parser.util.ParseException;
-import src.parser.parser.util.ParserBase;
-import src.token.ReturnType;
-import src.token.TypeRegistry;
-import src.token.family.AccessModifier;
-import src.token.family.Delimiter;
-import src.token.family.GenericParameterType;
-import src.token.family.Keyword;
-import src.token.family.Literal;
-import src.token.family.Operator;
+import parser.ast.SymbolTable;
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.BlockStatement;
+import parser.ast.nodes.statement.ClassDeclarationStatement;
+import parser.ast.nodes.statement.declaration.object.*;
+import parser.parser.util.ParseException;
+import parser.parser.util.ParserBase;
+import token.ReturnType;
+import token.TypeRegistry;
+import token.family.AccessModifier;
+import token.family.Delimiter;
+import token.family.GenericParameterType;
+import token.family.Keyword;
+import token.family.Literal;
+import token.family.Operator;
 
 import java.util.ArrayList;
 
@@ -131,7 +131,7 @@ public class ClassParser extends ParserBase {
         var methods = new ArrayList<ClassMethodDeclaration>();
         var innerClasses = new ArrayList<ClassDeclarationStatement>();
         
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) {
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
 
             var memberAccessModifier = parseAccessModifier();
             if (match(Keyword.CLASS)) {
@@ -233,7 +233,7 @@ public class ClassParser extends ParserBase {
         consume(Delimiter.LBRACE, "Expect '{' before method body");
 
         var bodyStatements = new ArrayList<StatementNode>();
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
         
         consume(Delimiter.RBRACE, "Expect '}' after method body");
 
@@ -271,7 +271,7 @@ public class ClassParser extends ParserBase {
         consume(Delimiter.LBRACE, "Expect '{' before constructor body");
 
         var bodyStatements = new ArrayList<StatementNode>();
-        while (!check(Delimiter.RBRACE) && !isAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
         
         consume(Delimiter.RBRACE, "Expect '}' after constructor body");
 

@@ -1,12 +1,12 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
-import src.parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
-import src.token.ReturnType;
-import src.token.family.AccessModifier;
-import src.token.family.NonPrimitiveType;
-import src.parser.ast.nodes.Symbol;
-import src.parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
+import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import token.ReturnType;
+import token.family.AccessModifier;
+import token.family.NonPrimitiveType;
+import parser.ast.nodes.Symbol;
+import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
 public class ClassDeclarationStatement extends Symbol {

@@ -1,24 +1,25 @@
-package src.parser.parser;
+package parser.parser;
 
-import src.lexer.token.*;
-import src.parser.ast.SymbolTable;
-import src.parser.ast.nodes.ExpressionNode;
-import src.parser.ast.nodes.expression.*;
-import src.parser.ast.nodes.expression.access.ArrayAccessExpression;
-import src.parser.ast.nodes.expression.access.MemberAccessExpression;
-import src.parser.ast.nodes.expression.literal.BoolLiteralExpression;
-import src.parser.ast.nodes.expression.literal.CharLiteralExpression;
-import src.parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
-import src.parser.ast.nodes.expression.literal.NullLiteralExpression;
-import src.parser.ast.nodes.expression.literal.NumberLiteralExpression;
-import src.parser.ast.nodes.expression.literal.StringLiteralExpression;
-import src.parser.parser.util.ParseException;
-import src.parser.parser.util.ParserBase;
-import src.parser.parser.util.ParserState;
-import src.token.family.Delimiter;
-import src.token.family.Keyword;
-import src.token.family.Literal;
-import src.token.family.Operator;
+import lexer.token.*;
+import parser.ast.SymbolTable;
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.expression.*;
+import parser.ast.nodes.expression.access.ArrayAccessExpression;
+import parser.ast.nodes.expression.access.MemberAccessExpression;
+import parser.ast.nodes.expression.literal.BoolLiteralExpression;
+import parser.ast.nodes.expression.literal.CharLiteralExpression;
+import parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
+import parser.ast.nodes.expression.literal.NullLiteralExpression;
+import parser.ast.nodes.expression.literal.NumberLiteralExpression;
+import parser.ast.nodes.expression.literal.StringLiteralExpression;
+import parser.parser.util.ParseException;
+import parser.parser.util.ParserBase;
+import parser.parser.util.ParserState;
+import token.family.Delimiter;
+import token.family.Keyword;
+import token.family.Literal;
+import token.family.Operator;
+import token.TypeRegistry;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity. It constructs an AST for expressions based
@@ -323,7 +324,7 @@ public class ExpressionParser extends ParserBase {
 
             var lit = (LiteralToken) previous();
             var value = lit.getValue();
-            char ch = value.length() > 0 ? value.charAt(0) : '\0';
+            char ch = !value.isEmpty() ? value.charAt(0) : '\0';
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
 
@@ -344,7 +345,7 @@ public class ExpressionParser extends ParserBase {
             var className = getLiteralValue(classNameToken);
 
             // Validate that the class exists in TypeRegistry
-            if (!src.token.TypeRegistry.isCustomClass(className)) {
+            if (!TypeRegistry.isCustomClass(className)) {
                 throw new ParseException("Class '" + className + "' not found", classNameToken);
             }
 

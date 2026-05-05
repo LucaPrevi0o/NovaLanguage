@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.*;
+import parser.ast.nodes.*;
 
 /// Represents a return statement in the abstract syntax tree (AST), which consists of an optional return value expression.
 public class ReturnStatement extends StatementNode {

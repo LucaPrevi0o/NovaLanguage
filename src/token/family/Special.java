@@ -1,6 +1,6 @@
-package src.token.family;
+package token.family;
 
-import src.token.TokenFamily;
+import token.TokenFamily;
 
 /// Represents special tokens in the programming language, such as EOF (end of file) and UNKNOWN (unrecognized token).
 public enum Special implements TokenFamily {

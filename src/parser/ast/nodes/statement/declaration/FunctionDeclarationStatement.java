@@ -1,8 +1,8 @@
-package src.parser.ast.nodes.statement.declaration;
+package parser.ast.nodes.statement.declaration;
 
-import src.parser.ast.nodes.statement.DeclarationStatement;
-import src.token.ReturnType;
-import src.parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.DeclarationStatement;
+import token.ReturnType;
+import parser.ast.nodes.StatementNode;
 
 /// Represents a function declaration statement in the abstract syntax tree (AST).
 public class FunctionDeclarationStatement extends DeclarationStatement {

@@ -1,4 +1,4 @@
-package src.parser.ast;
+package parser.ast;
 
 /// Represents a node in the abstract syntax tree (AST) of the source code.
 /// Each node contains information about its position in the source code (line and column).

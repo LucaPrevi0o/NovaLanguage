@@ -1,6 +1,6 @@
-package src.parser.ast.nodes;
+package parser.ast.nodes;
 
-import src.parser.ast.AstNode;
+import parser.ast.AstNode;
 
 /// Represents a statement node in the abstract syntax tree (AST).
 ///

@@ -1,11 +1,9 @@
-package src.test.java;
-
 import org.junit.jupiter.api.Test;
-import src.lexer.Lexer;
-import src.token.family.Literal;
-import src.token.family.Keyword;
-import src.token.family.Operator;
-import src.token.family.Special;
+import lexer.Lexer;
+import token.family.Literal;
+import token.family.Keyword;
+import token.family.Operator;
+import token.family.Special;
 
 import static org.junit.jupiter.api.Assertions.*;
 

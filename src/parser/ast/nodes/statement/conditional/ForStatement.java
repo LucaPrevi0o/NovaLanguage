@@ -1,7 +1,7 @@
-package src.parser.ast.nodes.statement.conditional;
+package parser.ast.nodes.statement.conditional;
 
-import src.parser.ast.nodes.*;
-import src.parser.ast.nodes.statement.ConditionalStatement;
+import parser.ast.nodes.*;
+import parser.ast.nodes.statement.ConditionalStatement;
 
 /// Represents a for loop statement in the AST.
 ///

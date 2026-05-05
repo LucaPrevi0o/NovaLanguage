@@ -1,7 +1,7 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.Symbol;
-import src.token.ReturnType;
+import parser.ast.nodes.Symbol;
+import token.ReturnType;
 
 /// Represents a declaration statement in the abstract syntax tree (AST), which can be a variable declaration, function declaration, or object declaration.
 public abstract class DeclarationStatement extends Symbol {

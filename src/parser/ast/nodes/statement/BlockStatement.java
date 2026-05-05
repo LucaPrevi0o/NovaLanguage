@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.*;
+import parser.ast.nodes.*;
 
 /// Represents a block statement in the abstract syntax tree (AST), which contains a sequence of statements.
 public class BlockStatement extends StatementNode {

@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.*;
+import parser.ast.nodes.*;
 
 /// Represents an expression statement in the abstract syntax tree (AST), which consists of a single expression that is evaluated for its side effects.
 public class ExpressionStatement extends StatementNode {

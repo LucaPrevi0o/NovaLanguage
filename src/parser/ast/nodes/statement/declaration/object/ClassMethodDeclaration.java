@@ -1,10 +1,10 @@
-package src.parser.ast.nodes.statement.declaration.object;
+package parser.ast.nodes.statement.declaration.object;
 
-import src.parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import src.parser.ast.nodes.statement.declaration.FunctionParameter;
-import src.token.ReturnType;
-import src.token.family.AccessModifier;
-import src.parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import parser.ast.nodes.statement.declaration.FunctionParameter;
+import token.ReturnType;
+import token.family.AccessModifier;
+import parser.ast.nodes.StatementNode;
 
 /// Represents a method declaration within a class, including its access modifier.
 public class ClassMethodDeclaration extends FunctionDeclarationStatement {

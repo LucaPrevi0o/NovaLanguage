@@ -1,7 +1,7 @@
-import src.lexer.Lexer;
-import src.parser.Parser;
-import src.printer.AstPrinter;
-import src.printer.SymbolTablePrinter;
+import lexer.Lexer;
+import parser.Parser;
+import printer.AstPrinter;
+import printer.SymbolTablePrinter;
 
 import java.io.IOException;
 import java.nio.file.Files;

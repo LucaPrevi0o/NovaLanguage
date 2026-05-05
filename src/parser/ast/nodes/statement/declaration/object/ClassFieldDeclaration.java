@@ -1,9 +1,9 @@
-package src.parser.ast.nodes.statement.declaration.object;
+package parser.ast.nodes.statement.declaration.object;
 
-import src.parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import src.token.ReturnType;
-import src.token.family.AccessModifier;
-import src.parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import token.ReturnType;
+import token.family.AccessModifier;
+import parser.ast.nodes.ExpressionNode;
 
 /// Represents a field declaration within a class, including its access modifier.
 public class ClassFieldDeclaration extends VariableDeclarationStatement {

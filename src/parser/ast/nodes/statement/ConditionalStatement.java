@@ -1,6 +1,6 @@
-package src.parser.ast.nodes.statement;
+package parser.ast.nodes.statement;
 
-import src.parser.ast.nodes.*;
+import parser.ast.nodes.*;
 
 /// Represents a conditional statement in the abstract syntax tree (AST), which includes an expression that evaluates to a boolean condition.
 public abstract class ConditionalStatement extends StatementNode {
