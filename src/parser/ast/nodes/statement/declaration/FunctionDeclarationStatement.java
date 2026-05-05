@@ -60,7 +60,7 @@ public class FunctionDeclarationStatement extends DeclarationStatement implement
     }
 
     /// Appends individual parameter info entries to the given list.
-    static void appendParameterEntries(List<PrintEntry> entries, FunctionParameter[] params) {
+    public static void appendParameterEntries(List<PrintEntry> entries, FunctionParameter[] params) {
 
         for (var param : params)
             entries.add(new PrintEntry.Info("  param " + param.getName() + ": " + buildTypeStringWithSizes(param.getType())));
