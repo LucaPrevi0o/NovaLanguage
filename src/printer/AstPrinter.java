@@ -20,8 +20,8 @@ import src.parser.ast.nodes.statement.BlockStatement;
 import src.parser.ast.nodes.statement.ClassDeclarationStatement;
 import src.parser.ast.nodes.statement.ExpressionStatement;
 import src.parser.ast.nodes.statement.ReturnStatement;
-import src.parser.ast.nodes.statement.conditional.BreakStatement;
-import src.parser.ast.nodes.statement.conditional.ContinueStatement;
+import src.parser.ast.nodes.statement.BreakStatement;
+import src.parser.ast.nodes.statement.ContinueStatement;
 import src.parser.ast.nodes.statement.conditional.ForStatement;
 import src.parser.ast.nodes.statement.conditional.IfStatement;
 import src.parser.ast.nodes.statement.conditional.WhileStatement;
@@ -69,8 +69,8 @@ public class AstPrinter {
                 case IfStatement is -> printIfStatement(is, spacers, !header.equals("└─ "));
                 case WhileStatement ws -> printWhileStatement(ws, spacers, !header.equals("└─ "));
                 case ForStatement fs -> printForStatement(fs, spacers, !header.equals("└─ "));
-                case BreakStatement bs -> printLine(spacers, "└─ break");
-                case ContinueStatement cs -> printLine(spacers, "└─ continue");
+                case BreakStatement _ -> printLine(spacers, "└─ break");
+                case ContinueStatement _ -> printLine(spacers, "└─ continue");
                 case ExpressionStatement es -> printExpressionStatement(es, spacers, !header.equals("└─ "));
                 case AssignmentExpression ae -> printAssignmentExpression(ae, spacers, !header.equals("└─ "));
                 case BinaryExpression be -> printBinaryExpression(be, spacers);
@@ -83,7 +83,7 @@ public class AstPrinter {
                 case NumberLiteralExpression nle -> printNumberLiteral(nle, spacers);
                 case StringLiteralExpression sle -> printStringLiteral(sle, spacers);
                 case CharLiteralExpression cle -> printCharLiteral(cle, spacers);
-                case NullLiteralExpression nle -> printNullLiteral(nle, spacers);
+                case NullLiteralExpression _ -> printNullLiteral(spacers);
                 case BoolLiteralExpression ble -> printBoolLiteral(ble, spacers);
                 default -> {}
             }
@@ -476,9 +476,8 @@ public class AstPrinter {
     }
 
     /// A helper method to print the details of a null literal expression.
-    /// @param nle The NullLiteralExpression node representing the null literal expression to print.
     /// @param spacers A list of strings used for indentation and visual structure.
-    private static void printNullLiteral(NullLiteralExpression nle, List<String> spacers) {
+    private static void printNullLiteral(List<String> spacers) {
 
         spacers.add("   ");
         printLine(spacers, "└─ Value: null");
