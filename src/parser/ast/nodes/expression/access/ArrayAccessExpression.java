@@ -1,5 +1,7 @@
 package parser.ast.nodes.expression.access;
 
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents an array access expression.
 ///

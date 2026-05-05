@@ -1,5 +1,8 @@
 package parser.ast.nodes.expression;
 
+import lexer.token.OperatorToken;
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a unary expression in the AST, consisting of an operator and a single operand expression.
 public class UnaryExpression extends ExpressionNode {

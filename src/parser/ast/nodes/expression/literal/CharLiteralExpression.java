@@ -1,5 +1,7 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a character literal expression, such as 'a', '\n', or '\\'.
 public class CharLiteralExpression extends ExpressionNode {

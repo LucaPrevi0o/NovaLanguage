@@ -1,5 +1,7 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a function or method call expression in the AST.
 ///

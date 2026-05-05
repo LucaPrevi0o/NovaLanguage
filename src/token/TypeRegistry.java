@@ -36,8 +36,13 @@ public class TypeRegistry {
         return null;
     }
 
-    /// Returns whether the given name corresponds to a registered custom class.
+    /// Determines whether the given name corresponds to a registered custom class.
     /// @param typeName The class name to check.
     /// @return {@code true} if the name is a registered custom class.
     public boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
+
+    /// No-op method kept for test API compatibility.
+    /// With per-instance TypeRegistry, each {@link parser.Parser} creates a fresh registry,
+    /// so no global reset is needed.
+    public static void reset() { }
 }

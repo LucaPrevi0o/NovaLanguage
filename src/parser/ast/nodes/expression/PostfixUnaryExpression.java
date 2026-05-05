@@ -1,5 +1,8 @@
 package parser.ast.nodes.expression;
 
+import lexer.token.OperatorToken;
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a postfix unary expression (e.g. {@code x++}, {@code x--}).
 /// Distinct from {@link UnaryExpression} which handles prefix operators.

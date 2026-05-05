@@ -1,5 +1,7 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 
 /// Represents a ternary conditional expression: {@code condition ? thenExpr : elseExpr}.
 public class TernaryExpression extends ExpressionNode {
