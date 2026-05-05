@@ -35,6 +35,9 @@ public enum Operator implements TokenFamily {
     /// The divide-assign operator, used for division assignment (a /= 5).
     DIVIDE_ASSIGN("/="),
 
+    /// The modulo-assign operator, used for modulo assignment (a %= 5).
+    MODULO_ASSIGN("%="),
+
     /// The equal operator, used for equality comparison.
     EQUAL("=="),
 

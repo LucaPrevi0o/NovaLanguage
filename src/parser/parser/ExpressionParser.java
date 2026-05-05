@@ -95,7 +95,8 @@ public class ExpressionParser extends ParserBase {
      private ExpressionNode assignment() {
 
          var expr = logicOr();
-         if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN)) {
+         if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN,
+             Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
 
              var operator = previous();
              var value = assignment();
@@ -130,6 +131,7 @@ public class ExpressionParser extends ParserBase {
                 case MINUS_ASSIGN -> Operator.MINUS;
                 case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
                 case DIVIDE_ASSIGN -> Operator.DIVIDE;
+                case MODULO_ASSIGN -> Operator.MODULO;
                 default -> throw new ParseException("Unknown compound assignment operator", operator);
             };
 
