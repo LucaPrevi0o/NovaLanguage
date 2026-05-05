@@ -2,12 +2,19 @@
 A modular, self-contained tokenizer and parser for custom programming language syntax.
 
 ## Requirements
-- **Maven** (see [pom.xml](https://github.com/LucaPrevi0o/CustomLanguage/blob/main/pom.xml))
-- **Java** (version 21+)
+- **Maven** (see [pom.xml](pom.xml))
+- **Java** (version 21+ - suggested: [**OpenJDK release 26**](https://jdk.java.net/26/) for latest features and improvements)
+
+> [!NOTE]
+> The use of newer Java versions is recommended to take advantage of the latest language features and performance improvements.
+> Switching to a newer version may require updating the `source` and `target` properties in the `pom.xml` file to match the Java version you are using.
+> 
+> Refer to the [Maven Compiler Plugin documentation](https://maven.apache.org/plugins/maven-compiler-plugin/) for details on how to configure the Java version in your project.
+> Use `java -version` in your terminal to check your current Java version and ensure compatibility with the project requirements.
 
 ## Overview
 A modular Java-based code analyzer that produces the *AST* (Abstract Syntax Tree) and *Symbol Table* of the source code.
-Full grammar explaination in class documentation (see [ClassParser.java](https://github.com/LucaPrevi0o/CustomLanguage/blob/main/src/parser/parser/ClassParser.java), [DeclarationParser.java](https://github.com/LucaPrevi0o/CustomLanguage/blob/main/src/parser/parser/DeclarationParser.java) and [ExpressionParser.java](https://github.com/LucaPrevi0o/CustomLanguage/blob/main/src/parser/parser/ExpressionParser.java) for details).
+Full grammar explanation in class documentation (see [ClassParser.java](src/parser/parser/ClassParser.java), [DeclarationParser.java](src/parser/parser/DeclarationParser.java) and [ExpressionParser.java](src/parser/parser/ExpressionParser.java) for details).
 
 ### Main features
 - Lexical analysis
@@ -15,8 +22,8 @@ Full grammar explaination in class documentation (see [ClassParser.java](https:/
   - Token list available for parsing or direct analysis
 - Source parsing
   - AST production with specific context-aware nodes
-  - Support for class-level defined custom return types, with the help of a parsing-level [`TypeRegistry`](https://github.com/LucaPrevi0o/CustomLanguage/blob/main/src/token/TypeRegistry.java) definition
-  - Support for multi-dimensional array type with optional static size definition
+  - Support for class-level defined custom return types, with the help of a parsing-level [`TypeRegistry`](src/token/TypeRegistry.java) definition
+  - Support for multidimensional array type with optional static size definition
   - Support for class inheritance and generic type parameters
   - Implementation of symbol scoping for variables, classes and functions
     - Full-depth scope tree production from global scope
@@ -53,3 +60,20 @@ public class NewClass [T] :: TestClass {
   }
 }
 ```
+
+## Further development
+- **Error handling**: Implementing comprehensive error reporting for syntax and semantic errors during parsing.
+  - Detailed error messages with line and column information to help identify issues in the source code.
+  - Recovery strategies to allow the parser to continue processing after encountering errors, providing more feedback in a single run.
+- **Code generation**: Adding functionality to generate intermediate code or bytecode from the AST for execution or further compilation.
+  - Transforming the AST into a target representation, such as Java bytecode or an intermediate language for a virtual machine.
+  - Final goal: *direct binary executable generation* from the source code, bypassing the need for an intermediate representation and improving performance.
+  - Support for standard library functions and built-in types to facilitate code generation and execution.
+
+## Contributing
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License** (CC BY-NC-SA 4.0).
+See the [LICENSE](LICENSE) file for details.
