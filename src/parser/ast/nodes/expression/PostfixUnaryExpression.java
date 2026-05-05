@@ -1,12 +1,15 @@
 package parser.ast.nodes.expression;
 
 import lexer.token.OperatorToken;
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents a postfix unary expression (e.g. {@code x++}, {@code x--}).
 /// Distinct from {@link UnaryExpression} which handles prefix operators.
-public class PostfixUnaryExpression extends ExpressionNode {
+public class PostfixUnaryExpression extends ExpressionNode implements Printable {
 
     private final ExpressionNode operand;
     private final OperatorToken operator;
@@ -30,6 +33,17 @@ public class PostfixUnaryExpression extends ExpressionNode {
     /// Returns the postfix operator token.
     /// @return The operator token.
     public OperatorToken getOperator() { return operator; }
+
+    @Override
+    public String toPrintString() { return "PostfixUnaryExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Operator: " + operator.getType()),
+            new PrintEntry.Child("Operand", operand)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitPostfixUnary(this); }

@@ -1,10 +1,13 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents a string literal expression in the AST.
-public class StringLiteralExpression extends ExpressionNode {
+public class StringLiteralExpression extends ExpressionNode implements Printable {
     
     String value;
 
@@ -21,6 +24,12 @@ public class StringLiteralExpression extends ExpressionNode {
     /// Returns the string value of this literal expression.
     /// @return The string value.
     public String getValue() { return value; }
+
+    @Override
+    public String toPrintString() { return "StringLiteralExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: \"" + value + "\"")); }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitStringLiteral(this); }

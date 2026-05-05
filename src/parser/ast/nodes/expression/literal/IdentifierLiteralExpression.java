@@ -1,13 +1,16 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents an identifier literal expression in the AST.
 ///
 /// An identifier literal expression represents a reference to a variable, function, or other named entity in the source code.
 /// It consists of a name that identifies the entity being referenced.
-public class IdentifierLiteralExpression extends ExpressionNode {
+public class IdentifierLiteralExpression extends ExpressionNode implements Printable {
     
     String name;
 
@@ -24,6 +27,12 @@ public class IdentifierLiteralExpression extends ExpressionNode {
     /// Returns the name of the identifier being referenced by this expression.
     /// @return The name of the identifier.
     public String getName() { return name; }
+
+    @Override
+    public String toPrintString() { return "IdentifierLiteralExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Identifier: " + name)); }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIdentifierLiteral(this); }

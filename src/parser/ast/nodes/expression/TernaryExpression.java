@@ -1,10 +1,13 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents a ternary conditional expression: {@code condition ? thenExpr : elseExpr}.
-public class TernaryExpression extends ExpressionNode {
+public class TernaryExpression extends ExpressionNode implements Printable {
 
     private final ExpressionNode condition;
     private final ExpressionNode thenExpr;
@@ -35,6 +38,18 @@ public class TernaryExpression extends ExpressionNode {
     /// Returns the expression evaluated when the condition is falsy.
     /// @return The else-expression.
     public ExpressionNode getElseExpr() { return elseExpr; }
+
+    @Override
+    public String toPrintString() { return "TernaryExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Child("Condition", condition),
+            new PrintEntry.Child("Then", thenExpr),
+            new PrintEntry.Child("Else", elseExpr)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitTernary(this); }

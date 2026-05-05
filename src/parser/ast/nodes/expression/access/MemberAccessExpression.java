@@ -1,12 +1,15 @@
 package parser.ast.nodes.expression.access;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents an expression that accesses a member of an object.
 ///
 /// Examples: `person.name`, `car.engine.type`, `myObject.field`
-public class MemberAccessExpression extends ExpressionNode {
+public class MemberAccessExpression extends ExpressionNode implements Printable {
     
     private final ExpressionNode object;      // The object being accessed
     private final String memberName;          // The member name
@@ -30,6 +33,17 @@ public class MemberAccessExpression extends ExpressionNode {
     /// Returns the name of the member being accessed.
     /// @return The member name.
     public String getMemberName() { return memberName; }
+
+    @Override
+    public String toPrintString() { return "MemberAccessExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Member: " + memberName),
+            new PrintEntry.Child("Object", object)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitMemberAccess(this); }

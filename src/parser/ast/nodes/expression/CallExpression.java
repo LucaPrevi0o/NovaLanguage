@@ -1,7 +1,10 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents a function or method call expression in the AST.
 ///
@@ -10,7 +13,7 @@ import parser.ast.visitor.NodeVisitor;
 /// - The callee can be any expression that evaluates to a function or method, such as an identifier,
 /// a member access expression, or another call expression.
 /// - The arguments are represented as an array of expressions, allowing for any number of arguments to be passed to the callee.
-public class CallExpression extends ExpressionNode {
+public class CallExpression extends ExpressionNode implements Printable {
     
     private final ExpressionNode callee;
     private final ExpressionNode[] arguments;
@@ -34,6 +37,17 @@ public class CallExpression extends ExpressionNode {
     /// Returns an array of expressions representing the arguments passed to the callee.
     /// @return An array of argument expressions.
     public ExpressionNode[] getArguments() { return arguments; }
+
+    @Override
+    public String toPrintString() { return "CallExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Child("Callee", callee),
+            new PrintEntry.Children("Arguments", arguments)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitCall(this); }

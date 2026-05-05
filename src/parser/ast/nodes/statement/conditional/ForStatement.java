@@ -1,15 +1,19 @@
 package parser.ast.nodes.statement.conditional;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
 import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /// Represents a for loop statement in the AST.
 ///
 /// A for loop consists of an initialization statement, a condition expression, an increment statement, and a body statement.
 /// The initialization is executed once before the loop starts, the condition is evaluated before each iteration,
 /// the body is executed if the condition is true, and the increment is executed after each iteration.
-public class ForStatement extends ConditionalStatement {
+public class ForStatement extends ConditionalStatement implements Printable {
     
     private final StatementNode initialization;
     private final StatementNode increment;
@@ -41,6 +45,20 @@ public class ForStatement extends ConditionalStatement {
     /// Returns the statement that represents the body of the loop, which is executed if the condition is true.
     /// @return The body statement.
     public StatementNode getBody() { return body; }
+
+    @Override
+    public String toPrintString() { return "ForStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Child("Condition", getCondition()));
+        if (initialization != null) entries.add(new PrintEntry.Child("Initializer", initialization));
+        if (increment != null) entries.add(new PrintEntry.Child("Increment", increment));
+        entries.add(new PrintEntry.Child("Body", body));
+        return entries;
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitFor(this); }

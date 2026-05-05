@@ -1,10 +1,13 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents a boolean literal expression in the AST.
-public class BoolLiteralExpression extends ExpressionNode {
+public class BoolLiteralExpression extends ExpressionNode implements Printable {
     
     boolean value;
 
@@ -21,6 +24,12 @@ public class BoolLiteralExpression extends ExpressionNode {
     /// Returns the boolean value of this literal expression.
     /// @return The boolean value.
     public boolean getValue() { return value; }
+
+    @Override
+    public String toPrintString() { return "BoolLiteralExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: " + value)); }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBoolLiteral(this); }

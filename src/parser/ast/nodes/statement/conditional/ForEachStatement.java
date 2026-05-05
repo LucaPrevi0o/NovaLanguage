@@ -1,13 +1,18 @@
 package parser.ast.nodes.statement.conditional;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ConditionalStatement;
 import token.ReturnType;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
+import static printer.AstPrinter.buildTypeStringWithSizes;
+
 /// Represents a for-each loop statement: {@code for (Type name : iterable) body}.
-public class ForEachStatement extends ConditionalStatement {
+public class ForEachStatement extends ConditionalStatement implements Printable {
 
     private final ReturnType elementType;
     private final String elementName;
@@ -44,6 +49,19 @@ public class ForEachStatement extends ConditionalStatement {
     /// Returns the loop body.
     /// @return The body statement.
     public StatementNode getBody() { return body; }
+
+    @Override
+    public String toPrintString() { return "ForEachStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Element Type: " + buildTypeStringWithSizes(elementType)),
+            new PrintEntry.Info("Element Name: " + elementName),
+            new PrintEntry.Child("Iterable", getIterable()),
+            new PrintEntry.Child("Body", body)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitForEach(this); }

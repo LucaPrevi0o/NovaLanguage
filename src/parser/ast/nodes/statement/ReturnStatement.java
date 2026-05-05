@@ -1,10 +1,14 @@
 package parser.ast.nodes.statement;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /// Represents a return statement in the abstract syntax tree (AST), which consists of an optional return value expression.
-public class ReturnStatement extends StatementNode {
+public class ReturnStatement extends StatementNode implements Printable {
     
     private final ExpressionNode returnValue;
 
@@ -21,6 +25,17 @@ public class ReturnStatement extends StatementNode {
     /// Returns the expression that represents the value returned by this return statement, or null if no value is returned.
     /// @return An ExpressionNode representing the return value of this return statement, or null if no value is returned.
     public ExpressionNode getReturnValue() { return returnValue; }
+
+    @Override
+    public String toPrintString() { return "ReturnStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        if (returnValue != null) entries.add(new PrintEntry.Child("Return Value", returnValue));
+        return entries;
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitReturn(this); }

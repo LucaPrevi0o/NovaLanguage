@@ -1,10 +1,13 @@
 package parser.ast.nodes.statement;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents a block statement in the abstract syntax tree (AST), which contains a sequence of statements.
-public class BlockStatement extends StatementNode {
+public class BlockStatement extends StatementNode implements Printable {
     
     private final StatementNode[] statements;
 
@@ -21,6 +24,14 @@ public class BlockStatement extends StatementNode {
     /// Returns the array of statements contained within this block statement.
     /// @return An array of StatementNode objects representing the statements in this block.
     public StatementNode[] getStatements() { return statements; }
+
+    @Override
+    public String toPrintString() { return "BlockStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(new PrintEntry.Children("Statements", statements));
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBlock(this); }

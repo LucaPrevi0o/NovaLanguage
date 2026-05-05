@@ -1,18 +1,22 @@
 package parser.ast.nodes.statement.conditional;
 
+import parser.ast.AstNode;
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /// Represents a single case (or the default arm) inside a switch statement.
 ///
 /// A case with a non-null {@code value} matches that specific value.
 /// A case with a {@code null} {@code value} is the default arm.
-public class SwitchCase {
+public class SwitchCase extends AstNode implements Printable {
 
     private final ExpressionNode value;   // null for default
     private final StatementNode body;
-    private final int line;
-    private final int column;
 
     /// Constructs a new SwitchCase.
     /// @param line   Line number of the case keyword.
@@ -21,8 +25,7 @@ public class SwitchCase {
     /// @param body   The statement body to execute when this case matches.
     public SwitchCase(int line, int column, ExpressionNode value, StatementNode body) {
 
-        this.line = line;
-        this.column = column;
+        super(line, column);
         this.value = value;
         this.body = body;
     }
@@ -35,15 +38,24 @@ public class SwitchCase {
     /// @return The body statement.
     public StatementNode getBody() { return body; }
 
-    /// Returns the line number of this case.
-    /// @return The line number.
-    public int getLine() { return line; }
-
-    /// Returns the column number of this case.
-    /// @return The column number.
-    public int getColumn() { return column; }
-
     /// Returns whether this is the default arm.
     /// @return {@code true} if this is the default arm.
     public boolean isDefault() { return value == null; }
+
+    @Override
+    public String toPrintString() { return (isDefault() ? "default" : "case") + " [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        if (!isDefault()) entries.add(new PrintEntry.Child("Value", value));
+        entries.add(new PrintEntry.Child("Body", body));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) {
+        throw new UnsupportedOperationException("SwitchCase is not visited directly");
+    }
 }

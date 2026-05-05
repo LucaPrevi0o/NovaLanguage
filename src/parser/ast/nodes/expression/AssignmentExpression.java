@@ -1,11 +1,14 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.visitor.NodeVisitor;
 
+import java.util.List;
+
 /// Represents an assignment expression in the AST, where a value is assigned to a target (which can be a variable,
 /// array element, or object property).
-public class AssignmentExpression extends ExpressionNode {
+public class AssignmentExpression extends ExpressionNode implements Printable {
 
     private final ExpressionNode target;  // Can be IdentifierLiteralExpression, ArrayAccessExpression, or MemberAccessExpression
     private final ExpressionNode value;
@@ -29,6 +32,17 @@ public class AssignmentExpression extends ExpressionNode {
     /// Returns the expression representing the value being assigned to the target.
     /// @return The value expression.
     public ExpressionNode getValue() { return value; }
+
+    @Override
+    public String toPrintString() { return "AssignmentExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Child("Target", target),
+            new PrintEntry.Child("Value", value)
+        );
+    }
 
     @Override
     public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitAssignment(this); }
