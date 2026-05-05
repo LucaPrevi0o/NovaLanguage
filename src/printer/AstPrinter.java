@@ -19,7 +19,7 @@ import token.ReturnType;
 ///
 /// This class is responsible only for managing indentation depth and the branch characters
 /// ({@code ├─}, {@code └─}, {@code │}) used to render the tree.
-public class AstPrinter {
+public final class AstPrinter {
 
     private AstPrinter() {}
 
