@@ -1,5 +1,6 @@
 package parser.parser;
 
+import lexer.Token;
 import lexer.token.*;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
@@ -106,28 +107,7 @@ public class ExpressionParser extends ParserBase {
                  throw new ParseException("Invalid assignment target", operator);
 
              // For compound assignments, convert them to binary operations
-             ExpressionNode assignmentValue = value;
-             if (operator.getType() instanceof Operator op && op != Operator.ASSIGN) {
-
-                 // Map compound operators to their base binary operators
-                 Operator binaryOp = switch (op) {
-                     case PLUS_ASSIGN -> Operator.PLUS;
-                     case MINUS_ASSIGN -> Operator.MINUS;
-                     case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
-                     case DIVIDE_ASSIGN -> Operator.DIVIDE;
-                     default -> throw new ParseException("Unknown compound assignment operator", operator);
-                 };
-
-                 // Create binary expression: target += value becomes target = target + value
-                 assignmentValue = new BinaryExpression(
-                     operator.getLine(),
-                     operator.getColumn(),
-                     expr,
-                     new OperatorToken(binaryOp, operator.getLine(), operator.getColumn()),
-                     value
-                 );
-             }
-
+             var assignmentValue = getExpressionNode(value, operator, expr);
              return new AssignmentExpression(
                  operator.getLine(),
                  operator.getColumn(),
@@ -138,6 +118,32 @@ public class ExpressionParser extends ParserBase {
 
          return expr;
      }
+
+    private static ExpressionNode getExpressionNode(ExpressionNode value, Token operator, ExpressionNode expr) {
+
+        var assignmentValue = value;
+        if (operator.getType() instanceof Operator op && op != Operator.ASSIGN) {
+
+            // Map compound operators to their base binary operators
+            var binaryOp = switch (op) {
+                case PLUS_ASSIGN -> Operator.PLUS;
+                case MINUS_ASSIGN -> Operator.MINUS;
+                case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
+                case DIVIDE_ASSIGN -> Operator.DIVIDE;
+                default -> throw new ParseException("Unknown compound assignment operator", operator);
+            };
+
+            // Create binary expression: target += value becomes target = target + value
+            assignmentValue = new BinaryExpression(
+                operator.getLine(),
+                operator.getColumn(),
+                expr,
+                new OperatorToken(binaryOp, operator.getLine(), operator.getColumn()),
+                value
+            );
+        }
+        return assignmentValue;
+    }
 
     /// Parses logical OR expressions, handling the "||" operator with left associativity.
     ///
