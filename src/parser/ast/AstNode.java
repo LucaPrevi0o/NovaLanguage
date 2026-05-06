@@ -6,8 +6,8 @@ import parser.ast.visitor.NodeVisitor;
 /// Each node contains information about its position in the source code (line and column).
 public abstract class AstNode {
 
-    public int line;
-    public int column;
+    private final int line;
+    private final int column;
 
     /// Constructs a new AstNode with the specified line and column numbers.
     /// @param line The line number in the source code where this node occurs.

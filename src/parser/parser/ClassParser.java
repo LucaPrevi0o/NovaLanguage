@@ -125,7 +125,6 @@ public class ClassParser extends ParserBase {
 
         var classScope = enterScope();
         var savedSymbolTable = this.symbolTable;
-        var savedDeclarationParser = this.declarationParser;
 
         this.symbolTable = classScope;
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
@@ -170,18 +169,13 @@ public class ClassParser extends ParserBase {
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }
 
-        return new ClassDeclarationStatement(
-            classToken.getLine(),
-            classToken.getColumn(),
-            className,
-            methods.toArray(new ClassMethodDeclaration[0]),
-            fields.toArray(new ClassFieldDeclaration[0]),
-            superClasses.toArray(new ReturnType[0]),
-            genericClassParameter,
-            innerClasses.toArray(new ClassDeclarationStatement[0]),
-            classAccessModifier,
-            constructors.toArray(new ClassConstructorDeclaration[0])
-        );
+        // Populate the already-registered placeholder with the fully parsed members.
+        // Using the same object keeps the symbol table and type registry consistent.
+        classDecl.setMethods(methods.toArray(new ClassMethodDeclaration[0]));
+        classDecl.setFields(fields.toArray(new ClassFieldDeclaration[0]));
+        classDecl.setConstructors(constructors.toArray(new ClassConstructorDeclaration[0]));
+        classDecl.setInnerClasses(innerClasses.toArray(new ClassDeclarationStatement[0]));
+        return classDecl;
     }
 
      /// Parses a class field declaration, which may optionally include an initializer.

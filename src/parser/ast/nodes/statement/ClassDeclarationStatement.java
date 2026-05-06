@@ -18,13 +18,13 @@ import static printer.AstPrinter.buildTypeStringWithSizes;
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
 public class ClassDeclarationStatement extends Symbol implements Printable {
 
-    private final ClassMethodDeclaration[] methods;
-    private final ClassFieldDeclaration[] fields;
+    private ClassMethodDeclaration[] methods;
+    private ClassFieldDeclaration[] fields;
     private final ReturnType[] superClasses;
     private final ReturnType genericClassParameter;
-    private final ClassDeclarationStatement[] innerClasses;
+    private ClassDeclarationStatement[] innerClasses;
     private final AccessModifier accessModifier;
-    private final ClassConstructorDeclaration[] constructors;
+    private ClassConstructorDeclaration[] constructors;
 
     /// Constructs a new ClassDeclarationStatement.
     ///
@@ -82,6 +82,22 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     /// Returns the constructors declared within the class.
     /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.
     public ClassConstructorDeclaration[] getConstructors() { return constructors; }
+
+    /// Sets the methods of this class after parsing is complete.
+    /// @param methods The parsed method declarations.
+    public void setMethods(ClassMethodDeclaration[] methods) { this.methods = methods; }
+
+    /// Sets the fields of this class after parsing is complete.
+    /// @param fields The parsed field declarations.
+    public void setFields(ClassFieldDeclaration[] fields) { this.fields = fields; }
+
+    /// Sets the constructors of this class after parsing is complete.
+    /// @param constructors The parsed constructor declarations.
+    public void setConstructors(ClassConstructorDeclaration[] constructors) { this.constructors = constructors; }
+
+    /// Sets the inner classes of this class after parsing is complete.
+    /// @param innerClasses The parsed inner class declarations.
+    public void setInnerClasses(ClassDeclarationStatement[] innerClasses) { this.innerClasses = innerClasses; }
 
     @Override
     public String toPrintString() { return "ClassDeclarationStatement [line " + getLine() + "]"; }
