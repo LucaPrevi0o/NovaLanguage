@@ -5,6 +5,8 @@ import parser.ast.SymbolTable;
 import token.TokenFamily;
 import token.TypeRegistry;
 import token.family.AccessModifier;
+import token.family.Delimiter;
+import token.family.Keyword;
 
 import java.util.ArrayList;
 
@@ -116,5 +118,24 @@ public abstract class ParserBase {
 
          for (var modifier : AccessModifier.values()) if (match(modifier)) return modifier;
          return null;  // No access modifier (package-private)
-     }
+      }
+
+    /// Advances tokens until a safe local recovery point is found.
+    /// Recovery points include statement boundaries, block boundaries, and common statement starters.
+    protected void synchronizeToStatementBoundary() {
+
+        if (isNotAtEnd()) advance();
+        while (isNotAtEnd()) {
+
+            if (previous().getType() == Delimiter.SEMICOLON) return;
+            if (check(Delimiter.RBRACE)) return;
+
+            var next = peek().getType();
+            if (next == Keyword.CLASS || next == Keyword.IF || next == Keyword.ELSE || next == Keyword.WHILE ||
+                next == Keyword.FOR || next == Keyword.SWITCH || next == Keyword.RETURN || next == Keyword.BREAK ||
+                next == Keyword.CONTINUE) return;
+
+            advance();
+        }
+    }
 }

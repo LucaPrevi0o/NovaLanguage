@@ -252,7 +252,7 @@ public class DeclarationParser extends ParserBase {
     /// `varDecl → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"`
     ///
     /// The first variable is registered in the symbol table immediately so that it is visible
-    /// to subsequent initialisers in the same comma-list.
+    /// to subsequent initializers in the same comma-list.
     ///
     /// @param type The return type of the variable, already parsed.
     /// @param name The name of the variable.
@@ -489,20 +489,26 @@ public class DeclarationParser extends ParserBase {
         consume(Delimiter.LBRACE, "Expect '{' before switch body");
 
         var cases = new ArrayList<SwitchCase>();
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) if (match(Keyword.CASE)) {
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+            if (match(Keyword.CASE)) {
 
-            var caseToken = previous();
-            var value = expressionParser.parseExpression();
-            consume(Delimiter.COLON, "Expect ':' after case value");
-            var body = parseStatement();
-            cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
-        } else if (match(Keyword.DEFAULT)) {
+                var caseToken = previous();
+                var value = expressionParser.parseExpression();
+                consume(Delimiter.COLON, "Expect ':' after case value");
+                var body = parseStatement();
+                cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
+            } else if (match(Keyword.DEFAULT)) {
 
-            var defaultToken = previous();
-            consume(Delimiter.COLON, "Expect ':' after 'default'");
-            var body = parseStatement();
-            cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
-        } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
+                var defaultToken = previous();
+                consume(Delimiter.COLON, "Expect ':' after 'default'");
+                var body = parseStatement();
+                cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
+            } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
+        } catch (ParseException e) {
+
+            state.addError(e);
+            synchronizeToStatementBoundary();
+        }
 
         consume(Delimiter.RBRACE, "Expect '}' after switch body");
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));
@@ -548,7 +554,13 @@ public class DeclarationParser extends ParserBase {
 
         var statements = new ArrayList<StatementNode>();
 
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) statements.add(parseDeclaration());
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+            statements.add(parseDeclaration());
+        } catch (ParseException e) {
+
+            state.addError(e);
+            synchronizeToStatementBoundary();
+        }
         consume(Delimiter.RBRACE, "Expect '}' after block");
 
         this.symbolTable = exitScope(blockScope);

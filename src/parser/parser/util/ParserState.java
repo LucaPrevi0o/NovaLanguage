@@ -8,12 +8,14 @@ import token.TokenFamily;
 import token.family.Special;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /// Represents the current state of the parser, including the list of tokens and the current position in that list.
 /// Provides methods for navigating and checking tokens during parsing.
 public class ParserState {
     
     private final List<Token> tokens;
+    private final List<ParseException> errors = new ArrayList<>();
     private int current = 0;
 
     /// Constructs a new ParserState with the given list of tokens.
@@ -119,4 +121,15 @@ public class ParserState {
     /// Restores a previously saved token stream position for backtracking.
     /// @param position The position to restore to.
     public void setCurrentPosition(int position) { current = position; }
+
+    /// Adds a parse error collected during recovery parsing.
+    /// @param error The ParseException representing the error to add to the list of collected errors.
+    public void addError(ParseException error) { errors.add(error); }
+
+    /// Returns all collected parse errors.
+    /// @return An unmodifiable list of all ParseExceptions that have been collected during recovery parsing.
+    public List<ParseException> getErrors() { return List.copyOf(errors); }
+
+    /// Clears any collected parse errors.
+    public void clearErrors() { errors.clear(); }
 }
