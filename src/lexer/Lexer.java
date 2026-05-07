@@ -38,6 +38,9 @@ public class Lexer {
         for (var value : AccessModifier.values()) KEYWORDS.put(value.get(), value);  // Add access modifiers
         for (var value : PrimitiveType.values()) TYPES.put(value.get(), value);
         for (var value : Operator.values()) OPERATORS.put(value.get(), value);
+
+        // "boolean" is an alias for the "bool" primitive type (for Java-style source code)
+        TYPES.put("boolean", PrimitiveType.BOOL);
     }
 
     /// Constructs a Lexer with the given source code.
@@ -158,6 +161,11 @@ public class Lexer {
         }
         
         var value = identifier.toString();
+
+        // Boolean literals "true" and "false" are tokenized as LiteralTokens with BooleanLiteral type
+        if ("true".equals(value))  return new LiteralToken(Literal.BooleanLiteral.TRUE,  startLine, startColumn);
+        if ("false".equals(value)) return new LiteralToken(Literal.BooleanLiteral.FALSE, startLine, startColumn);
+
         var isKeyword = KEYWORDS.get(value);
         var isType = TYPES.get(value);
 
