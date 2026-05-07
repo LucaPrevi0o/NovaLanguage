@@ -146,6 +146,30 @@ The `primary` rule handles object creation (`new ClassName(...)`), parenthesized
 When a [`ParseException`](src/parser/parser/util/ParseException.java) is thrown at the top-level declaration boundary, the [`Parser`](src/parser/Parser.java) records the error and calls `synchronize()` — which skips tokens until a safe resumption point (a semicolon or a statement-opening keyword) — then continues parsing.
 At the end of the run, all collected errors are bundled into a [`ParseErrorsException`](src/parser/parser/util/ParseErrorsException.java) and thrown together, giving the caller a complete picture of every problem in a single pass.
 
+### Project orchestration (multi-file)
+
+The repository now includes a project-level parser orchestration layer in [`parser/project`](src/parser/project):
+
+- [`ProjectParser`](src/parser/project/ProjectParser.java) discovers `.nv` files, performs a class-name collection pass for forward references, then parses files with shared symbol/type context.
+- [`StdLibLoader`](src/parser/project/StdLibLoader.java) with [`FileSystemStdLibLoader`](src/parser/project/FileSystemStdLibLoader.java) loads standard library modules from source files.
+- [`ProjectCompiler`](src/parser/project/ProjectCompiler.java) runs parse + semantic analysis + backend scaffold and emits pseudo assembly per file.
+
+Default stdlib source modules live in [`stdlib/`](stdlib/), replacing hard-coded stdlib assumptions for project parsing.
+
+### Diagnostics and recovery
+
+Parser errors now expose structured diagnostics (`DiagnosticCode`, `SourceSpan`, `Diagnostic`) and include caret-style location markers in aggregated parse output.
+Recovery has been extended in block/class/member parsing paths so multiple nested errors can be reported in one run.
+
+### Semantic and backend foundations
+
+- [`semantic/SemanticAnalyzer`](src/semantic/SemanticAnalyzer.java) introduces a first semantic pass (missing-return and unreachable-after-return checks).
+- [`backend/`](src/backend) introduces the initial backend scaffold:
+  - IR model (`IRProgram`, `IRInstruction`)
+  - AST lowering (`AstLowerer`)
+  - optimization hook (`Optimizer`)
+  - pseudo-assembly emission (`PseudoAssemblyEmitter`)
+
 ### Symbol Table
 
 The [`SymbolTable`](src/parser/ast/SymbolTable.java) is a tree of scopes.

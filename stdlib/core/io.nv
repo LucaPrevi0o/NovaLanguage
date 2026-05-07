@@ -1,0 +1,8 @@
+void print(string value) { }
+void println(string value) { }
+void printInt(int value) { }
+void printFloat(float value) { }
+void printBool(bool value) { }
+string readLine() { return ""; }
+int parseInt(string value) { return 0; }
+float parseFloat(string value) { return 0.0f; }

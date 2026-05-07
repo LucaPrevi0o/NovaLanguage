@@ -11,6 +11,7 @@ import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import parser.parser.ClassParser;
 import parser.parser.ExpressionParser;
+import parser.ast.SymbolTable;
 import token.ReturnType;
 import token.TypeRegistry;
 import token.family.Delimiter;
@@ -62,6 +63,15 @@ public class Parser extends ParserBase {
         registerStdLib();
     }
 
+    /// Constructs a parser using externally provided shared symbol/type context.
+    /// Useful for multi-file parsing orchestration.
+    public Parser(List<Token> tokens, SymbolTable sharedSymbolTable, TypeRegistry sharedTypeRegistry, boolean registerStdLib) {
+
+        super(new ParserState(tokens), sharedSymbolTable, sharedTypeRegistry);
+        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
+        if (registerStdLib) registerStdLib();
+    }
+
     /// Pre-registers built-in standard-library functions in the global symbol table so user code
     /// can call them without declaring them.
     ///
@@ -110,18 +120,18 @@ public class Parser extends ParserBase {
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
+        state.clearErrors();
         var statements = new ArrayList<StatementNode>();
-        var errors     = new ArrayList<ParseException>();
 
         while (isNotAtEnd()) try {
             statements.add(declarationParser.parseDeclaration());
         } catch (ParseException e) {
 
-            errors.add(e);
+            state.addError(e);
             synchronize();
         }
 
-        if (!errors.isEmpty()) throw new ParseErrorsException(errors);
+        if (!state.getErrors().isEmpty()) throw new ParseErrorsException(state.getErrors());
         return statements;
     }
 

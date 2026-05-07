@@ -27,7 +27,7 @@ public class ParseErrorsException extends RuntimeException {
 
         var sb = new StringBuilder();
         sb.append(errors.size()).append(" parse error").append(errors.size() == 1 ? "" : "s").append(":\n");
-        for (var e : errors) sb.append("  • ").append(e.getMessage()).append("\n");
+        for (var e : errors) sb.append("  • ").append(e.getDiagnostic().toPrettyString()).append("\n");
         return sb.toString().stripTrailing();
     }
 }

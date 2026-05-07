@@ -134,7 +134,7 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
+            while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
 
                 var memberAccessModifier = parseAccessModifier();
                 if (match(Keyword.CLASS)) {
@@ -159,6 +159,10 @@ public class ClassParser extends ParserBase {
 
                 if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
                 else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+            } catch (ParseException e) {
+
+                state.addError(e);
+                synchronizeToStatementBoundary();
             }
         } finally {
 
@@ -234,7 +238,13 @@ public class ClassParser extends ParserBase {
             consume(Delimiter.LBRACE, "Expect '{' before method body");
 
             var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+            while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+                bodyStatements.add(declarationParser.parseDeclaration());
+            } catch (ParseException e) {
+
+                state.addError(e);
+                synchronizeToStatementBoundary();
+            }
             consume(Delimiter.RBRACE, "Expect '}' after method body");
 
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
@@ -276,7 +286,13 @@ public class ClassParser extends ParserBase {
             consume(Delimiter.LBRACE, "Expect '{' before constructor body");
 
             var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+            while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+                bodyStatements.add(declarationParser.parseDeclaration());
+            } catch (ParseException e) {
+
+                state.addError(e);
+                synchronizeToStatementBoundary();
+            }
             consume(Delimiter.RBRACE, "Expect '}' after constructor body");
 
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));

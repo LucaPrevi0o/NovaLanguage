@@ -1,6 +1,7 @@
 package token;
 
 import parser.ast.nodes.statement.ClassDeclarationStatement;
+import token.family.AccessModifier;
 import token.family.NonPrimitiveType;
 import token.family.PrimitiveType;
 import java.util.ArrayList;
@@ -20,6 +21,24 @@ public class TypeRegistry {
     /// Registers a new class declaration as a return type in the registry.
     /// @param classDecl The ClassDeclarationStatement representing the class to register.
     public void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
+
+    /// Registers a class name placeholder for multi-file forward references.
+    /// If already registered, this is a no-op.
+    public void registerClassName(String className) {
+
+        if (isCustomClass(className)) return;
+        var placeholder = new ClassDeclarationStatement(
+            0, 0, className,
+            new parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration[0],
+            new parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration[0],
+            new ReturnType[0],
+            null,
+            new ClassDeclarationStatement[0],
+            AccessModifier.PUBLIC,
+            new parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration[0]
+        );
+        registerClass(placeholder);
+    }
 
     /// Retrieves a ReturnType from the registry based on its string representation.
     /// @param typeName The string representation of the return type (e.g., "int", "MyClass").
