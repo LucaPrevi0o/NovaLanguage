@@ -110,18 +110,18 @@ public class Parser extends ParserBase {
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
+        state.clearErrors();
         var statements = new ArrayList<StatementNode>();
-        var errors     = new ArrayList<ParseException>();
 
         while (isNotAtEnd()) try {
             statements.add(declarationParser.parseDeclaration());
         } catch (ParseException e) {
 
-            errors.add(e);
+            state.addError(e);
             synchronize();
         }
 
-        if (!errors.isEmpty()) throw new ParseErrorsException(errors);
+        if (!state.getErrors().isEmpty()) throw new ParseErrorsException(state.getErrors());
         return statements;
     }
 
