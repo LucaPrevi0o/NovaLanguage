@@ -1,6 +1,5 @@
 package parser.parser;
 
-import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
@@ -9,7 +8,6 @@ import parser.ast.nodes.statement.declaration.object.*;
 import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import token.ReturnType;
-import token.TypeRegistry;
 import token.family.AccessModifier;
 import token.family.Delimiter;
 import token.family.GenericParameterType;
@@ -135,6 +133,7 @@ public class ClassParser extends ParserBase {
         var innerClasses = new ArrayList<ClassDeclarationStatement>();
 
         try {
+
             while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
 
                 var memberAccessModifier = parseAccessModifier();
@@ -152,18 +151,17 @@ public class ClassParser extends ParserBase {
                     continue;
                 }
 
-                if (!declarationParser.isValidType(peek()))
-                    throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", peek());
+                if (!declarationParser.isValidType(peek())) throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", peek());
 
                 var type = declarationParser.parseType();
                 var memberNameToken = consume(new Literal.IdentifierLiteral(), "Expect member name");
                 var memberName = getLiteralValue(memberNameToken);
 
-                if (check(Delimiter.LPAREN))
-                    methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+                if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
                 else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
             }
         } finally {
+
             consume(Delimiter.RBRACE, "Expect '}' after class body");
             this.symbolTable = exitScope(classScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
@@ -184,6 +182,12 @@ public class ClassParser extends ParserBase {
     /// ```
     /// classField → accessModifier? type IDENTIFIER ("=" expression)? ";"
     /// ```
+    /// @param type The return type of the field.
+    /// @param name The name of the field.
+    /// @param line The line number where the field declaration appears.
+    /// @param column The column number where the field declaration starts.
+    /// @param accessModifier The access modifier of the field (e.g., public, private).
+    /// @return A ClassFieldDeclaration representing the parsed class field declaration.
     private ClassFieldDeclaration parseClassField(ReturnType type, String name, int line, int column, AccessModifier accessModifier) {
 
         ExpressionNode initializer = null;
@@ -201,6 +205,12 @@ public class ClassParser extends ParserBase {
     /// ```
     /// classMethod → accessModifier? type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
     /// ```
+    /// @param returnType The return type of the method.
+    /// @param name The name of the method.
+    /// @param line The line number where the method declaration appears.
+    /// @param column The column number where the method declaration starts.
+    /// @param accessModifier The access modifier of the method (e.g., public, private).
+    /// @return A ClassMethodDeclaration representing the parsed class method declaration.
     private ClassMethodDeclaration parseClassMethod(ReturnType returnType, String name, int line, int column, AccessModifier accessModifier) {
 
         consume(Delimiter.LPAREN, "Expect '(' after method name");
@@ -220,6 +230,7 @@ public class ClassParser extends ParserBase {
         for (var param : parameters) this.symbolTable.register(param);
 
         try {
+
             consume(Delimiter.LBRACE, "Expect '{' before method body");
 
             var bodyStatements = new ArrayList<StatementNode>();
@@ -230,6 +241,7 @@ public class ClassParser extends ParserBase {
             placeholder.setBody(body);
             return placeholder;
         } finally {
+
             this.symbolTable = exitScope(methodScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }
@@ -241,6 +253,10 @@ public class ClassParser extends ParserBase {
     /// ```
     /// constructor → accessModifier? CLASSNAME "(" parameters? ")" "{" declaration* "}"
     /// ```
+    /// @param line The line number where the constructor declaration appears.
+    /// @param column The column number where the constructor declaration starts.
+    /// @param accessModifier The access modifier of the constructor (e.g., public, private).
+    /// @return A ClassConstructorDeclaration representing the parsed class constructor declaration.
     private ClassConstructorDeclaration parseConstructor(int line, int column, AccessModifier accessModifier) {
 
         consume(Delimiter.LPAREN, "Expect '(' after constructor name");
@@ -256,6 +272,7 @@ public class ClassParser extends ParserBase {
         for (var param : parameters) this.symbolTable.register(param);
 
         try {
+
             consume(Delimiter.LBRACE, "Expect '{' before constructor body");
 
             var bodyStatements = new ArrayList<StatementNode>();
@@ -265,6 +282,7 @@ public class ClassParser extends ParserBase {
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
             return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);
         } finally {
+
             this.symbolTable = exitScope(constructorScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }

@@ -38,9 +38,6 @@ public class Lexer {
         for (var value : AccessModifier.values()) KEYWORDS.put(value.get(), value);  // Add access modifiers
         for (var value : PrimitiveType.values()) TYPES.put(value.get(), value);
         for (var value : Operator.values()) OPERATORS.put(value.get(), value);
-
-        // "boolean" is an alias for the "bool" primitive type (for Java-style source code)
-        TYPES.put("boolean", PrimitiveType.BOOL);
     }
 
     /// Constructs a Lexer with the given source code.
@@ -185,31 +182,28 @@ public class Lexer {
         var string = new StringBuilder();
         advance(); // skip opening quote
 
-        while (currentChar != '\0' && currentChar != '"') {
+        while (currentChar != '\0' && currentChar != '"') if (currentChar == '\\') {
 
-            if (currentChar == '\\') {
+            advance(); // skip backslash
+            if (currentChar != '\0') {
 
-                advance(); // skip backslash
-                if (currentChar != '\0') {
-
-                    // Handle escape sequences
-                    char escapedChar = switch (currentChar) {
-                        case 'n' -> '\n';
-                        case 't' -> '\t';
-                        case 'r' -> '\r';
-                        case '"' -> '"';
-                        case '\'' -> '\'';
-                        case '\\' -> '\\';
-                        default -> currentChar;  // Unrecognized escape: pass through verbatim
-                    };
-                    string.append(escapedChar);
-                    advance();
-                }
-            } else {
-
-                string.append(currentChar);
+                // Handle escape sequences
+                var escapedChar = switch (currentChar) {
+                    case 'n' -> '\n';
+                    case 't' -> '\t';
+                    case 'r' -> '\r';
+                    case '"' -> '"';
+                    case '\'' -> '\'';
+                    case '\\' -> '\\';
+                    default -> currentChar;  // Unrecognized escape: pass through verbatim
+                };
+                string.append(escapedChar);
                 advance();
             }
+        } else {
+
+            string.append(currentChar);
+            advance();
         }
         
         if (currentChar == '"') advance(); // skip closing quote
@@ -229,6 +223,7 @@ public class Lexer {
 
         // Empty char literal: ''
         if (currentChar == '\'') {
+
             advance(); // skip closing quote
             return new Token(Special.UNKNOWN, startLine, startColumn);
         }
@@ -236,7 +231,7 @@ public class Lexer {
         // Unterminated char literal: reached EOF before closing quote
         if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
 
-        char ch = '\0';
+        var ch = '\0';
         if (currentChar == '\\') {
 
             advance(); // skip backslash

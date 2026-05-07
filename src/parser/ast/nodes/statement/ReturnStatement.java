@@ -2,7 +2,6 @@ package parser.ast.nodes.statement;
 
 import parser.ast.Printable;
 import parser.ast.nodes.*;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,4 @@ public class ReturnStatement extends StatementNode implements Printable {
         if (returnValue != null) entries.add(new PrintEntry.Child("Return Value", returnValue));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitReturn(this); }
 }

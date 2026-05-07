@@ -4,7 +4,6 @@ import parser.ast.Printable;
 import parser.ast.nodes.statement.DeclarationStatement;
 import token.ReturnType;
 import parser.ast.nodes.StatementNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,12 +59,9 @@ public class FunctionDeclarationStatement extends DeclarationStatement implement
     }
 
     /// Appends individual parameter info entries to the given list.
+    /// @param entries The list to append parameter info entries to.
+    /// @param params The array of FunctionParameter objects to generate entries for.
     public static void appendParameterEntries(List<PrintEntry> entries, FunctionParameter[] params) {
-
-        for (var param : params)
-            entries.add(new PrintEntry.Info("  param " + param.getName() + ": " + buildTypeStringWithSizes(param.getType())));
+        for (var param : params) entries.add(new PrintEntry.Info("  param " + param.getName() + ": " + buildTypeStringWithSizes(param.getType())));
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitFunctionDeclaration(this); }
 }

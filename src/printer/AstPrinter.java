@@ -21,6 +21,7 @@ import token.ReturnType;
 /// ({@code ├─}, {@code └─}, {@code │}) used to render the tree.
 public final class AstPrinter {
 
+    /// Private constructor to prevent instantiation, since this class only contains static methods.
     private AstPrinter() {}
 
     // ─── Public API ────────────────────────────────────────────────────────────
@@ -48,11 +49,10 @@ public final class AstPrinter {
         if (node == null) return;
         spacers.add(vLine ? "│  " : "   ");
         if (node instanceof Printable p) {
+
             printLine(spacers, header + p.toPrintString());
             printEntries(p.getPrintEntries(), spacers);
-        } else {
-            printLine(spacers, header + node.getClass().getSimpleName() + " [line " + node.getLine() + "]");
-        }
+        } else printLine(spacers, header + node.getClass().getSimpleName() + " [line " + node.getLine() + "]");
         spacers.removeLast();
     }
 
@@ -62,30 +62,29 @@ public final class AstPrinter {
     /// {@code ├─} for non-last entries and {@code └─} for the last entry.
     private static void printEntries(List<PrintEntry> entries, List<String> spacers) {
 
-        for (int i = 0; i < entries.size(); i++) {
+        for (var i = 0; i < entries.size(); i++) {
 
             var entry = entries.get(i);
-            boolean isLast = (i == entries.size() - 1);
-            String prefix = isLast ? "└─ " : "├─ ";
-            boolean hasMoreAfter = !isLast;
-
+            var isLast = (i == entries.size() - 1);
+            var prefix = isLast ? "└─ " : "├─ ";
+            var hasMoreAfter = !isLast;
             switch (entry) {
 
-                case PrintEntry.Info info ->
-                    printLine(spacers, prefix + info.text());
+                case PrintEntry.Info info -> printLine(spacers, prefix + info.text());
 
                 case PrintEntry.Child child -> {
+
                     printLine(spacers, prefix + child.label() + ":");
                     printASTNode(child.node(), spacers, "└─ ", hasMoreAfter);
                 }
 
                 case PrintEntry.Children children -> {
+
                     printLine(spacers, prefix + children.label() + ": " + children.nodes().length);
-                    for (int j = 0; j < children.nodes().length; j++) {
-                        boolean isLastChild = (j == children.nodes().length - 1);
-                        printASTNode(children.nodes()[j], spacers,
-                                isLastChild ? "└─ " : "├─ ",
-                                !isLastChild || hasMoreAfter);
+                    for (var j = 0; j < children.nodes().length; j++) {
+
+                        var isLastChild = (j == children.nodes().length - 1);
+                        printASTNode(children.nodes()[j], spacers, isLastChild ? "└─ " : "├─ ", !isLastChild || hasMoreAfter);
                     }
                 }
             }

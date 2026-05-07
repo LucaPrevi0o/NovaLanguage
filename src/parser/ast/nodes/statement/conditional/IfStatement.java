@@ -3,7 +3,6 @@ package parser.ast.nodes.statement.conditional;
 import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +49,4 @@ public class IfStatement extends ConditionalStatement implements Printable {
         if (elseBlock != null) entries.add(new PrintEntry.Child("Else", elseBlock));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIf(this); }
 }

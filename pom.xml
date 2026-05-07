@@ -15,8 +15,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
-        <outDirectory>out</outDirectory>
+        <maven.compiler.release>24</maven.compiler.release>
+        <outDirectory>${project.build.directory}/classes</outDirectory>
     </properties>
 
     <dependencies>

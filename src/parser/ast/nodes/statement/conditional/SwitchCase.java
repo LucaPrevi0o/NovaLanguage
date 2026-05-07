@@ -4,7 +4,6 @@ import parser.ast.AstNode;
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,10 +51,5 @@ public class SwitchCase extends AstNode implements Printable {
         if (!isDefault()) entries.add(new PrintEntry.Child("Value", value));
         entries.add(new PrintEntry.Child("Body", body));
         return entries;
-    }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) {
-        throw new UnsupportedOperationException("SwitchCase is not visited directly");
     }
 }

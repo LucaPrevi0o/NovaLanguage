@@ -96,7 +96,6 @@ public class Parser extends ParserBase {
 
     /// Convenience helper for registering a stdlib function with zero or more parameters.
     private void registerFunc(String name, ReturnType returnType, FunctionParameter... params) {
-
         symbolTable.register(new FunctionDeclarationStatement(0, 0, returnType, name, params, null));
     }
 
@@ -114,13 +113,12 @@ public class Parser extends ParserBase {
         var statements = new ArrayList<StatementNode>();
         var errors     = new ArrayList<ParseException>();
 
-        while (isNotAtEnd()) {
-            try {
-                statements.add(declarationParser.parseDeclaration());
-            } catch (ParseException e) {
-                errors.add(e);
-                synchronize();
-            }
+        while (isNotAtEnd()) try {
+            statements.add(declarationParser.parseDeclaration());
+        } catch (ParseException e) {
+
+            errors.add(e);
+            synchronize();
         }
 
         if (!errors.isEmpty()) throw new ParseErrorsException(errors);
@@ -143,7 +141,6 @@ public class Parser extends ParserBase {
     private void synchronize() {
 
         if (isNotAtEnd()) advance();  // always skip the offending token
-
         while (isNotAtEnd()) {
 
             // A semicolon marks the end of the previous statement — safe to resume after it.
@@ -151,7 +148,7 @@ public class Parser extends ParserBase {
 
             // Keywords that begin a new declaration or statement are also safe resume points.
             var next = peek().getType();
-            if (next == Keyword.CLASS   || next == Keyword.IF     || next == Keyword.WHILE  ||
+            if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
                 next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
                 next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
 

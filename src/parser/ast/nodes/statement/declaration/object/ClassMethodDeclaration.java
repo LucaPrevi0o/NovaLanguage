@@ -1,12 +1,10 @@
 package parser.ast.nodes.statement.declaration.object;
 
-import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.StatementNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +50,4 @@ public class ClassMethodDeclaration extends FunctionDeclarationStatement {
         entries.add(new PrintEntry.Child("Body", getBody()));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassMethod(this); }
 }

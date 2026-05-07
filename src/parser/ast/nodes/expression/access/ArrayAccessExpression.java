@@ -2,7 +2,6 @@ package parser.ast.nodes.expression.access;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -44,7 +43,4 @@ public class ArrayAccessExpression extends ExpressionNode implements Printable {
             new PrintEntry.Child("Index", index)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitArrayAccess(this); }
 }

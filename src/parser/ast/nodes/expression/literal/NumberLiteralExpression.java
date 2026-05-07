@@ -4,7 +4,6 @@ import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import token.family.PrimitiveType;
 import lexer.token.TypeToken;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -84,7 +83,7 @@ public abstract class NumberLiteralExpression extends ExpressionNode implements 
         public Byte getValue() { return (Byte) value; }
     }
 
-    TypeToken typeToken;
+    private final TypeToken typeToken;
     Number value;
 
     /// Constructs a new NumberLiteralExpression with the specified line, column, type token, and numeric value.
@@ -103,12 +102,13 @@ public abstract class NumberLiteralExpression extends ExpressionNode implements 
     /// @return The numeric value.
     public abstract Number getValue();
 
+    /// Returns the type token representing the specific numeric type of this literal expression.
+    /// @return The type token of this literal expression.
+    public TypeToken getTypeToken() { return typeToken; }
+
     @Override
     public String toPrintString() { return "NumberLiteralExpression [line " + getLine() + "]"; }
 
     @Override
     public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: " + getValue())); }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitNumberLiteral(this); }
 }

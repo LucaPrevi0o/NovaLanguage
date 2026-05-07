@@ -5,7 +5,6 @@ import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ConditionalStatement;
 import token.ReturnType;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -62,7 +61,4 @@ public class ForEachStatement extends ConditionalStatement implements Printable 
             new PrintEntry.Child("Body", body)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitForEach(this); }
 }

@@ -2,7 +2,6 @@ package parser.ast.nodes.expression.literal;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -33,7 +32,4 @@ public class IdentifierLiteralExpression extends ExpressionNode implements Print
 
     @Override
     public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Identifier: " + name)); }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIdentifierLiteral(this); }
 }

@@ -234,7 +234,7 @@ public class DeclarationParser extends ParserBase {
         var functionScope = enterScope();
         this.symbolTable = functionScope;
 
-        for (FunctionParameter param : parameters) this.symbolTable.register(param);
+        for (var param : parameters) this.symbolTable.register(param);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
         consume(Delimiter.LBRACE, "Expect '{' before function body");
@@ -395,6 +395,7 @@ public class DeclarationParser extends ParserBase {
                     this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
                     try {
+
                         var elementDecl = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, elementName, null);
                         this.symbolTable.register(elementDecl);
 
@@ -403,6 +404,7 @@ public class DeclarationParser extends ParserBase {
                         var body = parseStatement();
                         return new ForEachStatement(forToken.getLine(), forToken.getColumn(), type, elementName, iterable, body);
                     } finally {
+
                         this.symbolTable = exitScope(forEachScope);
                         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
                     }
@@ -410,9 +412,7 @@ public class DeclarationParser extends ParserBase {
 
                 // Not a for-each — restore and fall through to regular for parsing
                 state.setCurrentPosition(savedCurrent);
-            } else {
-                state.setCurrentPosition(savedCurrent);
-            }
+            } else state.setCurrentPosition(savedCurrent);
         }
 
         return parseForStatement(forToken);
@@ -431,6 +431,7 @@ public class DeclarationParser extends ParserBase {
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
         try {
+
             StatementNode initializer;
             if (match(Delimiter.SEMICOLON)) initializer = null;
             else if (isValidType(peek())) {
@@ -443,8 +444,7 @@ public class DeclarationParser extends ParserBase {
                 if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
                 consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
 
-                initializer = new VariableDeclarationStatement(
-                    nameToken.getLine(), nameToken.getColumn(), type, name, init);
+                initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, name, init);
                 this.symbolTable.register((VariableDeclarationStatement) initializer);
             } else {
 
@@ -467,6 +467,7 @@ public class DeclarationParser extends ParserBase {
             var body = parseStatement();
             return new ForStatement(forToken.getLine(), forToken.getColumn(), initializer, condition, increment, body);
         } finally {
+
             this.symbolTable = exitScope(forScope);
             this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         }
@@ -488,23 +489,20 @@ public class DeclarationParser extends ParserBase {
         consume(Delimiter.LBRACE, "Expect '{' before switch body");
 
         var cases = new ArrayList<SwitchCase>();
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) if (match(Keyword.CASE)) {
 
-            if (match(Keyword.CASE)) {
+            var caseToken = previous();
+            var value = expressionParser.parseExpression();
+            consume(Delimiter.COLON, "Expect ':' after case value");
+            var body = parseStatement();
+            cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
+        } else if (match(Keyword.DEFAULT)) {
 
-                var caseToken = previous();
-                var value = expressionParser.parseExpression();
-                consume(Operator.ARROW, "Expect '->' after case value");
-                var body = parseStatement();
-                cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
-            } else if (match(Keyword.DEFAULT)) {
-
-                var defaultToken = previous();
-                consume(Operator.ARROW, "Expect '->' after 'default'");
-                var body = parseStatement();
-                cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
-            } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
-        }
+            var defaultToken = previous();
+            consume(Delimiter.COLON, "Expect ':' after 'default'");
+            var body = parseStatement();
+            cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
+        } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
 
         consume(Delimiter.RBRACE, "Expect '}' after switch body");
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));

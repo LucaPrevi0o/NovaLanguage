@@ -2,7 +2,6 @@ package parser.ast.nodes.expression;
 
 import parser.ast.Printable;
 import parser.ast.nodes.*;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -43,7 +42,4 @@ public class AssignmentExpression extends ExpressionNode implements Printable {
             new PrintEntry.Child("Value", value)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitAssignment(this); }
 }

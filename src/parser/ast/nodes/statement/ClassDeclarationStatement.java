@@ -8,7 +8,6 @@ import token.family.AccessModifier;
 import token.family.NonPrimitiveType;
 import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,11 +107,12 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
-        if (genericClassParameter != null)
-            entries.add(new PrintEntry.Info("Generic Parameter: " + buildTypeStringWithSizes(genericClassParameter)));
+        if (genericClassParameter != null) entries.add(new PrintEntry.Info("Generic Parameter: " + buildTypeStringWithSizes(genericClassParameter)));
         if (superClasses != null && superClasses.length > 0) {
+
             var superNames = new StringBuilder();
-            for (int i = 0; i < superClasses.length; i++) {
+            for (var i = 0; i < superClasses.length; i++) {
+
                 if (i > 0) superNames.append(", ");
                 superNames.append(buildTypeStringWithSizes(superClasses[i]));
             }
@@ -124,7 +124,4 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         entries.add(new PrintEntry.Children("Methods", methods));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassDeclaration(this); }
 }

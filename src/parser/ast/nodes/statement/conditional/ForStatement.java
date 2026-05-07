@@ -3,7 +3,6 @@ package parser.ast.nodes.statement.conditional;
 import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +58,4 @@ public class ForStatement extends ConditionalStatement implements Printable {
         entries.add(new PrintEntry.Child("Body", body));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitFor(this); }
 }

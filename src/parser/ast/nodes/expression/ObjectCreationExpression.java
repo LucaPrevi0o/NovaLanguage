@@ -2,7 +2,6 @@ package parser.ast.nodes.expression;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -42,7 +41,4 @@ public class ObjectCreationExpression extends ExpressionNode implements Printabl
             new PrintEntry.Children("Arguments", arguments)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitObjectCreation(this); }
 }

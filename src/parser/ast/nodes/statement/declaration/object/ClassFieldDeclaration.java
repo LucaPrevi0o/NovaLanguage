@@ -1,11 +1,9 @@
 package parser.ast.nodes.statement.declaration.object;
 
-import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +45,4 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
         if (getInitialValue() != null) entries.add(new PrintEntry.Child("Initializer", getInitialValue()));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassField(this); }
 }

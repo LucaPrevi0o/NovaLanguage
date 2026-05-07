@@ -2,7 +2,6 @@ package parser.ast.nodes.statement;
 
 import parser.ast.Printable;
 import parser.ast.nodes.*;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -32,7 +31,4 @@ public class BlockStatement extends StatementNode implements Printable {
     public List<PrintEntry> getPrintEntries() {
         return List.of(new PrintEntry.Children("Statements", statements));
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBlock(this); }
 }

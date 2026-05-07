@@ -62,6 +62,7 @@ public class ParserState {
         var currentType = peek().getType();
 
         if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
+
             var typeVal = litType.get();
             if (typeVal != null) return typeVal.equals(litCurrent.get());  // specific-value match (e.g. TRUE vs FALSE)
             return type.getClass() == currentType.getClass();              // wildcard class match

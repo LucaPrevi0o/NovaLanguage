@@ -3,7 +3,6 @@ package parser.ast.nodes.statement.conditional;
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.statement.ConditionalStatement;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -44,7 +43,4 @@ public class SwitchStatement extends ConditionalStatement implements Printable {
             new PrintEntry.Children("Cases", cases)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitSwitch(this); }
 }

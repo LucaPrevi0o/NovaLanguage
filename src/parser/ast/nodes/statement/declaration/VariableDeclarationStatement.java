@@ -4,7 +4,6 @@ import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.DeclarationStatement;
 import token.ReturnType;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +43,4 @@ public class VariableDeclarationStatement extends DeclarationStatement implement
         if (initialValue != null) entries.add(new PrintEntry.Child("Initializer", initialValue));
         return entries;
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitVariableDeclaration(this); }
 }

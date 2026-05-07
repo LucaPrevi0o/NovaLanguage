@@ -21,7 +21,6 @@ import token.family.Delimiter;
 import token.family.Keyword;
 import token.family.Literal;
 import token.family.Operator;
-import token.family.PrimitiveType;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity.
@@ -55,23 +54,26 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Entry point: parses a full expression.
+    /// @return The root ExpressionNode of the parsed expression AST.
     public ExpressionNode parseExpression() { return assignment(); }
 
     // ─── Precedence levels ────────────────────────────────────────────────────
 
+    /// Parses an assignment expression, which can be a simple assignment or a compound assignment.
+    /// Grammar rule: {@code assignment → (lValue) ("=" | "+=" | "-=" | "*=" | "/=") assignment | ternary}
+    /// > Note: The left-hand side of an assignment must be a valid l-value (identifier, array access, or member access).
+    /// @return An ExpressionNode representing the assignment expression, which may be a simple assignment or a compound assignment.
     private ExpressionNode assignment() {
 
         var expr = ternary();
-        if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN,
-                Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
+        if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
 
             var operator = previous();
             var value = assignment();
 
             if (!(expr instanceof IdentifierLiteralExpression ||
-                    expr instanceof ArrayAccessExpression ||
-                    expr instanceof MemberAccessExpression))
-                throw new ParseException("Invalid assignment target", operator);
+            expr instanceof ArrayAccessExpression ||
+            expr instanceof MemberAccessExpression)) throw new ParseException("Invalid assignment target", operator);
 
             var assignmentValue = expandCompound(expr, operator, value);
             return new AssignmentExpression(operator.getLine(), operator.getColumn(), expr, assignmentValue);
@@ -80,8 +82,8 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses a ternary expression: {@code condition ? thenExpr : elseExpr}.
-    ///
     /// Grammar rule: {@code ternary → logicOr ("?" expression ":" expression)?}
+    /// @return An ExpressionNode representing the ternary expression if the `?` operator is present, or the result of `logicOr()` if not.
     private ExpressionNode ternary() {
 
         var expr = logicOr();
@@ -96,6 +98,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses logical OR expressions, which have the lowest precedence among binary operators.
+    /// Grammar rule: {@code logicOr → logicAnd ("||" logicAnd)*}
+    /// @return An ExpressionNode representing the logical OR expression, which may consist of multiple `||` operations.
     private ExpressionNode logicOr() {
 
         var expr = logicAnd();
@@ -108,6 +113,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses logical AND expressions, which have higher precedence than logical OR.
+    /// Grammar rule: {@code logicAnd → equality ("&&" equality)*}
+    /// @return An ExpressionNode representing the logical AND expression, which may consist of multiple `&&` operations.
     private ExpressionNode logicAnd() {
 
         var expr = equality();
@@ -120,6 +128,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses equality expressions, which have higher precedence than logical AND.
+    /// Grammar rule: {@code equality → comparison (("==" | "!=") comparison)*}
+    /// @return An ExpressionNode representing the equality expression, which may consist of multiple `==` or `!=` operations.
     private ExpressionNode equality() {
 
         var expr = comparison();
@@ -132,6 +143,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses comparison expressions, which have higher precedence than equality.
+    /// Grammar rule: {@code comparison → term (("<" | ">" | "<=" | ">=") term)*}
+    /// @return An ExpressionNode representing the comparison expression, which may consist of multiple `<`, `>`, `<=`, or `>=` operations.
     private ExpressionNode comparison() {
 
         var expr = term();
@@ -144,6 +158,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses addition and subtraction expressions, which have higher precedence than comparison.
+    /// Grammar rule: {@code term → factor (("+" | "-") factor)*}
+    /// @return An ExpressionNode representing the addition/subtraction expression, which may consist of multiple `+` or `-` operations.
     private ExpressionNode term() {
 
         var expr = factor();
@@ -156,6 +173,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Parses multiplication, division, and modulo expressions, which have higher precedence than addition and subtraction.
+    /// Grammar rule: {@code factor → unary (("*" | "/" | "%") unary)*}
+    /// @return An ExpressionNode representing the multiplication/division/modulo expression, which may consist of multiple `*`, `/`, or `%` operations.
     private ExpressionNode factor() {
 
         var expr = unary();
@@ -168,7 +188,9 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
-    /// Prefix unary operators: {@code !}, {@code -}, {@code ++}, {@code --}.
+    /// Parses unary expressions, which have higher precedence than multiplication/division/modulo.
+    /// Grammar rule: {@code unary → ("!" | "-" | "++" | "--") unary | call}
+    /// @return An ExpressionNode representing the unary expression if a unary operator is present, or the result of `call()` if not.
     private ExpressionNode unary() {
 
         if (match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
@@ -180,7 +202,10 @@ public class ExpressionParser extends ParserBase {
         return call();
     }
 
-    /// Postfix operators: {@code ()}, {@code .member}, {@code [idx]}, {@code ++}, {@code --}.
+    /// Parses call expressions, which include function calls, member access, array access, and postfix increment/decrement.
+    /// Grammar rule: {@code call → primary (postfixOp)*}
+    /// > Note: This method handles the chaining of member access, array access, and function calls, as well as postfix increment/decrement operators.
+    /// @return An ExpressionNode representing the call expression, which may include nested member access, array access, function calls, and postfix operators.
     private ExpressionNode call() {
 
         var expr = primary();
@@ -206,6 +231,10 @@ public class ExpressionParser extends ParserBase {
         return expr;
     }
 
+    /// Finishes parsing a function call after the initial `(` has been consumed.
+    /// Grammar rule: {@code call → primary "(" arguments? ")"}
+    /// @param callee The expression representing the function being called (e.g., an identifier or a member access).
+    /// @return A CallExpression node representing the function call, including the callee and the list of argument expressions.
     private ExpressionNode finishCall(ExpressionNode callee) {
 
         var arguments = new ArrayList<ExpressionNode>();
@@ -219,6 +248,9 @@ public class ExpressionParser extends ParserBase {
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
 
+    /// Parses primary expressions, which are the most basic building blocks of expressions.
+    /// Grammar rule: {@code primary → NUMBER | STRING | CHAR | "true" | "false" | "null" | IDENTIFIER | "new" CLASSNAME "(" arguments? ")" | "(" expression ")"}
+    /// @return An ExpressionNode representing the primary expression, which may be a literal, an identifier, an object creation expression, or a parenthesized expression.
     private ExpressionNode primary() {
 
         var token = peek();
@@ -239,7 +271,7 @@ public class ExpressionParser extends ParserBase {
 
             var lit = (LiteralToken) previous();
             var value = lit.getValue();
-            char ch = (value != null && !value.isEmpty()) ? value.charAt(0) : '\0';
+            var ch = (value != null && !value.isEmpty()) ? value.charAt(0) : '\0';
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
 
@@ -260,23 +292,17 @@ public class ExpressionParser extends ParserBase {
 
                 // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
-                throw new ParseException(
-                    "Cannot use 'new' with primitive type '" + badToken.getType().get() +
-                    "'. Use a class name instead.",
-                    badToken
-                );
+                throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().get() + "'. Use a class name instead.", badToken);
             }
 
             var classNameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'new'");
             var className = getLiteralValue(classNameToken);
 
-            if (!typeRegistry.isCustomClass(className))
-                throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
+            if (!typeRegistry.isCustomClass(className)) throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
 
             consume(Delimiter.LPAREN, "Expect '(' after class name");
             var arguments = new ArrayList<ExpressionNode>();
             if (!check(Delimiter.RPAREN)) do {
-
                 arguments.add(parseExpression());
             } while (match(Delimiter.COMMA));
             consume(Delimiter.RPAREN, "Expect ')' after arguments");
@@ -296,6 +322,11 @@ public class ExpressionParser extends ParserBase {
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /// Expands a compound assignment operator into a binary expression.
+    /// For example, `x += 5` becomes `x = x + 5`.
+    /// @param target The left-hand side expression of the assignment (e.g., variable, array element, or object property).
+    /// @param operator The compound assignment operator token (e.g., `+=`, `-=`, `*=`, `/=`, `%=`).
+    /// @param value The right-hand side expression of the assignment (the value being assigned).
+    /// @return An ExpressionNode representing the expanded compound assignment, which is a binary expression combining the target and value with the appropriate operator.
     private static ExpressionNode expandCompound(ExpressionNode target, Token operator, ExpressionNode value) {
 
         if (!(operator.getType() instanceof Operator op) || op == Operator.ASSIGN) return value;
@@ -318,6 +349,9 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses a numeric literal into the appropriate {@link NumberLiteralExpression} subtype.
+    /// Supports suffixes for long (`L`), float (`F`), double (`D`), and byte (`B`) literals, as well as plain integers and doubles.
+    /// @param token The literal token representing the numeric value, which may include a suffix to indicate the specific numeric type.
+    /// @return A NumberLiteralExpression representing the parsed numeric literal, with the appropriate type based on the suffix or format of the value.
     private NumberLiteralExpression parseNumber(LiteralToken token) {
 
         var value = token.getValue();

@@ -3,7 +3,6 @@ package parser.ast.nodes.statement.conditional;
 import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -41,7 +40,4 @@ public class WhileStatement extends ConditionalStatement implements Printable {
             new PrintEntry.Child("Body", body)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitWhile(this); }
 }

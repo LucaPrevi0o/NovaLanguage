@@ -2,7 +2,6 @@ package parser.ast.nodes.expression;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 import lexer.token.OperatorToken;
 
 import java.util.List;
@@ -51,7 +50,4 @@ public class BinaryExpression extends ExpressionNode implements Printable {
             new PrintEntry.Child("Right", right)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBinary(this); }
 }

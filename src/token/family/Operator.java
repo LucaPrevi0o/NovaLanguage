@@ -72,10 +72,7 @@ public enum Operator implements TokenFamily {
     LOGICAL_OR("||"),
 
     /// The question-mark operator, used as the condition separator in a ternary expression.
-    QUESTION("?"),
-
-    /// The arrow operator, used as the body separator in switch case arms.
-    ARROW("->");
+    QUESTION("?");
 
     private final String symbol;
 

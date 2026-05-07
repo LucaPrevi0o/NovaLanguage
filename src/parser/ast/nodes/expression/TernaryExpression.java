@@ -2,7 +2,6 @@ package parser.ast.nodes.expression;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -50,7 +49,4 @@ public class TernaryExpression extends ExpressionNode implements Printable {
             new PrintEntry.Child("Else", elseExpr)
         );
     }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitTernary(this); }
 }

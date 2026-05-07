@@ -2,7 +2,6 @@ package parser.ast.nodes.expression.literal;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 
@@ -22,7 +21,4 @@ public class NullLiteralExpression extends ExpressionNode implements Printable {
 
     @Override
     public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: null")); }
-
-    @Override
-    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitNullLiteral(this); }
 }
