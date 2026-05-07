@@ -1,6 +1,10 @@
 package token;
 
 import parser.ast.nodes.statement.ClassDeclarationStatement;
+import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
+import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import token.family.AccessModifier;
 import token.family.NonPrimitiveType;
 import token.family.PrimitiveType;
 import java.util.ArrayList;
@@ -52,6 +56,25 @@ public class TypeRegistry {
     /// @return {@code true} if the name is a registered primitive type.
     public boolean isGenericType(String typeName) {
         return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).anyMatch(ReturnType::isGeneric);
+    }
+
+    /// Registers a class name placeholder for multi-file forward references.
+    /// If already registered, this is a no-op.
+    /// @param className The name of the class to register as a placeholder.
+    public void registerClassName(String className) {
+
+        if (isCustomClass(className)) return;
+        var placeholder = new ClassDeclarationStatement(
+            0, 0, className,
+            new ClassMethodDeclaration[0],
+            new ClassFieldDeclaration[0],
+            new ReturnType[0],
+            null,
+            new ClassDeclarationStatement[0],
+            AccessModifier.PUBLIC,
+            new ClassConstructorDeclaration[0]
+        );
+        registerClass(placeholder);
     }
 
     /// No-op method kept for test API compatibility.
