@@ -21,10 +21,16 @@ public class TypeRegistry {
     /// @param classDecl The ClassDeclarationStatement representing the class to register.
     public void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
 
+    /// Registers a new ReturnType in the registry.
+    /// @param returnType The ReturnType to register.
+    public void registerType(ReturnType returnType) { types.add(returnType); }
+
     /// Retrieves a ReturnType from the registry based on its string representation.
     /// @param typeName The string representation of the return type (e.g., "int", "MyClass").
     /// @return The matching ReturnType, or {@code null} if not found.
-    public ReturnType getReturnType(String typeName) { return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null); }
+    public ReturnType getReturnType(String typeName) {
+        return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null);
+    }
 
     /// Retrieves a ReturnType for a registered class by its class name.
     /// @param className The class name.
@@ -40,6 +46,13 @@ public class TypeRegistry {
     /// @param typeName The class name to check.
     /// @return {@code true} if the name is a registered custom class.
     public boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
+
+    /// Determines whether the given name corresponds to a registered primitive type.
+    /// @param typeName The type name to check.
+    /// @return {@code true} if the name is a registered primitive type.
+    public boolean isGenericType(String typeName) {
+        return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).anyMatch(ReturnType::isGeneric);
+    }
 
     /// No-op method kept for test API compatibility.
     /// With per-instance TypeRegistry, each {@link parser.Parser} creates a fresh registry,

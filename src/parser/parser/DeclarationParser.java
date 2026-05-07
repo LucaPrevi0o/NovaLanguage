@@ -120,7 +120,7 @@ public class DeclarationParser extends ParserBase {
             var typeToken = advance();
             var baseType = typeToken.getType(); // TokenFamily (PrimitiveType etc.)
             var arrayDims = parseArrayDimensions();
-            return new ReturnType(baseType, arrayDims, null, null);
+            return new ReturnType(baseType, arrayDims, null, null, false);
         } else if (isClassName(token)) {
 
             var classToken = (LiteralToken) advance();
@@ -134,7 +134,7 @@ public class DeclarationParser extends ParserBase {
 
             var arrayDims = parseArrayDimensions();
             if (arrayDims.length == 0) return classType;
-            return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType);
+            return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType, false);
         }
 
         throw new ParseException("Expect type (primitive or class name)", token);
@@ -150,7 +150,7 @@ public class DeclarationParser extends ParserBase {
         if (!(token.getType() instanceof Literal.IdentifierLiteral)) return false;
 
         var name = ((LiteralToken) token).getValue();
-        return typeRegistry.isCustomClass(name);
+        return typeRegistry.isCustomClass(name) || typeRegistry.isGenericType(name);  // Allow generic types as valid types in declarations
     }
 
     /// Parses an expression using the ExpressionParser.

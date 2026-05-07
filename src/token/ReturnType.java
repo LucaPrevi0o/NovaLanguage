@@ -9,23 +9,25 @@ public class ReturnType {
     private final ExpressionNode[] arraySizes;
     private final ReturnType[] superTypes;
     private final ReturnType genericParameterType;
+    private final boolean isGeneric;
 
     /// Create a return type with all details specified.
     /// @param baseType The base type (primitive or custom class).
     /// @param arraySizes The sizes of each array dimension (empty if not an array).
     /// @param superTypes The super types if this is a class type (null if not a class).
     /// @param genericParameterType The generic parameter type if this is a generic type (null if not generic).
-    public ReturnType(TokenFamily baseType, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType) {
+    public ReturnType(TokenFamily baseType, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType, boolean isGeneric) {
 
         this.baseType = baseType;
         this.arraySizes = arraySizes;
         this.superTypes = superTypes;
         this.genericParameterType = genericParameterType;
+        this.isGeneric = isGeneric;
     }
 
     /// Create a simple return type with just a base type (no arrays, no generics).
     /// @param baseType The base type (primitive or custom class).
-    public ReturnType(TokenFamily baseType) { this(baseType, new ExpressionNode[0], null, null); }
+    public ReturnType(TokenFamily baseType) { this(baseType, new ExpressionNode[0], null, null, false); }
 
     /// Get the base type (primitive or custom class).
     /// @return The base type of this return type.
@@ -47,11 +49,15 @@ public class ReturnType {
     /// @return true if this return type is an array type (i.e., has one or more array dimensions), false otherwise.
     public boolean isArray() { return arraySizes.length > 0; }
 
+    /// Check if this return type represents a generic type.
+    /// @return true if this return type is a generic type (i.e., has a generic parameter type), false otherwise.
+    public boolean isGeneric() { return isGeneric; }
+
     @Override
     public String toString() {
 
         var sb = new StringBuilder(baseType.get());
-        for (ExpressionNode arraySize : arraySizes) sb.append("[").append(arraySize).append("]");
+        for (var arraySize : arraySizes) sb.append("[").append(arraySize).append("]");
         return sb.toString();
     }
 }

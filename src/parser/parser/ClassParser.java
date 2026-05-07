@@ -83,8 +83,11 @@ public class ClassParser extends ParserBase {
             var genToken = consume(new Literal.IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
             var genericParameterName = getLiteralValue(genToken);
             var genericType = new GenericParameterType(genericParameterName);
-            genericClassParameter = new ReturnType(genericType);
+            genericClassParameter = new ReturnType(genericType, new ExpressionNode[0], null, null,  true);
             consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+
+            // Pre-register generic parameter as a type in the registry so it can be used within the class body.
+            typeRegistry.registerType(genericClassParameter);
         }
 
         if (match(Delimiter.DOUBLE_COLON)) {
