@@ -1,0 +1,29 @@
+public class TestClass {
+
+  private int field1;
+  private float field2 = 3.14;
+  private int[5][] arrayField;
+
+  public void method() {
+
+    // List of statements...
+  }
+}
+
+public class NewClass [T] :: TestClass {
+
+  private T genericTypeField;
+
+  public int method(int param1, int param2) { return param1 + param2; }
+
+  public T getGenericTypeField() { return genericTypeField; }
+
+  public NewClass(T[10] params) {
+
+    for (int a = 0; a < 10; a++) {
+      if (a == 5) { genericTypeField = params[a]; }
+    }
+
+    /* Other statements... */
+  }
+}
