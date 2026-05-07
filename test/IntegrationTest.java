@@ -3,7 +3,6 @@ import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
 import token.TypeRegistry;
 
@@ -101,9 +100,9 @@ public class IntegrationTest {
                 "int state; " +
                 "while (state < 3) { " +
                 "  switch (state) { " +
-                "    case 0 -> state = 1; " +
-                "    case 1 -> state = 2; " +
-                "    default -> state = 3; " +
+                "    case 0 : state = 1; " +
+                "    case 1 : state = 2; " +
+                "    default : state = 3; " +
                 "  } " +
                 "}"
             ).tokenize();
@@ -132,10 +131,10 @@ public class IntegrationTest {
     }
 
     @Test
-    void testComplexBooleanExpression() {
+    void testComplexBoolExpression() {
 
         assertDoesNotThrow(() ->
-            parse("boolean a; boolean b; boolean c; boolean r; " +
+            parse("bool a; bool b; bool c; bool r; " +
                   "r = (a && b) || (!c && a);")
         );
     }

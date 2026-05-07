@@ -1,14 +1,9 @@
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import parser.Parser;
+import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.expression.*;
-import parser.ast.nodes.expression.access.ArrayAccessExpression;
-import parser.ast.nodes.expression.access.MemberAccessExpression;
-import parser.ast.nodes.expression.literal.*;
 import parser.ast.nodes.statement.ExpressionStatement;
-import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import parser.parser.util.ParseErrorsException;
-import parser.parser.util.ParseException;
 import token.TypeRegistry;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,16 +13,16 @@ import static org.junit.jupiter.api.Assertions.*;
 /// assignment (compound), member access, array access, call expressions.
 public class ExpressionParserTest {
 
-    private Parser parse(String source) {
+    private Parser parse() {
 
         TypeRegistry.reset();
-        var tokens = new Lexer(source).tokenize();
+        var tokens = new Lexer("int x; x = true ? 1 : 0;").tokenize();
         return new Parser(tokens);
     }
 
-    private parser.ast.nodes.StatementNode firstStatement(String source) {
+    private StatementNode firstStatement() {
 
-        var parser = parse(source);
+        var parser = parse();
         var ast = parser.parse();
         assertFalse(ast.isEmpty());
         return ast.getFirst();
@@ -38,7 +33,7 @@ public class ExpressionParserTest {
     @Test
     void testTernaryExpression() {
 
-        var stmt = firstStatement("int x; x = true ? 1 : 0;");
+        var stmt = firstStatement();
         // The second statement is an ExpressionStatement with an AssignmentExpression
         // whose RHS is a TernaryExpression.
         // Just asserting it parses without throwing is sufficient for the smoke test.
@@ -151,7 +146,7 @@ public class ExpressionParserTest {
     void testLogicalAnd() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("boolean a; boolean b; boolean c; c = a && b;").tokenize();
+            var tokens = new Lexer("bool a; bool b; bool c; c = a && b;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -160,7 +155,7 @@ public class ExpressionParserTest {
     void testLogicalOr() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("boolean a; boolean b; boolean c; c = a || b;").tokenize();
+            var tokens = new Lexer("bool a; bool b; bool c; c = a || b;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -169,7 +164,7 @@ public class ExpressionParserTest {
     void testLogicalNot() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("boolean a; boolean b; b = !a;").tokenize();
+            var tokens = new Lexer("bool a; bool b; b = !a;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -180,7 +175,7 @@ public class ExpressionParserTest {
     void testEqualityComparison() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("int x; boolean r; r = x == 0;").tokenize();
+            var tokens = new Lexer("int x; bool r; r = x == 0;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -189,7 +184,7 @@ public class ExpressionParserTest {
     void testInequalityComparison() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("int x; boolean r; r = x != 0;").tokenize();
+            var tokens = new Lexer("int x; bool r; r = x != 0;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -198,7 +193,7 @@ public class ExpressionParserTest {
     void testLessThan() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("int x; boolean r; r = x < 10;").tokenize();
+            var tokens = new Lexer("int x; bool r; r = x < 10;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -207,7 +202,7 @@ public class ExpressionParserTest {
     void testGreaterThanOrEqual() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("int x; boolean r; r = x >= 5;").tokenize();
+            var tokens = new Lexer("int x; bool r; r = x >= 5;").tokenize();
             new Parser(tokens).parse();
         });
     }
@@ -269,19 +264,19 @@ public class ExpressionParserTest {
     // ─── Literals ─────────────────────────────────────────────────────────────
 
     @Test
-    void testBooleanTrueLiteral() {
+    void testboolTrueLiteral() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("boolean b; b = true;").tokenize();
+            var tokens = new Lexer("bool b; b = true;").tokenize();
             new Parser(tokens).parse();
         });
     }
 
     @Test
-    void testBooleanFalseLiteral() {
+    void testboolFalseLiteral() {
 
         assertDoesNotThrow(() -> {
-            var tokens = new Lexer("boolean b; b = false;").tokenize();
+            var tokens = new Lexer("bool b; b = false;").tokenize();
             new Parser(tokens).parse();
         });
     }
