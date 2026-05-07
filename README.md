@@ -21,7 +21,7 @@ Nova source files use the **`.nv`** extension. The package manager is **Orbit**,
 
 > [!NOTE]
 > This repository contains the **compiler front-end**: the lexer and recursive-descent parser that produce the AST and Symbol Table from Nova source code.
-> The backend (IR generation, optimization, and native code emission) is a future milestone described in the [Further development](#further-development) section.
+> The backend (IR generation, optimization, and native code emission) is a future milestone described in the [Further development](#further-development-detailed-roadmap) section.
 
 ## Requirements
 - **Maven** (see [pom.xml](pom.xml))
@@ -146,6 +146,35 @@ The `primary` rule handles object creation (`new ClassName(...)`), parenthesized
 When a [`ParseException`](src/parser/parser/util/ParseException.java) is thrown at the top-level declaration boundary, the [`Parser`](src/parser/Parser.java) records the error and calls `synchronize()` — which skips tokens until a safe resumption point (a semicolon or a statement-opening keyword) — then continues parsing.
 At the end of the run, all collected errors are bundled into a [`ParseErrorsException`](src/parser/parser/util/ParseErrorsException.java) and thrown together, giving the caller a complete picture of every problem in a single pass.
 
+### Project orchestration (multi-file) — experimental
+
+There is initial work toward multi-file project orchestration under [`src/parser/project`](src/parser/project).
+The implementation is experimental and provides bootstrapping facilities, but is not yet a fully integrated build/compilation pipeline for large projects.
+
+- [`ProjectParser`](src/parser/project/ProjectParser.java) — discovers `.nv` files and implements a first-pass collection for class names and top-level declarations to help resolve forward references across files. This reduces ordering constraints but does not yet implement a robust dependency solver for complex cycles.
+- [`StdLibLoader`](src/parser/project/StdLibLoader.java) and [`FileSystemStdLibLoader`](src/parser/project/FileSystemStdLibLoader.java) — a pluggable mechanism to load standard library modules from the filesystem. The loader exists, but the provided standard library in `stdlib/` is minimal and primarily intended for tests and prototyping.
+- [`ProjectCompiler`](src/parser/project/ProjectCompiler.java) — orchestration glue that invokes parsing, the semantic pass, and the backend scaffold. The backend currently emits pseudo-assembly for inspection only; no real code-generation backend is present.
+
+Notes on current status:
+
+- Multi-file support is usable for small examples and tests, but the orchestrator is not hardened for large codebases yet (ordering, mutual recursion across many files and incremental builds need work).
+- The standard library is currently a small set of stubbed modules; it is not feature-complete and must be expanded and maintained as ordinary Nova source files.
+- The `ProjectParser`/`ProjectCompiler` code is a good starting point for the requested multi-file parsing orchestrator, but additional integration, robust error reporting across files, and build orchestration are required before it can be considered production-ready.
+
+### Diagnostics and recovery
+
+Parser errors now expose structured diagnostics (`DiagnosticCode`, `SourceSpan`, `Diagnostic`) and include caret-style location markers in aggregated parse output.
+Recovery has been extended in block/class/member parsing paths so multiple nested errors can be reported in one run.
+
+### Semantic and backend foundations
+
+- [`semantic/SemanticAnalyzer`](src/semantic/SemanticAnalyzer.java) introduces a first semantic pass (missing-return and unreachable-after-return checks).
+- [`backend/`](src/backend) introduces the initial backend scaffold:
+  - IR model (`IRProgram`, `IRInstruction`)
+  - AST lowering (`AstLowerer`)
+  - optimization hook (`Optimizer`)
+  - pseudo-assembly emission (`PseudoAssemblyEmitter`)
+
 ### Symbol Table
 
 The [`SymbolTable`](src/parser/ast/SymbolTable.java) is a tree of scopes.
@@ -174,28 +203,48 @@ Two utility classes render the internal structures to standard output for inspec
 - **[`AstPrinter`](src/printer/AstPrinter.java)** — recursively walks the AST using each node's `Printable` interface, rendering the tree with `├─` / `└─` / `│` branch characters and managing indentation centrally. Array type annotations (e.g. `int[3][]`) are formatted by the shared `buildTypeStringWithSizes` helper.
 - **[`SymbolTablePrinter`](src/printer/SymbolTablePrinter.java)** — walks the `SymbolTable` scope tree, printing each symbol with its kind and declared type, and attaching child scopes (function bodies, class bodies, anonymous blocks) as indented subtrees beneath their owning symbol.
 
-## Further development
+## Further development (detailed roadmap)
 
-- **Error handling**: The parser already implements top-level error recovery with synchronization and multi-error collection across declaration boundaries. Possible extensions include:
-  - Finer-grained recovery inside statement and expression parsing, not just at the top-level declaration boundary, to surface more errors per run.
-  - Richer semantic checks beyond out-of-scope symbol detection — for example, type mismatch, return-type consistency, duplicate class/method overloads, and unreachable code.
-  - Detailed error messages with column-accurate caret indicators to pinpoint issues visually in the source text.
+This section documents missing features, current partial implementations, and a recommended sequence of work items to bring the front-end and the rest of the toolchain to a usable, multi-file compilation system.
 
-- **Multi-file parsing**: The current pipeline handles a single source file. Supporting real projects requires a multi-file orchestration layer:
-  - A project-level entry point that discovers, orders, and feeds multiple source files to the lexer and parser in dependency order.
-  - A shared, cross-file `TypeRegistry` and global `SymbolTable` that accumulate declarations across files, so that a class defined in one file can be referenced in another.
-  - Forward-declaration or two-pass strategies to handle mutual references between files without requiring a strict declaration order.
+1) Error handling (current state: partial)
+   - Current: top-level synchronization and multi-error aggregation is implemented. Parser exposes structured diagnostics (`DiagnosticCode`, `SourceSpan`) and caret-style markers for aggregated outputs.
+   - Missing / next steps:
+     - Extend recovery to finer-grained units inside expressions and statements so more errors can be reported in a single parse pass.
+     - Improve semantic diagnostics: type mismatch messages, expected vs actual type hints, candidate suggestions for unresolved symbols, and richer context for overload/duplicate definitions.
+     - Produce editor-friendly diagnostic outputs (JSON/LS-style) to integrate with language servers and IDEs.
 
-- **Standard library**: At the moment a handful of stub functions (`print`, `println`, `parseInt`, etc.) are hard-coded directly in the `Parser` constructor. A proper standard library should be:
-  - Authored as ordinary source files in Nova's own syntax, living in a designated `stdlib/` directory within the project.
-  - Preloaded automatically by the multi-file orchestrator before user code is parsed, so that standard types and functions are available globally without any import.
-  - Extensible: new built-in modules (collections, I/O, math, string utilities, …) can be added as source files rather than requiring changes to the parser itself.
+2) Multi-file parsing & build orchestration (current state: experimental)
+   - Current: `src/parser/project` contains `ProjectParser`, `StdLibLoader`, and `ProjectCompiler` as bootstrapping pieces.
+   - Missing / next steps:
+     - Implement a robust discovery and dependency resolution phase: collect exports/types per file, build a file dependency graph, and compute a safe parse/compile order. Support cycles via a two-pass strategy (declaration collection pass + definition pass).
+     - Introduce a workspace builder that can accept a set of source roots and a standard-library root, and feed files to the lexer/parser with a shared `TypeRegistry` and `SymbolTable` session context.
+     - Add incremental build support (timestamp or hash-based) so large projects don't require full rebuilds every change.
+     - Provide a stable CLI entrypoint for `nova build` / `nova check` that uses the orchestrator.
 
-- **Code generation**: No backend exists yet. The roadmap for adding one would roughly follow these stages:
-  - Transform the AST into an intermediate representation (IR) — a lower-level, platform-independent form that is easier to analyze and optimize than the source-level AST.
-  - Apply basic optimizations on the IR (constant folding, dead-code elimination, inlining).
-  - Emit a target artifact: either JVM bytecode (leveraging existing tooling and the Java runtime), a custom bytecode for a purpose-built virtual machine, or — as a longer-term goal — native machine code to produce self-contained binary executables without any intermediate runtime.
-  - Add runtime support for standard-library operations that cannot be expressed purely in the source language (e.g. I/O, memory management).
+3) Standard library (current state: minimal stubs)
+   - Current: a handful of built-in stubs are available (e.g., `print`, `println`, `parseInt`) and `stdlib/` contains a few prototype modules used by tests.
+   - Missing / next steps:
+     - Author stdlib modules in Nova source and place them under `stdlib/` (I/O, collections, math, strings, concurrency primitives, file system, process, etc.).
+     - Ensure the orchestrator preloads stdlib modules before parsing user code (so types and functions are globally available without imports).
+     - Define a module/package manifest format (e.g., `module.nvm` or metadata comments) to allow selective preloading and easy extension.
+
+4) Code generation and runtime (current state: none / scaffold only)
+   - Current: a backend scaffold exists in `backend/` (IR model, lowering pass, optimizer hook, pseudo-assembly emitter) intended for experiments and prototyping.
+   - Missing / next steps:
+     - Implement a deterministic AST → IR lowering pass (`AstLowerer`) that emits a stable IR suitable for optimization.
+     - Implement a minimal IR optimizer (constant folding, dead code elimination, simple inlining) and add regression tests.
+     - Provide at least one backend target: JVM bytecode (fast path using ASM or similar) or a small custom VM with a bytecode interpreter. *Long-term*: native code via LLVM or a custom codegen pipeline.
+     - Design and ship a small runtime library for operations not expressible in Nova source (I/O, memory management hooks, platform interop).
+
+5) Testing, CI and developer ergonomics
+   - Add more unit and integration tests around multi-file parsing, stdlib loading, semantic checks, and backend lowering.
+   - Provide sample multi-file projects in `examples/` that exercise cross-file references, generics, and stdlib usage.
+   - Add a reproducible CI job that runs the full parse+semantic pipeline and the backend scaffold to catch regressions early.
+
+6) Migration & compatibility notes
+   - Keep `Parser`-level hard-coded stubs only as a compatibility shim while migrating stdlib pieces into source modules.
+   - Prefer progressively deprecating hard-coded behavior in favor of source-defined stdlib modules.
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
