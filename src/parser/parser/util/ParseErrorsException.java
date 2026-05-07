@@ -23,11 +23,14 @@ public class ParseErrorsException extends RuntimeException {
     /// @return An unmodifiable list of {@link ParseException}s.
     public List<ParseException> getErrors() { return errors; }
 
+    /// Builds a detailed error message that includes the number of errors and their individual messages.
+    /// @param errors The list of parse exceptions to include in the message.
+    /// @return A formatted error message summarizing all collected parse errors.
     private static String buildMessage(List<ParseException> errors) {
 
         var sb = new StringBuilder();
         sb.append(errors.size()).append(" parse error").append(errors.size() == 1 ? "" : "s").append(":\n");
-        for (var e : errors) sb.append("  • ").append(e.getMessage()).append("\n");
+        for (var e : errors) sb.append("  • ").append(e.getDiagnostic().toPrettyString()).append("\n");
         return sb.toString().stripTrailing();
     }
 }
