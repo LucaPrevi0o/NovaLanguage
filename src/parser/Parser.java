@@ -11,6 +11,7 @@ import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import parser.parser.ClassParser;
 import parser.parser.ExpressionParser;
+import parser.ast.SymbolTable;
 import token.ReturnType;
 import token.TypeRegistry;
 import token.family.Delimiter;
@@ -60,6 +61,19 @@ public class Parser extends ParserBase {
         super(new ParserState(tokens), new TypeRegistry());
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
         registerStdLib();
+    }
+
+    /// Constructs a parser using externally provided shared symbol/type context.
+    /// Useful for multi-file parsing orchestration.
+    /// @param tokens The list of tokens to be parsed into an AST.
+    /// @param sharedSymbolTable The symbol table to use for this parse session (e.g. global scope).
+    /// @param sharedTypeRegistry The type registry to use for this parse session.
+    /// @param registerStdLib Whether to pre-register built-in stdlib functions in the provided symbol table.
+    public Parser(List<Token> tokens, SymbolTable sharedSymbolTable, TypeRegistry sharedTypeRegistry, boolean registerStdLib) {
+
+        super(new ParserState(tokens), sharedSymbolTable, sharedTypeRegistry);
+        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
+        if (registerStdLib) registerStdLib();
     }
 
     /// Pre-registers built-in standard-library functions in the global symbol table so user code
