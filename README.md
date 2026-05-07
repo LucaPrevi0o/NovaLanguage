@@ -1,5 +1,27 @@
-# Programming Language Parser
-A modular, self-contained tokenizer and parser for custom programming language syntax.
+# Nova — Compiler Front-End
+A modular, self-contained tokenizer and parser for the **Nova** programming language.
+
+## What is Nova?
+Nova is a compiled, object-oriented programming language designed around a single ambition: take everything the modern language ecosystem does well, and commit to it fully — rather than bolting it on as an afterthought.
+
+It draws from the performance and directness of C, the natural OOP model of Java, the modularity of Python, and the package ecosystem philosophy of Ruby — while addressing what each of those leaves incomplete.
+The standard library is designed to be truly exhaustive: I/O, math, string utilities, event-driven programming, GPU-dispatched graphics, audio interfaces, and more are all first-class citizens, injectable on demand, rather than delegated to fragile third-party dependencies.
+
+Nova introduces a deliberate distinction between two fundamental concepts that most languages conflate:
+
+- **Classes** — Java-style objects with identity, behavior, and lifecycle, inheriting from a common root that provides sensible defaults.
+- **Types** — algebraic entities defined entirely by their mathematical properties, supporting operator overloading to construct structures like tensors, matrices, and other composable forms directly in the language.
+
+A class is not a type, and a type is not a class.
+This separation is a first-class design decision, not a convention.
+
+The syntax is intentionally familiar — close to C and Java — so that the language feels natural from day one, without the cognitive overhead of learning an entirely new grammar.
+
+Nova source files use the **`.nv`** extension. The package manager is **Orbit**, and the community package registry is **the Nebula**.
+
+> [!NOTE]
+> This repository contains the **compiler front-end**: the lexer and recursive-descent parser that produce the AST and Symbol Table from Nova source code.
+> The backend (IR generation, optimization, and native code emission) is a future milestone described in the [Further development](#further-development) section.
 
 ## Requirements
 - **Maven** (see [pom.xml](pom.xml))
@@ -82,15 +104,15 @@ Every token carries its **source position** (line and column), which propagates 
 
 All token types implement the [`TokenFamily`](src/token/TokenFamily.java) marker interface, organized into enums and classes under `token/family/`:
 
-| Type | Examples |
-|---|---|
-| [`PrimitiveType`](src/token/family/PrimitiveType.java) | `int`, `float`, `string`, `void`, … |
-| [`Keyword`](src/token/family/Keyword.java) | `if`, `while`, `for`, `class`, `return`, … |
-| [`AccessModifier`](src/token/family/AccessModifier.java) | `public`, `private`, `protected` |
-| [`Operator`](src/token/family/Operator.java) | `+`, `==`, `&&`, `++`, `+=`, … |
-| [`Delimiter`](src/token/family/Delimiter.java) | `(`, `{`, `[`, `;`, `::`, … |
-| [`Literal`](src/token/family/Literal.java) | identifiers, numbers, strings, booleans, chars |
-| [`Special`](src/token/family/Special.java) | `EOF`, `UNKNOWN` |
+| Type                                                     | Examples                                       |
+|----------------------------------------------------------|------------------------------------------------|
+| [`PrimitiveType`](src/token/family/PrimitiveType.java)   | `int`, `float`, `string`, `void`, …            |
+| [`Keyword`](src/token/family/Keyword.java)               | `if`, `while`, `for`, `class`, `return`, …     |
+| [`AccessModifier`](src/token/family/AccessModifier.java) | `public`, `private`, `protected`               |
+| [`Operator`](src/token/family/Operator.java)             | `+`, `==`, `&&`, `++`, `+=`, …                 |
+| [`Delimiter`](src/token/family/Delimiter.java)           | `(`, `{`, `[`, `;`, `::`, …                    |
+| [`Literal`](src/token/family/Literal.java)               | identifiers, numbers, strings, booleans, chars |
+| [`Special`](src/token/family/Special.java)               | `EOF`, `UNKNOWN`                               |
 
 Non-primitive class names are represented at parse time by [`NonPrimitiveType`](src/token/family/NonPrimitiveType.java), and generic parameters by [`GenericParameterType`](src/token/family/GenericParameterType.java).
 
@@ -165,7 +187,7 @@ Two utility classes render the internal structures to standard output for inspec
   - Forward-declaration or two-pass strategies to handle mutual references between files without requiring a strict declaration order.
 
 - **Standard library**: At the moment a handful of stub functions (`print`, `println`, `parseInt`, etc.) are hard-coded directly in the `Parser` constructor. A proper standard library should be:
-  - Authored as ordinary source files in the language's own syntax, living in a designated `stdlib/` directory within the project.
+  - Authored as ordinary source files in Nova's own syntax, living in a designated `stdlib/` directory within the project.
   - Preloaded automatically by the multi-file orchestrator before user code is parsed, so that standard types and functions are available globally without any import.
   - Extensible: new built-in modules (collections, I/O, math, string utilities, …) can be added as source files rather than requiring changes to the parser itself.
 

@@ -5,13 +5,13 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.customlanguage</groupId>
-    <artifactId>custom-language</artifactId>
+    <groupId>com.nova.lang</groupId>
+    <artifactId>nova-front-end</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Custom Language Compiler Front-End</name>
-    <description>A handwritten lexer and recursive descent parser for a custom programming language</description>
+    <name>Nova — Compiler Front-End</name>
+    <description>Lexer and recursive-descent parser for the Nova programming language, producing the AST and Symbol Table from Nova source files.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -97,4 +97,3 @@
         <testSourceDirectory>test</testSourceDirectory>
     </build>
 </project>
-
