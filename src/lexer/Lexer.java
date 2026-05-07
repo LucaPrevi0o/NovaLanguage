@@ -38,6 +38,9 @@ public class Lexer {
         for (var value : AccessModifier.values()) KEYWORDS.put(value.get(), value);  // Add access modifiers
         for (var value : PrimitiveType.values()) TYPES.put(value.get(), value);
         for (var value : Operator.values()) OPERATORS.put(value.get(), value);
+
+        // "boolean" is an alias for the "bool" primitive type (for Java-style source code)
+        TYPES.put("boolean", PrimitiveType.BOOL);
     }
 
     /// Constructs a Lexer with the given source code.
@@ -110,16 +113,31 @@ public class Lexer {
     }
 
     /// Read a number literal, which can be an integer or a floating-point number.
-    /// Handles sequences of digits and at most one decimal point.
+    /// Handles sequences of digits and at most one decimal point. A second decimal
+    /// point stops lexing the number; the remaining characters will be tokenized
+    /// separately so that callers receive a clear, isolated bad-token rather than
+    /// one bloated number string.
+    /// An optional type suffix (l/L, f/F, d/D, b/B) after the digits is also consumed.
     /// @return A LiteralToken representing the number literal.
     private Token readNumber() {
 
         var startLine = line;
         var startColumn = column;
         var number = new StringBuilder();
-        
+        var seenDot = false;
+
         while (currentChar != '\0' && (Character.isDigit(currentChar) || currentChar == '.')) {
 
+            if (currentChar == '.') {
+                if (seenDot) break;   // second dot — stop here; leave it for the next token
+                seenDot = true;
+            }
+            number.append(currentChar);
+            advance();
+        }
+
+        // Consume optional type suffix: l/L, f/F, d/D, b/B
+        if (currentChar != '\0' && "lLfFdDbB".indexOf(currentChar) >= 0) {
             number.append(currentChar);
             advance();
         }
@@ -143,6 +161,11 @@ public class Lexer {
         }
         
         var value = identifier.toString();
+
+        // Boolean literals "true" and "false" are tokenized as LiteralTokens with BooleanLiteral type
+        if ("true".equals(value))  return new LiteralToken(Literal.BooleanLiteral.TRUE,  startLine, startColumn);
+        if ("false".equals(value)) return new LiteralToken(Literal.BooleanLiteral.FALSE, startLine, startColumn);
+
         var isKeyword = KEYWORDS.get(value);
         var isType = TYPES.get(value);
 
@@ -195,37 +218,49 @@ public class Lexer {
 
     /// Read a character literal, which is a single character enclosed in single quotes.
     /// Handles escape sequences similar to string literals.
-    /// @return A LiteralToken representing the character literal.
+    /// Returns an {@code UNKNOWN} token when the literal is empty ({@code ''}) or unterminated
+    /// (end-of-file reached before the closing single quote).
+    /// @return A LiteralToken representing the character literal, or an UNKNOWN token on error.
     private Token readChar() {
 
         var startLine = line;
         var startColumn = column;
         advance(); // skip opening quote
 
+        // Empty char literal: ''
+        if (currentChar == '\'') {
+            advance(); // skip closing quote
+            return new Token(Special.UNKNOWN, startLine, startColumn);
+        }
+
+        // Unterminated char literal: reached EOF before closing quote
+        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
+
         char ch = '\0';
         if (currentChar == '\\') {
 
             advance(); // skip backslash
-            if (currentChar != '\0') {
+            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
 
-                // Handle escape sequences
-                ch = switch (currentChar) {
-                    case 'n' -> '\n';
-                    case 't' -> '\t';
-                    case 'r' -> '\r';
-                    case '\'' -> '\'';
-                    case '\\' -> '\\';
-                    default -> currentChar;
-                };
-                advance();
-            }
-        } else if (currentChar != '\0' && currentChar != '\'') {
+            // Handle escape sequences
+            ch = switch (currentChar) {
+                case 'n' -> '\n';
+                case 't' -> '\t';
+                case 'r' -> '\r';
+                case '\'' -> '\'';
+                case '\\' -> '\\';
+                default -> currentChar;
+            };
+            advance();
+        } else {
 
             ch = currentChar;
             advance();
         }
 
-        if (currentChar == '\'') advance(); // skip closing quote
+        // Expect closing quote; if missing, return UNKNOWN
+        if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn);
+        advance(); // skip closing quote
         return new LiteralToken(new Literal.CharLiteral(ch), startLine, startColumn);
     }
 

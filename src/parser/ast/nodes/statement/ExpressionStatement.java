@@ -1,9 +1,14 @@
 package parser.ast.nodes.statement;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /// Represents an expression statement in the abstract syntax tree (AST), which consists of a single expression that is evaluated for its side effects.
-public class ExpressionStatement extends StatementNode {
+public class ExpressionStatement extends StatementNode implements Printable {
 
     private final ExpressionNode expression;
 
@@ -20,4 +25,18 @@ public class ExpressionStatement extends StatementNode {
     /// Returns the expression that is evaluated for its side effects in this expression statement.
     /// @return An ExpressionNode representing the expression of this expression statement.
     public ExpressionNode getExpression() { return expression; }
+
+    @Override
+    public String toPrintString() { return "ExpressionStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        if (expression != null) entries.add(new PrintEntry.Child("Expression", expression));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitExpressionStatement(this); }
 }

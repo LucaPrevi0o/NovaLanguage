@@ -3,6 +3,7 @@ package parser.ast;
 import java.util.ArrayList;
 import java.util.List;
 import parser.ast.nodes.Symbol;
+import parser.parser.util.ParseException;
 
 /// Represents a symbol table for managing variable and function scopes in the abstract syntax tree (AST).
 ///
@@ -26,11 +27,16 @@ public record SymbolTable(SymbolTable parent, List<Symbol> symbols, List<SymbolT
     }
 
     /// Registers a new symbol in the current symbol table.
+    /// Throws a {@link ParseException} with source location if the name is already declared in this scope.
     /// @param symbol The symbol to register in the current symbol table.
     public void register(Symbol symbol) {
 
         for (var sym : symbols) if (sym.getName().equals(symbol.getName()))
-            throw new RuntimeException("Symbol '" + symbol.getName() + "' is already defined in this scope.");
+            throw new ParseException(
+                "Symbol '" + symbol.getName() + "' is already defined in this scope.",
+                symbol.getLine(),
+                symbol.getColumn()
+            );
 
         symbols.add(symbol);
     }

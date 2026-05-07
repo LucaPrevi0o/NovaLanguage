@@ -1,9 +1,13 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents a character literal expression, such as 'a', '\n', or '\\'.
-public class CharLiteralExpression extends ExpressionNode {
+public class CharLiteralExpression extends ExpressionNode implements Printable {
 
     private final char value;
 
@@ -20,5 +24,13 @@ public class CharLiteralExpression extends ExpressionNode {
     /// Returns the character value of this literal expression.
     /// @return The character value of this literal expression.
     public char getValue() { return value; }
-}
 
+    @Override
+    public String toPrintString() { return "CharLiteralExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: '" + value + "'")); }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitCharLiteral(this); }
+}

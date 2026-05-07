@@ -45,14 +45,27 @@ public class ParserState {
     // ========== Token Checking ==========
 
     /// Checks if the current token matches the specified token family.
+    ///
+    /// Matching rules for {@link Literal} types:
+    /// <ul>
+    ///   <li>If {@code type} has a non-null value (e.g. {@code BooleanLiteral.TRUE} / {@code BooleanLiteral.FALSE}),
+    ///       the token's value must equal that specific value — this correctly distinguishes TRUE from FALSE.</li>
+    ///   <li>If {@code type} has a null value (wildcard/placeholder, e.g. {@code new Literal.NumberLiteral()}),
+    ///       the token only needs to be the same sub-class of {@code Literal}.</li>
+    /// </ul>
+    ///
     /// @param type The token family to check against the current token.
     /// @return True if the current token matches the specified token family, false otherwise.
     public boolean check(TokenFamily type) {
 
         if (isAtEnd()) return false;
         var currentType = peek().getType();
-        
-        if (type instanceof Literal && currentType instanceof Literal) return type.getClass() == currentType.getClass();
+
+        if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
+            var typeVal = litType.get();
+            if (typeVal != null) return typeVal.equals(litCurrent.get());  // specific-value match (e.g. TRUE vs FALSE)
+            return type.getClass() == currentType.getClass();              // wildcard class match
+        }
         return currentType == type;
     }
 
@@ -96,4 +109,13 @@ public class ParserState {
         if (token instanceof LiteralToken lit) return lit.getValue();
         throw new ParseException("Expected literal token", token);
     }
+
+    /// Returns the current token stream position.
+    /// Used to save and restore the position for backtracking during ambiguous parses (e.g. for vs for-each).
+    /// @return The current position index.
+    public int getCurrentPosition() { return current; }
+
+    /// Restores a previously saved token stream position for backtracking.
+    /// @param position The position to restore to.
+    public void setCurrentPosition(int position) { current = position; }
 }

@@ -69,7 +69,13 @@ public enum Operator implements TokenFamily {
     LOGICAL_AND("&&"),
 
     /// The logical OR operator, used for logical disjunction.
-    LOGICAL_OR("||");
+    LOGICAL_OR("||"),
+
+    /// The question-mark operator, used as the condition separator in a ternary expression.
+    QUESTION("?"),
+
+    /// The arrow operator, used as the body separator in switch case arms.
+    ARROW("->");
 
     private final String symbol;
 

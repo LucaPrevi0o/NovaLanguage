@@ -1,11 +1,15 @@
 package parser.ast.nodes.expression.literal;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import token.family.PrimitiveType;
 import lexer.token.TypeToken;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents a numeric literal expression in the AST, which can be an integer, long, float, double, or byte literal.
-public abstract class NumberLiteralExpression extends ExpressionNode {
+public abstract class NumberLiteralExpression extends ExpressionNode implements Printable {
 
     /// Represents an integer literal expression in the AST.
     ///
@@ -98,4 +102,13 @@ public abstract class NumberLiteralExpression extends ExpressionNode {
     /// Returns the numeric value of this literal expression.
     /// @return The numeric value.
     public abstract Number getValue();
+
+    @Override
+    public String toPrintString() { return "NumberLiteralExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() { return List.of(new PrintEntry.Info("Value: " + getValue())); }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitNumberLiteral(this); }
 }

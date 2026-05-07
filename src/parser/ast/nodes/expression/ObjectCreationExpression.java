@@ -1,9 +1,13 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents an object creation expression (new expression), used to instantiate a class.
-public class ObjectCreationExpression extends ExpressionNode {
+public class ObjectCreationExpression extends ExpressionNode implements Printable {
 
     private final String className;
     private final ExpressionNode[] arguments;
@@ -27,5 +31,18 @@ public class ObjectCreationExpression extends ExpressionNode {
     /// Returns the constructor arguments.
     /// @return An array of ExpressionNode objects representing the constructor arguments.
     public ExpressionNode[] getArguments() { return arguments; }
-}
 
+    @Override
+    public String toPrintString() { return "ObjectCreationExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Class: " + className),
+            new PrintEntry.Children("Arguments", arguments)
+        );
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitObjectCreation(this); }
+}

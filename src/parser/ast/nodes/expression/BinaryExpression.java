@@ -1,10 +1,14 @@
 package parser.ast.nodes.expression;
 
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
 import lexer.token.OperatorToken;
 
+import java.util.List;
+
 /// Represents a binary expression in the AST, consisting of a left expression, an operator, and a right expression.
-public class BinaryExpression extends ExpressionNode {
+public class BinaryExpression extends ExpressionNode implements Printable {
     
     private final ExpressionNode left;
     private final OperatorToken operator;
@@ -35,4 +39,19 @@ public class BinaryExpression extends ExpressionNode {
     /// Returns the right-hand side expression of the binary operation.
     /// @return The right expression.
     public ExpressionNode getRight() { return right; }
+
+    @Override
+    public String toPrintString() { return "BinaryExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Operator: " + operator.getType()),
+            new PrintEntry.Child("Left", left),
+            new PrintEntry.Child("Right", right)
+        );
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitBinary(this); }
 }

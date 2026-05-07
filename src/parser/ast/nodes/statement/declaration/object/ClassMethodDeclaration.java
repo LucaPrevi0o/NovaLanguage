@@ -1,10 +1,17 @@
 package parser.ast.nodes.statement.declaration.object;
 
+import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.StatementNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static printer.AstPrinter.buildTypeStringWithSizes;
 
 /// Represents a method declaration within a class, including its access modifier.
 public class ClassMethodDeclaration extends FunctionDeclarationStatement {
@@ -28,4 +35,24 @@ public class ClassMethodDeclaration extends FunctionDeclarationStatement {
     /// Returns the access modifier of the method.
     /// @return The access modifier of the method (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
+
+    @Override
+    public String toPrintString() { return "ClassMethodDeclaration [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
+        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
+        var params = getParameters();
+        entries.add(new PrintEntry.Info("Parameters: " + params.length));
+        appendParameterEntries(entries, params);
+        entries.add(new PrintEntry.Info("Name: " + getName()));
+        entries.add(new PrintEntry.Child("Body", getBody()));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassMethod(this); }
 }

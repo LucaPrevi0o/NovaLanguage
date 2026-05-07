@@ -6,41 +6,43 @@ import token.family.PrimitiveType;
 import java.util.ArrayList;
 import java.util.List;
 
-//// A registry for managing return types in the language, including both primitive and non-primitive types.
+/// A per-parse-session registry of all known types (primitives + user-declared classes).
+///
+/// Each {@link parser.Parser} creates its own instance, eliminating static shared state
+/// and making concurrent parsing and testing safe.
 public class TypeRegistry {
 
-    private static final List<ReturnType> types = new ArrayList<>();
+    private final List<ReturnType> types = new ArrayList<>();
 
-    static { for (var primitive : PrimitiveType.values()) types.add(new ReturnType(primitive)); }
+    /// Creates a new TypeRegistry pre-populated with all primitive types.
+    public TypeRegistry() { for (var primitive : PrimitiveType.values()) types.add(new ReturnType(primitive)); }
 
     /// Registers a new class declaration as a return type in the registry.
-    /// @param classDecl The ClassDeclarationStatement representing the class to be registered as a return type.
-    public static void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
+    /// @param classDecl The ClassDeclarationStatement representing the class to register.
+    public void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
 
     /// Retrieves a ReturnType from the registry based on its string representation.
-    /// @param typeName The string representation of the return type to retrieve (e.g., "int", "MyClass").
-    /// @return The ReturnType object corresponding to the specified type name, or null if no matching type is found in the registry.
-    public static ReturnType getReturnType(String typeName) { return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null); }
+    /// @param typeName The string representation of the return type (e.g., "int", "MyClass").
+    /// @return The matching ReturnType, or {@code null} if not found.
+    public ReturnType getReturnType(String typeName) { return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null); }
 
-    /// Retrieves a ReturnType from the registry based on the name of a class declaration.
-    /// @param className The name of the class declaration to retrieve the ReturnType for.
-    /// @return The ReturnType object corresponding to the specified class name, or null if no matching class declaration is found in the registry.
-    public static ReturnType getClassDeclaration(String className) {
+    /// Retrieves a ReturnType for a registered class by its class name.
+    /// @param className The class name.
+    /// @return The ReturnType wrapping the class declaration, or {@code null} if not found.
+    public ReturnType getClassDeclaration(String className) {
 
         for (var type : types) if (type.getBaseType() instanceof NonPrimitiveType npt)
             if (npt.getClassDeclaration().getName().equals(className)) return type;
         return null;
     }
 
-    /// Checks if a given type name corresponds to a custom class type registered in the registry.
-    /// @param typeName The string representation of the type to check (e.g., "MyClass").
-    /// @return true if the specified type name corresponds to a custom class type registered in the registry, false otherwise.
-    public static boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
+    /// Determines whether the given name corresponds to a registered custom class.
+    /// @param typeName The class name to check.
+    /// @return {@code true} if the name is a registered custom class.
+    public boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
 
-    /// Resets the registry by removing all non-primitive types, retaining only primitive types.
-    /// This should be called at the start of each parse to ensure a clean state.
-    public static void reset() {
-
-        types.removeIf(t -> !(t.getBaseType() instanceof PrimitiveType));
-    }
+    /// No-op method kept for test API compatibility.
+    /// With per-instance TypeRegistry, each {@link parser.Parser} creates a fresh registry,
+    /// so no global reset is needed.
+    public static void reset() { }
 }

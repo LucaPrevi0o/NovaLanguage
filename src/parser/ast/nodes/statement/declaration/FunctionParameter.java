@@ -1,6 +1,7 @@
 package parser.ast.nodes.statement.declaration;
 
 import parser.ast.nodes.Symbol;
+import parser.ast.visitor.NodeVisitor;
 import token.ReturnType;
 
 /// Represents a parameter in a function declaration, including its type and name.
@@ -22,4 +23,9 @@ public class FunctionParameter extends Symbol {
     /// Returns the return type of the parameter.
     /// @return The return type of the parameter.
     public ReturnType getType() { return type; }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) {
+        throw new UnsupportedOperationException("FunctionParameter is not visited directly");
+    }
 }

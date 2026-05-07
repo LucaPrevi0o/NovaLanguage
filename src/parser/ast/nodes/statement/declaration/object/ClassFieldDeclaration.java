@@ -1,9 +1,16 @@
 package parser.ast.nodes.statement.declaration.object;
 
+import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import token.ReturnType;
 import token.family.AccessModifier;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static printer.AstPrinter.buildTypeStringWithSizes;
 
 /// Represents a field declaration within a class, including its access modifier.
 public class ClassFieldDeclaration extends VariableDeclarationStatement {
@@ -26,4 +33,21 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
     /// Returns the access modifier of the field.
     /// @return The access modifier of the field (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
+
+    @Override
+    public String toPrintString() { return "ClassFieldDeclaration [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Info("Name: " + getName()));
+        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
+        entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
+        if (getInitialValue() != null) entries.add(new PrintEntry.Child("Initializer", getInitialValue()));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassField(this); }
 }

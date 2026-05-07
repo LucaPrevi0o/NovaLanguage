@@ -1,13 +1,18 @@
 package parser.ast.nodes.statement.conditional;
 
+import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.ConditionalStatement;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /// Represents an if statement in the AST.
 ///
 /// An if statement consists of a condition expression, a then block (the code to execute if the condition is true),
 /// and an optional else block (the code to execute if the condition is false).
-public class IfStatement extends ConditionalStatement {
+public class IfStatement extends ConditionalStatement implements Printable {
 
     private final StatementNode thenBlock;
     private final StatementNode elseBlock;
@@ -32,4 +37,20 @@ public class IfStatement extends ConditionalStatement {
     /// Returns the statement that represents the code to execute if the condition is false (optional).
     /// @return The else block statement, or null if there is no else block.
     public StatementNode getElseBlock() { return elseBlock; }
+
+    @Override
+    public String toPrintString() { return "IfStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Child("Condition", getCondition()));
+        entries.add(new PrintEntry.Child("Then", thenBlock));
+        if (elseBlock != null) entries.add(new PrintEntry.Child("Else", elseBlock));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitIf(this); }
 }

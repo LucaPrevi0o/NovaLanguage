@@ -1,11 +1,17 @@
 package parser.ast.nodes.statement.declaration.object;
 
+import parser.ast.Printable;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import token.family.AccessModifier;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /// Represents a constructor declaration within a class.
-public class ClassConstructorDeclaration extends StatementNode {
+public class ClassConstructorDeclaration extends StatementNode implements Printable {
 
     private final FunctionParameter[] parameters;
     private final StatementNode body;
@@ -37,4 +43,21 @@ public class ClassConstructorDeclaration extends StatementNode {
     /// Returns the access modifier of the constructor.
     /// @return The access modifier of the constructor (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
+
+    @Override
+    public String toPrintString() { return "ClassConstructorDeclaration [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
+        entries.add(new PrintEntry.Info("Parameters: " + parameters.length));
+        FunctionDeclarationStatement.appendParameterEntries(entries, parameters);
+        entries.add(new PrintEntry.Child("Body", body));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassConstructor(this); }
 }

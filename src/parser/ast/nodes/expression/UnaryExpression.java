@@ -1,10 +1,14 @@
 package parser.ast.nodes.expression;
 
 import lexer.token.OperatorToken;
+import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /// Represents a unary expression in the AST, consisting of an operator and a single operand expression.
-public class UnaryExpression extends ExpressionNode {
+public class UnaryExpression extends ExpressionNode implements Printable {
     
     private final OperatorToken operator;
     private final ExpressionNode operand;
@@ -28,4 +32,18 @@ public class UnaryExpression extends ExpressionNode {
     /// Returns the expression that is the operand of the unary operation.
     /// @return The operand expression.
     public ExpressionNode getOperand() { return operand; }
+
+    @Override
+    public String toPrintString() { return "UnaryExpression [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(
+            new PrintEntry.Info("Operator: " + operator.getType()),
+            new PrintEntry.Child("Operand", operand)
+        );
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitUnary(this); }
 }

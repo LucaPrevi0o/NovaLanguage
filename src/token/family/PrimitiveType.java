@@ -27,7 +27,10 @@ public enum PrimitiveType implements TokenFamily {
     BOOL("bool"),
 
     /// The void primitive type, representing the absence of a value or return type.
-    VOID("void");
+    VOID("void"),
+
+    /// The string primitive type, representing a sequence of characters.
+    STRING("string");
 
     private final String name;
 

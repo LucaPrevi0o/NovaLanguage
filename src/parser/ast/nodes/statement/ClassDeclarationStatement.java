@@ -1,5 +1,6 @@
 package parser.ast.nodes.statement;
 
+import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import token.ReturnType;
@@ -7,17 +8,23 @@ import token.family.AccessModifier;
 import token.family.NonPrimitiveType;
 import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static printer.AstPrinter.buildTypeStringWithSizes;
 
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
-public class ClassDeclarationStatement extends Symbol {
+public class ClassDeclarationStatement extends Symbol implements Printable {
 
-    private final ClassMethodDeclaration[] methods;
-    private final ClassFieldDeclaration[] fields;
+    private ClassMethodDeclaration[] methods;
+    private ClassFieldDeclaration[] fields;
     private final ReturnType[] superClasses;
     private final ReturnType genericClassParameter;
-    private final ClassDeclarationStatement[] innerClasses;
+    private ClassDeclarationStatement[] innerClasses;
     private final AccessModifier accessModifier;
-    private final ClassConstructorDeclaration[] constructors;
+    private ClassConstructorDeclaration[] constructors;
 
     /// Constructs a new ClassDeclarationStatement.
     ///
@@ -75,4 +82,49 @@ public class ClassDeclarationStatement extends Symbol {
     /// Returns the constructors declared within the class.
     /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.
     public ClassConstructorDeclaration[] getConstructors() { return constructors; }
+
+    /// Sets the methods of this class after parsing is complete.
+    /// @param methods The parsed method declarations.
+    public void setMethods(ClassMethodDeclaration[] methods) { this.methods = methods; }
+
+    /// Sets the fields of this class after parsing is complete.
+    /// @param fields The parsed field declarations.
+    public void setFields(ClassFieldDeclaration[] fields) { this.fields = fields; }
+
+    /// Sets the constructors of this class after parsing is complete.
+    /// @param constructors The parsed constructor declarations.
+    public void setConstructors(ClassConstructorDeclaration[] constructors) { this.constructors = constructors; }
+
+    /// Sets the inner classes of this class after parsing is complete.
+    /// @param innerClasses The parsed inner class declarations.
+    public void setInnerClasses(ClassDeclarationStatement[] innerClasses) { this.innerClasses = innerClasses; }
+
+    @Override
+    public String toPrintString() { return "ClassDeclarationStatement [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+
+        var entries = new ArrayList<PrintEntry>();
+        entries.add(new PrintEntry.Info("Name: " + getName()));
+        entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
+        if (genericClassParameter != null)
+            entries.add(new PrintEntry.Info("Generic Parameter: " + buildTypeStringWithSizes(genericClassParameter)));
+        if (superClasses != null && superClasses.length > 0) {
+            var superNames = new StringBuilder();
+            for (int i = 0; i < superClasses.length; i++) {
+                if (i > 0) superNames.append(", ");
+                superNames.append(buildTypeStringWithSizes(superClasses[i]));
+            }
+            entries.add(new PrintEntry.Info("Superclasses: " + superNames));
+        }
+        entries.add(new PrintEntry.Children("Constructors", constructors));
+        entries.add(new PrintEntry.Children("Inner Classes", innerClasses));
+        entries.add(new PrintEntry.Children("Fields", fields));
+        entries.add(new PrintEntry.Children("Methods", methods));
+        return entries;
+    }
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) { return visitor.visitClassDeclaration(this); }
 }
