@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>Custom Language Compiler Front-End</name>
-    <description>A hand-written lexer and recursive descent parser for a custom programming language</description>
+    <description>A handwritten lexer and recursive descent parser for a custom programming language</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,6 +38,7 @@
         <outputDirectory>${outDirectory}</outputDirectory>
         <testOutputDirectory>${outDirectory}</testOutputDirectory>
         <plugins>
+
             <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -77,6 +78,17 @@
                             <mainClass>Main</mainClass>
                         </manifest>
                     </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Javadoc Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <configuration>
+                    <source>${maven.compiler.release}</source>
+                    <outputDirectory>${project.build.directory}/site/apidocs</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>
