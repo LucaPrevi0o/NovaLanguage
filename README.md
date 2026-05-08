@@ -8,7 +8,7 @@ It draws from the performance and directness of C and C++, the natural OOP model
 The standard library is designed to be truly exhaustive: I/O, math, string utilities, event-driven programming, GPU-dispatched graphics, audio interfaces, and more are all first-class citizens, injectable on demand, rather than delegated to fragile third-party dependencies.
 
 The syntax is intentionally familiar — close to C and Java — so that the language feels natural from day one, without the cognitive overhead of learning an entirely new grammar.
-(Yes - Python and Ruby fans, I'm watching you, you'll learn this the hard way... but at least you'll learn ***the right*** syntax)
+(Yes - Python and Ruby fans, I'm watching you, you'll learn this the hard way... I'm sorry, but to me this is just cleaner)
 
 ### Classes vs Types
 Nova introduces a deliberate distinction between two fundamental concepts that most languages conflate:
@@ -38,14 +38,16 @@ To enforce this, a strict set of rules govern the type system:
   - On the other hand, features that would require **non-statically-typed declarations** (e.g. reflection, dynamic method invocation) are intentionally excluded from the language design.
 - Type inheritance is supported, but only for classes — not for types.
   - When a class extends another, it inherits both its method signatures and its implementation (fields and method bodies).
-  - If a class extends multiple classes, it inherits the method signatures from all of them, but **must** provide its own implementation for any conflicting members (i.e. members with the same signature but different implementations in the parent classes).
+  - If a class extends multiple classes, it inherits the method signatures from all of them.
+    - For conflicting methods, an explicit override is required to resolve the ambiguity.
+    - Conflicting fields are simply not allowed, and will result in a compile-time error (some way of solving the diamond problem is required, *this is what I came up to* - any better ideas would be appreciated).
   - Abstract methods can be declared: a class with one or more abstract methods is considered abstract, and cannot be instantiated directly.
   - A class extending an abstract class must provide concrete implementations for all inherited abstract methods; if not, it is also considered abstract and cannot be instantiated.
   - Final classes (not extendable) and final methods (not overrideable) are also supported, to allow developers to explicitly control the inheritance hierarchy and prevent unintended overrides.
-  - The static root of type inheritance allows for **local type upcasting**:
-    - Function parameters can declare a type that is a superclass of the actual argument type, and the compiler will allow the call as long as the argument type is compatible with the parameter type (i.e. it extends it).
-    - The parameters themselves are still typed with the actual type of the argument; however, the runtime type signature is the one expressed by the parameter declaration.
-    - This means that only the members declared in the parameter type (the superclass) are accessible within the function body, even if the actual argument type (the subclass) has additional members.
+  - The static root of type inheritance allows for bounded polymorphism:
+    - Parameters can be declared with an upper bound (e.g. `T : Comparable`), which allows any type that extends `Comparable` to be used as an argument.
+    - Any type that matches the expected type (e.g. `List[int]` when `List[T : Comparable]` is expected) can be used as an argument.
+    - Only the signature provided by the upper bound is actually accessible within the function body - no other field and/or method of the concrete type is available.
 - Generic classes are supported, but objects of a generic class have a type that is fully determined by their type parameters at compile time.
   - When a generic class is declared, the compiler generates a distinct class for each unique combination of type parameters used in the codebase.
     - This means that `List[int]` and `List[string]` are compiled into separate classes, representing **different types** with (almost) no shared runtime representation.
@@ -58,31 +60,50 @@ To enforce this, a strict set of rules govern the type system:
     - For example, `class List[T : Comparable]` declares a generic class `List` with a type parameter `T` that must extend the `Comparable` type.
     - This allows the compiler to enforce constraints on the type parameters and enable operator overloading for user-defined types that implement the required interfaces.
     - Recursively, the extended type can also be generic, and/or have its own constraints (e.g. `class List[T : Comparable[T]]`).
-    - If the type parameter allows local type upcasting for different instances of the same generic class (e.g. `List[int]` and `List[float]`), the two types can interact with each other:
+    - If the type parameter allows bounded polymorphism for different instances of the same generic class (e.g. `List[int]` and `List[float]`), the two types can interact with each other:
       - Any type parameter that matches the expected type (e.g. `List[int]` when `List[T : Comparable]` is expected) can be used as an argument.
-      - Only the signature provided by local type upcasting is actually accessible within the function body.
-      - Object of different types can interact as they were of the same type, specified by the parameter declaration.
+      - Only the signature provided by the upper bound is actually accessible within the function body.
+      - Object of different types can interact as they were of the same type (the upper bound itself).
         - If the type is non-abstract, any operation defined for the parameter type (e.g. `Comparable`) is available for all instances of the generic class.
         - Even if the class is abstract, non-abstract operations already defined in the parameter type are still usable.
-  - As type erasure is not a thing, shenanigans like *classes with a variable number of type parameters* (e.g. `Tuple[T1, T2, ...]`) are actually possible:
-    - The compiler can generate a new class for each unique combination of type parameters, regardless of the number of parameters, as long as they are all concrete types at compile-time.
-    - Objects of these classes have a fully concrete type that is determined by their type parameters.
-    - The number of type parameters (and the specific ones) is part of the type identity, so `Tuple[int, string]` and `Tuple[int, string, float]` are different types.
+  - As type erasure is not a thing, shenanigans like *classes with a variable number of type parameters* (e.g. `Tuple[{A}]`) are actually possible (as hard as it is to implement, but still possible):
+    - The compiler generates a distinct class for each unique combination of type parameters that is used in the codebase, regardless of the number of type parameters.
+    - Objects of these classes have a fully concrete type, that is determined by their type parameters.
+    - The number of type parameters (and the specific ones) is part of the type identity, so `Tuple[{int, string}]` and `Tuple[{int, string, float}]` are different types.
 - Class parameters can be declared, similar to C++ template non-type parameters, but with the same compile-time semantics as type parameters:
-  - On top of a generic type, a class can also declare parameters that are not types, but values (e.g. `class Tensor[T, N : int]`).
+  - On top of a generic type, a class can also declare parameters that are not types, but values (e.g. `class Tensor[T, (N : int)]`).
   - These parameters are also part of the type identity, so `Tensor[int, N = 3]` and `Tensor[int, N = 2]` are different types.
   - The class parameter must explicitly declare its type (e.g. `N : int`) - note: a **type**, not a ***class***.
 
 This design allows for a powerful and flexible type system, without sacrificing performance or safety.
 Common patterns like collections, data structures, and algorithms can be implemented as generic classes, while still benefiting from the full power of static typing and compile-time optimizations.
 
+> [!WARNING]
+> The avoidance of type erasure and reflection rejects constructs like runtime type inspection or method invocation.
+> Test frameworks (that would typically rely on reflection to discover test methods) will need to be designed with this constraint in mind.
+> 
+> The main principle is always the same:
+> - If the construct can be fully resolved at compile-time, it is supported and optimized.
+> - If the construct requires runtime type information or dynamic dispatch, it is not supported and will result in a compile-time error.
+> 
+> A local test framework could be implemented by generating a static test registry at compile time.
+> The compiler would scan for methods annotated with `@Test` and generate a `TestRegistry` class that contains static references to all test methods, allowing them to be executed without any runtime discovery mechanism.
+
+> [!WARNING]
+> Another big obstacle to be tackled will be variadic type parameters.
+> Although doable, the implementation of constructs like `Tuple[{A}]` (a tuple with a variable number of type parameters) is non-trivial, and will require careful design to ensure that the compiler can generate the appropriate classes for each unique combination of type parameters used in the codebase.
+
 ### Lambda expressions and functional programming
 Nova supports lambda expressions and functional programming constructs, but they are designed to be fully statically typed and optimized at compile time.
-- An abstract generic class `Function[A..., R]` is provided as the base for all function types, where `A...` is a variadic list of type parameters representing the argument types, and `R` is the return type.
+- An abstract generic class `Function[{A}, R]` is provided as the base for all function types, where `{A}` is a list of type parameters representing the argument types, and `R` is the return type.
 - Lambda expressions are syntactic sugar for anonymous subclasses of `Function`:
-  - A lambda expression like `(x: int, y: int) -> int { return x + y; }` is parsed into an anonymous class that extends `Function[int, int, int]` (with `A...` = `int, int` and `A` = `int`), and implements the `call` method with the provided body.
+  - A lambda expression like `(x: int, y: int) -> int { return x + y; }` is parsed into an anonymous class that extends `Function[{int, int}, int]` (with `{A} = int, int` and `R = int`), and implements the `call` method with the provided body.
   - The compiler generates a concrete class for each unique lambda expression, with the appropriate type parameters based on the lambda's argument and return types.
   - This allows lambda expressions to be fully statically typed, with no runtime overhead compared to regular function declarations, while still supporting the full expressiveness of functional programming constructs.
+
+> [!WARNING]
+> Lambdas are a powerful tool for functional programming, but a seriously difficult implementation task.
+> To provide a functional interface that is both statically typed and optimized, full commitment is required.
 
 ### Package management
 Nova source files use the **`.nv`** extension.
