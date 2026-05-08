@@ -232,18 +232,25 @@ public class DeclarationParser extends ParserBase {
         this.symbolTable.register(decl);
 
         var functionScope = enterScope();
-        this.symbolTable = functionScope;
 
-        for (var param : parameters) this.symbolTable.register(param);
+        this.symbolTable = functionScope;
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
-        consume(Delimiter.LBRACE, "Expect '{' before function body");
+        try {
 
-        var bodyStatements = getStatementList(functionScope);
-        var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+            for (var param : parameters) this.symbolTable.register(param);
+            consume(Delimiter.LBRACE, "Expect '{' before function body");
 
-        decl.setBody(body);  // Attach parsed body to the pre-registered declaration
-        return decl;
+            var bodyStatements = getStatementList();
+            var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+
+            decl.setBody(body);  // Attach parsed body to the pre-registered declaration
+            return decl;
+        } finally {
+
+            this.symbolTable = exitScope(functionScope);
+            this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
+        }
     }
 
     /// Parses a variable declaration, which consists of a type, a name, an optional initializer, and may include multiple declarations separated by commas.
@@ -543,14 +550,20 @@ public class DeclarationParser extends ParserBase {
         this.symbolTable = blockScope;
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
-        var statements = getStatementList(blockScope);
-        return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
+        try {
+
+            var statements = getStatementList();
+            return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
+        } finally {
+
+            this.symbolTable = exitScope(blockScope);
+            this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
+        }
     }
 
-    /// Helper method to parse a list of statements within a block, until the closing right brace is encountered.
-    /// @param blockScope The symbol table representing the scope of the block.
+    /// Helper method to parse a list of statements within a block/function body, until the closing right brace is encountered.
     /// @return An ArrayList of StatementNode objects.
-    ArrayList<StatementNode> getStatementList(SymbolTable blockScope) {
+    private ArrayList<StatementNode> getStatementList() {
 
         var statements = new ArrayList<StatementNode>();
 
@@ -562,9 +575,6 @@ public class DeclarationParser extends ParserBase {
             synchronizeToStatementBoundary();
         }
         consume(Delimiter.RBRACE, "Expect '}' after block");
-
-        this.symbolTable = exitScope(blockScope);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         return statements;
     }
 

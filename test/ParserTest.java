@@ -173,6 +173,20 @@ public class ParserTest {
         assertEquals(1, ex.getErrors().size(), "Only the first (invalid) statement should produce an error");
     }
 
+    @Test
+    void testScopeRestoredAfterFunctionBodyParseError() {
+
+        var source = "int broken() return 1; int x;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the malformed function should fail");
+        assertNotNull(parser.getSymbolTable().lookup("x"),
+            "Top-level declarations after a malformed function should still be registered in global scope");
+    }
+
     // ─── Stdlib tests ─────────────────────────────────────────────────────────
 
     @Test
@@ -197,4 +211,3 @@ public class ParserTest {
         assertDoesNotThrow(parser::parse);
     }
 }
-

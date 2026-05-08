@@ -210,9 +210,14 @@ This section documents missing features, current partial implementations, and a 
 1) Error handling (current state: partial)
    - Current: top-level synchronization and multi-error aggregation is implemented. Parser exposes structured diagnostics (`DiagnosticCode`, `SourceSpan`) and caret-style markers for aggregated outputs.
    - Missing / next steps:
-     - Extend recovery to finer-grained units inside expressions and statements so more errors can be reported in a single parse pass.
-     - Improve semantic diagnostics: type mismatch messages, expected vs actual type hints, candidate suggestions for unresolved symbols, and richer context for overload/duplicate definitions.
-     - Produce editor-friendly diagnostic outputs (JSON/LS-style) to integrate with language servers and IDEs.
+      - Extend recovery to finer-grained units inside expressions and statements so more errors can be reported in a single parse pass.
+      - Improve semantic diagnostics: type mismatch messages, expected vs actual type hints, candidate suggestions for unresolved symbols, and richer context for overload/duplicate definitions.
+      - Produce editor-friendly diagnostic outputs (JSON/LS-style) to integrate with language servers and IDEs.
+   - Proposed implementation plan (diagnostics expansion):
+      - Phase 1 — Diagnostics pipeline hardening: normalize parser/semantic diagnostic payloads into a single transport model (`severity`, `code`, `message`, `span`, `context`, optional `relatedSpans`) and keep deterministic ordering for stable tests/tooling.
+      - Phase 2 — Warning detection: add a semantic warning pass (unused variables/parameters, unreachable code, shadowing, redundant/null checks) with configurable warning levels.
+      - Phase 3 — Suggestions (depends on warnings): attach machine-readable suggestions to each warning/error (e.g. rename candidate, remove dead statement, add missing return) and include a compilable replacement preview where possible.
+      - Phase 4 — IDE/CLI delivery: expose diagnostics + suggestions in both human-readable CLI output and JSON protocol output for editor integration and auto-fix workflows.
 
 2) Multi-file parsing & build orchestration (current state: experimental)
    - Current: `src/parser/project` contains `ProjectParser`, `StdLibLoader`, and `ProjectCompiler` as bootstrapping pieces.

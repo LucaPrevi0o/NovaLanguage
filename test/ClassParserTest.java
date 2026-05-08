@@ -6,7 +6,6 @@ import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
-import parser.parser.util.ParseException;
 import token.TypeRegistry;
 
 import java.util.List;

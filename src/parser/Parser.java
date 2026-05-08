@@ -9,13 +9,9 @@ import parser.parser.util.ParseErrorsException;
 import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
-import parser.parser.ClassParser;
-import parser.parser.ExpressionParser;
 import parser.ast.SymbolTable;
 import token.ReturnType;
 import token.TypeRegistry;
-import token.family.Delimiter;
-import token.family.Keyword;
 import token.family.PrimitiveType;
 
 import java.util.ArrayList;
@@ -115,7 +111,7 @@ public class Parser extends ParserBase {
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
-    /// <p>Errors are collected via {@link #synchronize() error recovery}: parsing continues after
+    /// <p>Errors are collected via statement-boundary synchronization: parsing continues after
     /// each top-level error.  When the token stream is exhausted, a {@link ParseErrorsException}
     /// is thrown if any errors were recorded during the run.</p>
     ///
@@ -132,41 +128,11 @@ public class Parser extends ParserBase {
         } catch (ParseException e) {
 
             state.addError(e);
-            synchronize();
+            synchronizeToStatementBoundary();
         }
 
         if (!state.getErrors().isEmpty()) throw new ParseErrorsException(state.getErrors());
         return statements;
     }
 
-    // ─── Error recovery ────────────────────────────────────────────────────────
-
-    /// Advances the token stream to the next plausible statement boundary so that parsing
-    /// can resume after an error.
-    ///
-    /// <p>The synchronisation heuristics are (in order):</p>
-    /// <ul>
-    ///   <li>Skip the current token (the one that caused the error).</li>
-    ///   <li>Stop at a semicolon (end of an expression statement).</li>
-    ///   <li>Stop before any keyword that typically starts a new declaration or statement:
-    ///       {@code class}, {@code if}, {@code while}, {@code for}, {@code switch}, {@code return},
-    ///       {@code break}, {@code continue}.</li>
-    /// </ul>
-    private void synchronize() {
-
-        if (isNotAtEnd()) advance();  // always skip the offending token
-        while (isNotAtEnd()) {
-
-            // A semicolon marks the end of the previous statement — safe to resume after it.
-            if (previous().getType() == Delimiter.SEMICOLON) return;
-
-            // Keywords that begin a new declaration or statement are also safe resume points.
-            var next = peek().getType();
-            if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
-                next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
-                next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
-
-            advance();
-        }
-    }
 }
