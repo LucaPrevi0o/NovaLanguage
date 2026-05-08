@@ -4,7 +4,6 @@ import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
-import token.TypeRegistry;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ public class ControlFlowParserTest {
 
     private List<StatementNode> parse(String source) {
 
-        TypeRegistry.reset();
         var tokens = new Lexer(source).tokenize();
         return new Parser(tokens).parse();
     }

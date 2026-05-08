@@ -1,7 +1,7 @@
-package token.family;
+package lexer.token.family;
 
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents a non-primitive type in the token family, which is associated with a class declaration.
 public class NonPrimitiveType implements TokenFamily {

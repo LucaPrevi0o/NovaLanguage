@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents operators in the programming language, such as arithmetic, assignment, and logical operators.
 public enum Operator implements TokenFamily {

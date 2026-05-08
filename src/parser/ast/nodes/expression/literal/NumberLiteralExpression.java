@@ -2,8 +2,8 @@ package parser.ast.nodes.expression.literal;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import token.family.PrimitiveType;
-import lexer.token.TypeToken;
+import lexer.token.family.PrimitiveType;
+import lexer.token.type.TypeToken;
 
 import java.util.List;
 
@@ -84,7 +84,7 @@ public abstract class NumberLiteralExpression extends ExpressionNode implements 
     }
 
     private final TypeToken typeToken;
-    Number value;
+    final Number value;
 
     /// Constructs a new NumberLiteralExpression with the specified line, column, type token, and numeric value.
     /// @param line The line number in the source code where this expression occurs.

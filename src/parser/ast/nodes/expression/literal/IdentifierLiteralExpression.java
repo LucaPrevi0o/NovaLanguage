@@ -11,7 +11,7 @@ import java.util.List;
 /// It consists of a name that identifies the entity being referenced.
 public class IdentifierLiteralExpression extends ExpressionNode implements Printable {
     
-    String name;
+    final String name;
 
     /// Constructs a new IdentifierLiteralExpression with the specified line, column, and name.
     /// @param line The line number in the source code where this expression occurs.

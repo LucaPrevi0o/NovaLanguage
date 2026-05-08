@@ -8,7 +8,7 @@ import java.util.List;
 /// Represents a string literal expression in the AST.
 public class StringLiteralExpression extends ExpressionNode implements Printable {
     
-    String value;
+    final String value;
 
     /// Constructs a new StringLiteralExpression with the specified line, column, and string value.
     /// @param line The line number in the source code where this expression occurs.

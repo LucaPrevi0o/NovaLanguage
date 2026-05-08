@@ -11,11 +11,11 @@ import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import parser.parser.ClassParser;
 import parser.parser.ExpressionParser;
-import token.ReturnType;
-import token.TypeRegistry;
-import token.family.Delimiter;
-import token.family.Keyword;
-import token.family.PrimitiveType;
+import lexer.token.ReturnType;
+import lexer.token.TypeRegistry;
+import lexer.token.family.Delimiter;
+import lexer.token.family.Keyword;
+import lexer.token.family.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ import java.util.List;
 ///
 /// <p>The parser implements <em>error recovery</em>: when a {@link ParseException} is thrown while
 /// parsing a top-level declaration the parser records the error, skips tokens until a safe
-/// synchronisation point, and then continues with the next declaration.  At the end of the run,
+/// synchronization point, and then continues with the next declaration.  At the end of the run,
 /// if any errors were collected, a {@link ParseErrorsException} is thrown containing all of them so
 /// that callers receive a complete picture of every problem in a single pass.</p>
 ///
@@ -53,7 +53,7 @@ public class Parser extends ParserBase {
 
     /// Constructs a new Parser with the given list of tokens.
     /// Creates a fresh per-session {@link TypeRegistry}, pre-populates the global symbol table
-    /// with built-in stdlib functions, and initialises the declaration parser.
+    /// with built-in stdlib functions, and initializes the declaration parser.
     /// @param tokens The list of tokens to be parsed into an AST.
     public Parser(List<Token> tokens) {
 
@@ -130,7 +130,7 @@ public class Parser extends ParserBase {
     /// Advances the token stream to the next plausible statement boundary so that parsing
     /// can resume after an error.
     ///
-    /// <p>The synchronisation heuristics are (in order):</p>
+    /// <p>The synchronization heuristics are (in order):</p>
     /// <ul>
     ///   <li>Skip the current token (the one that caused the error).</li>
     ///   <li>Stop at a semicolon (end of an expression statement).</li>

@@ -1,7 +1,8 @@
 package parser.parser;
 
 import lexer.*;
-import lexer.token.LiteralToken;
+import lexer.token.family.literal.IdentifierLiteral;
+import lexer.token.type.LiteralToken;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
@@ -11,12 +12,11 @@ import parser.ast.nodes.statement.declaration.*;
 import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
-import token.ReturnType;
-import token.TypeRegistry;
-import token.family.Delimiter;
-import token.family.Keyword;
-import token.family.Literal;
-import token.family.Operator;
+import lexer.token.ReturnType;
+import lexer.token.TypeRegistry;
+import lexer.token.family.Delimiter;
+import lexer.token.family.Keyword;
+import lexer.token.family.Operator;
 import java.util.ArrayList;
 
 /// Unified parser for declarations and statements.
@@ -147,7 +147,7 @@ public class DeclarationParser extends ParserBase {
     private boolean isClassName(Token token) {
 
         if (!(token instanceof LiteralToken)) return false;
-        if (!(token.getType() instanceof Literal.IdentifierLiteral)) return false;
+        if (!(token.getType() instanceof IdentifierLiteral)) return false;
 
         var name = ((LiteralToken) token).getValue();
         return typeRegistry.isCustomClass(name) || typeRegistry.isGenericType(name);  // Allow generic types as valid types in declarations
@@ -171,7 +171,7 @@ public class DeclarationParser extends ParserBase {
             if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
 
             var paramType = parseType();
-            var paramName = consume(new Literal.IdentifierLiteral(), "Expect parameter name");
+            var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue(paramName), paramType));
         } while (match(Delimiter.COMMA));
         return parameters.toArray(new FunctionParameter[0]);
@@ -195,7 +195,7 @@ public class DeclarationParser extends ParserBase {
         if (isValidType(peek())) {
 
             var returnType = parseType();
-            if (check(new Literal.IdentifierLiteral())) {
+            if (check(new IdentifierLiteral())) {
 
                 var nameToken = advance();
                 var name = getLiteralValue(nameToken);
@@ -252,7 +252,7 @@ public class DeclarationParser extends ParserBase {
     /// `varDecl → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"`
     ///
     /// The first variable is registered in the symbol table immediately so that it is visible
-    /// to subsequent initialisers in the same comma-list.
+    /// to subsequent initializers in the same comma-list.
     ///
     /// @param type The return type of the variable, already parsed.
     /// @param name The name of the variable.
@@ -276,7 +276,7 @@ public class DeclarationParser extends ParserBase {
 
             do {
 
-                var nameToken = consume(new Literal.IdentifierLiteral(), "Expect variable name");
+                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
                 var varName = getLiteralValue(nameToken);
 
                 ExpressionNode init = null;
@@ -383,7 +383,7 @@ public class DeclarationParser extends ParserBase {
             var savedCurrent = state.getCurrentPosition();
             var type = parseType();
 
-            if (check(new Literal.IdentifierLiteral())) {
+            if (check(new IdentifierLiteral())) {
 
                 var nameToken = advance();
                 if (match(Delimiter.COLON)) {
@@ -437,7 +437,7 @@ public class DeclarationParser extends ParserBase {
             else if (isValidType(peek())) {
 
                 var type = parseType();
-                var nameToken = consume(new Literal.IdentifierLiteral(), "Expect variable name");
+                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
                 var name = getLiteralValue(nameToken);
 
                 ExpressionNode init = null;

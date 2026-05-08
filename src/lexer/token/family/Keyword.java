@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents keywords in the programming language, such as if, else, while, for, class, and return.
 public enum Keyword implements TokenFamily {

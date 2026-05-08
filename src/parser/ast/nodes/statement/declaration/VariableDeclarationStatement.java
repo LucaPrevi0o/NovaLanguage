@@ -3,7 +3,7 @@ package parser.ast.nodes.statement.declaration;
 import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.DeclarationStatement;
-import token.ReturnType;
+import lexer.token.ReturnType;
 
 import java.util.ArrayList;
 import java.util.List;

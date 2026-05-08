@@ -4,7 +4,6 @@ import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.expression.*;
 import parser.ast.nodes.statement.ExpressionStatement;
-import token.TypeRegistry;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,7 +14,6 @@ public class ExpressionParserTest {
 
     private Parser parse() {
 
-        TypeRegistry.reset();
         var tokens = new Lexer("int x; x = true ? 1 : 0;").tokenize();
         return new Parser(tokens);
     }
@@ -264,7 +262,7 @@ public class ExpressionParserTest {
     // ─── Literals ─────────────────────────────────────────────────────────────
 
     @Test
-    void testboolTrueLiteral() {
+    void testBoolTrueLiteral() {
 
         assertDoesNotThrow(() -> {
             var tokens = new Lexer("bool b; b = true;").tokenize();
@@ -273,7 +271,7 @@ public class ExpressionParserTest {
     }
 
     @Test
-    void testboolFalseLiteral() {
+    void testBoolFalseLiteral() {
 
         assertDoesNotThrow(() -> {
             var tokens = new Lexer("bool b; b = false;").tokenize();

@@ -1,14 +1,14 @@
 package lexer;
 
-import lexer.token.*;
-import token.TokenFamily;
-import token.family.AccessModifier;
-import token.family.Delimiter;
-import token.family.Keyword;
-import token.family.Literal;
-import token.family.Operator;
-import token.family.PrimitiveType;
-import token.family.Special;
+import lexer.token.TokenFamily;
+import lexer.token.family.literal.*;
+import lexer.token.type.*;
+import lexer.token.family.AccessModifier;
+import lexer.token.family.Delimiter;
+import lexer.token.family.Keyword;
+import lexer.token.family.Operator;
+import lexer.token.family.PrimitiveType;
+import lexer.token.family.Special;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,7 +139,7 @@ public class Lexer {
             advance();
         }
 
-        return new LiteralToken(new Literal.NumberLiteral(number.toString()), startLine, startColumn);
+        return new LiteralToken(new NumberLiteral(number.toString()), startLine, startColumn);
     }
 
     /// Read an identifier or keyword, which starts with a letter or underscore and can contain letters, digits, and underscores.
@@ -160,15 +160,15 @@ public class Lexer {
         var value = identifier.toString();
 
         // Boolean literals "true" and "false" are tokenized as LiteralTokens with BooleanLiteral type
-        if ("true".equals(value))  return new LiteralToken(Literal.BooleanLiteral.TRUE,  startLine, startColumn);
-        if ("false".equals(value)) return new LiteralToken(Literal.BooleanLiteral.FALSE, startLine, startColumn);
+        if ("true".equals(value)) return new LiteralToken(BoolLiteral.TRUE,  startLine, startColumn);
+        if ("false".equals(value)) return new LiteralToken(BoolLiteral.FALSE, startLine, startColumn);
 
         var isKeyword = KEYWORDS.get(value);
         var isType = TYPES.get(value);
 
         if (isKeyword != null) return new KeywordToken(isKeyword, startLine, startColumn);
         if (isType != null) return new TypeToken(isType, startLine, startColumn);
-        return new LiteralToken(new Literal.IdentifierLiteral(value), startLine, startColumn);
+        return new LiteralToken(new IdentifierLiteral(value), startLine, startColumn);
     }
 
     /// Read a string literal, which starts and ends with double quotes.
@@ -207,7 +207,7 @@ public class Lexer {
         }
         
         if (currentChar == '"') advance(); // skip closing quote
-        return new LiteralToken(new Literal.StringLiteral(string.toString()), startLine, startColumn);
+        return new LiteralToken(new StringLiteral(string.toString()), startLine, startColumn);
     }
 
     /// Read a character literal, which is a single character enclosed in single quotes.
@@ -256,7 +256,7 @@ public class Lexer {
         // Expect closing quote; if missing, return UNKNOWN
         if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn);
         advance(); // skip closing quote
-        return new LiteralToken(new Literal.CharLiteral(ch), startLine, startColumn);
+        return new LiteralToken(new CharLiteral(ch), startLine, startColumn);
     }
 
     /// Read an operator token, which can be one or two characters long.

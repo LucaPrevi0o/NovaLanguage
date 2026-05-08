@@ -2,8 +2,8 @@ package parser.ast.nodes.statement.declaration.object;
 
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
-import token.ReturnType;
-import token.family.AccessModifier;
+import lexer.token.ReturnType;
+import lexer.token.family.AccessModifier;
 import parser.ast.nodes.StatementNode;
 
 import java.util.ArrayList;

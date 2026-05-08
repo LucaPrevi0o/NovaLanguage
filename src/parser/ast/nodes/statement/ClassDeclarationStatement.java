@@ -3,9 +3,9 @@ package parser.ast.nodes.statement;
 import parser.ast.Printable;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
-import token.ReturnType;
-import token.family.AccessModifier;
-import token.family.NonPrimitiveType;
+import lexer.token.ReturnType;
+import lexer.token.family.AccessModifier;
+import lexer.token.family.NonPrimitiveType;
 import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 

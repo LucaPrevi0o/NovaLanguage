@@ -4,7 +4,7 @@ import parser.ast.Printable;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
-import token.family.AccessModifier;
+import lexer.token.family.AccessModifier;
 
 import java.util.ArrayList;
 import java.util.List;

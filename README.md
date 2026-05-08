@@ -44,7 +44,7 @@ Full grammar explanation in class documentation (see [ClassParser.java](src/pars
   - Token list available for parsing or direct analysis
 - Source parsing
   - AST production with specific context-aware nodes
-  - Support for class-level defined custom return types, with the help of a parsing-level [`TypeRegistry`](src/token/TypeRegistry.java) definition
+  - Support for class-level defined custom return types, with the help of a parsing-level [`TypeRegistry`](src/lexer/token/TypeRegistry.java) definition
   - Support for multidimensional array type with optional static size definition
   - Support for class inheritance and generic type parameters
   - Implementation of symbol scoping for variables, classes and functions
@@ -94,32 +94,32 @@ The [`Lexer`](src/lexer/Lexer.java) performs lexical analysis, converting raw so
 It handles:
 
 - **Whitespace and comment skipping** — both single-line (`//`) and multi-line (`/* */`) comments are discarded transparently.
-- **Literal recognition** — numbers (with optional type suffixes `l/L`, `f/F`, `d/D`, `b/B`), strings, character literals, and booleans (`true`/`false`) are each tokenized into a dedicated [`LiteralToken`](src/lexer/token/LiteralToken.java) subtype.
-- **Keyword and type disambiguation** — identifiers are checked against a static map of known keywords ([`Keyword`](src/token/family/Keyword.java), [`AccessModifier`](src/token/family/AccessModifier.java)) and primitive types ([`PrimitiveType`](src/token/family/PrimitiveType.java)), producing [`KeywordToken`](src/lexer/token/KeywordToken.java) or [`TypeToken`](src/lexer/token/TypeToken.java) respectively; unrecognized sequences become [`LiteralToken`](src/lexer/token/LiteralToken.java) identifiers.
+- **Literal recognition** — numbers (with optional type suffixes `l/L`, `f/F`, `d/D`, `b/B`), strings, character literals, and booleans (`true`/`false`) are each tokenized into a dedicated [`LiteralToken`](src/lexer/token/type/LiteralToken.java) subtype.
+- **Keyword and type disambiguation** — identifiers are checked against a static map of known keywords ([`Keyword`](src/lexer/token/family/Keyword.java), [`AccessModifier`](src/lexer/token/family/AccessModifier.java)) and primitive types ([`PrimitiveType`](src/lexer/token/family/PrimitiveType.java)), producing [`KeywordToken`](src/lexer/token/type/KeywordToken.java) or [`TypeToken`](src/lexer/token/type/TypeToken.java) respectively; unrecognized sequences become [`LiteralToken`](src/lexer/token/type/LiteralToken.java) identifiers.
 - **Operator and delimiter tokenization** — both one- and two-character forms (e.g. `=` vs `==`, `:` vs `::`) are resolved greedily.
 
 Every token carries its **source position** (line and column), which propagates through the parser into error messages and AST nodes.
 
 ### Token families
 
-All token types implement the [`TokenFamily`](src/token/TokenFamily.java) marker interface, organized into enums and classes under `token/family/`:
+All token types implement the [`TokenFamily`](src/lexer/token/TokenFamily.java) marker interface, organized into enums and classes under `token/family/`:
 
-| Type                                                     | Examples                                       |
-|----------------------------------------------------------|------------------------------------------------|
-| [`PrimitiveType`](src/token/family/PrimitiveType.java)   | `int`, `float`, `string`, `void`, …            |
-| [`Keyword`](src/token/family/Keyword.java)               | `if`, `while`, `for`, `class`, `return`, …     |
-| [`AccessModifier`](src/token/family/AccessModifier.java) | `public`, `private`, `protected`               |
-| [`Operator`](src/token/family/Operator.java)             | `+`, `==`, `&&`, `++`, `+=`, …                 |
-| [`Delimiter`](src/token/family/Delimiter.java)           | `(`, `{`, `[`, `;`, `::`, …                    |
-| [`Literal`](src/token/family/Literal.java)               | identifiers, numbers, strings, booleans, chars |
-| [`Special`](src/token/family/Special.java)               | `EOF`, `UNKNOWN`                               |
+| Type                                                           | Examples                                       |
+|----------------------------------------------------------------|------------------------------------------------|
+| [`PrimitiveType`](src/lexer/token/family/PrimitiveType.java)   | `int`, `float`, `string`, `void`, …            |
+| [`Keyword`](src/lexer/token/family/Keyword.java)               | `if`, `while`, `for`, `class`, `return`, …     |
+| [`AccessModifier`](src/lexer/token/family/AccessModifier.java) | `public`, `private`, `protected`               |
+| [`Operator`](src/lexer/token/family/Operator.java)             | `+`, `==`, `&&`, `++`, `+=`, …                 |
+| [`Delimiter`](src/lexer/token/family/Delimiter.java)           | `(`, `{`, `[`, `;`, `::`, …                    |
+| [`Literal`](src/lexer/token/family/Literal.java)               | identifiers, numbers, strings, booleans, chars |
+| [`Special`](src/lexer/token/family/Special.java)               | `EOF`, `UNKNOWN`                               |
 
-Non-primitive class names are represented at parse time by [`NonPrimitiveType`](src/token/family/NonPrimitiveType.java), and generic parameters by [`GenericParameterType`](src/token/family/GenericParameterType.java).
+Non-primitive class names are represented at parse time by [`NonPrimitiveType`](src/lexer/token/family/NonPrimitiveType.java), and generic parameters by [`GenericParameterType`](src/lexer/token/family/GenericParameterType.java).
 
 ### Parser
 
 The [`Parser`](src/parser/Parser.java) is the entry point for syntactic analysis.
-It owns a per-session [`TypeRegistry`](src/token/TypeRegistry.java) (pre-populated with all primitive types and extended as classes are declared), a global [`SymbolTable`](src/parser/ast/SymbolTable.java), and a small set of built-in standard-library stubs (`print`, `println`, `parseInt`, etc.).
+It owns a per-session [`TypeRegistry`](src/lexer/token/TypeRegistry.java) (pre-populated with all primitive types and extended as classes are declared), a global [`SymbolTable`](src/parser/ast/SymbolTable.java), and a small set of built-in standard-library stubs (`print`, `println`, `parseInt`, etc.).
 Parsing is delegated to three specialized sub-parsers:
 
 #### DeclarationParser
@@ -155,7 +155,7 @@ Symbol lookup walks up the parent chain, enabling full lexical scoping; re-decla
 
 ### Type Registry
 
-The [`TypeRegistry`](src/token/TypeRegistry.java) is a per-session catalogue of all known types.
+The [`TypeRegistry`](src/lexer/token/TypeRegistry.java) is a per-session catalogue of all known types.
 It is pre-populated with the primitive types at construction and extended with each new [`ClassDeclarationStatement`](src/parser/ast/nodes/statement/ClassDeclarationStatement.java) as it is parsed.
 The parser consults the registry to distinguish class names from plain identifiers during type parsing and `new` expressions, and to resolve superclass names in inheritance declarations.
 

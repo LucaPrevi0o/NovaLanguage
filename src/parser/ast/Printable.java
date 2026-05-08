@@ -8,7 +8,7 @@ import java.util.List;
 /// <ul>
 ///   <li>{@link #toPrintString()} – a one-line label for the node itself.</li>
 ///   <li>{@link #getPrintEntries()} – the ordered list of informational lines and child
-///       sub-trees that belong to this node.</li>
+///       subtrees that belong to this node.</li>
 /// </ul>
 ///
 /// {@link printer.AstPrinter} uses these two methods to render the whole AST tree,
@@ -44,7 +44,7 @@ public interface Printable {
     String toPrintString();
 
     /// Returns the ordered list of print entries that represent this node's
-    /// attributes and child sub-trees.
+    /// attributes and child subtrees.
     ///
     /// @return A list of {@link PrintEntry} values; never {@code null}.
     List<PrintEntry> getPrintEntries();

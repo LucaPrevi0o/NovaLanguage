@@ -8,7 +8,7 @@ import java.util.List;
 /// Represents a boolean literal expression in the AST.
 public class BoolLiteralExpression extends ExpressionNode implements Printable {
     
-    boolean value;
+    final boolean value;
 
     /// Constructs a new BoolLiteralExpression with the specified line, column, and boolean value.
     /// @param line The line number in the source code where this expression occurs.

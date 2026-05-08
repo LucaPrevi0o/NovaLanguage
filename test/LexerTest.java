@@ -1,9 +1,10 @@
+import lexer.token.family.literal.NumberLiteral;
+import lexer.token.family.literal.StringLiteral;
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
-import token.family.Literal;
-import token.family.Keyword;
-import token.family.Operator;
-import token.family.Special;
+import lexer.token.family.Keyword;
+import lexer.token.family.Operator;
+import lexer.token.family.Special;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,7 +17,7 @@ public class LexerTest {
         var lexer = new Lexer("42");
         var tokens = lexer.tokenize();
         assertEquals(2, tokens.size()); // number + EOF
-        assertInstanceOf(Literal.NumberLiteral.class, tokens.getFirst().getType());
+        assertInstanceOf(NumberLiteral.class, tokens.getFirst().getType());
     }
 
     @Test
@@ -25,7 +26,7 @@ public class LexerTest {
         var lexer = new Lexer("\"hello\"");
         var tokens = lexer.tokenize();
         assertEquals(2, tokens.size()); // string + EOF
-        assertInstanceOf(Literal.StringLiteral.class, tokens.getFirst().getType());
+        assertInstanceOf(StringLiteral.class, tokens.getFirst().getType());
     }
 
     @Test
@@ -76,7 +77,7 @@ public class LexerTest {
         var lexer = new Lexer("// this is a comment\n42");
         var tokens = lexer.tokenize();
         assertEquals(2, tokens.size()); // only number + EOF, comment is skipped
-        assertInstanceOf(Literal.NumberLiteral.class, tokens.getFirst().getType());
+        assertInstanceOf(NumberLiteral.class, tokens.getFirst().getType());
     }
 
     @Test
@@ -85,7 +86,7 @@ public class LexerTest {
         var lexer = new Lexer("/* comment */42");
         var tokens = lexer.tokenize();
         assertEquals(2, tokens.size()); // only number + EOF, comment is skipped
-        assertInstanceOf(Literal.NumberLiteral.class, tokens.getFirst().getType());
+        assertInstanceOf(NumberLiteral.class, tokens.getFirst().getType());
     }
 
     @Test

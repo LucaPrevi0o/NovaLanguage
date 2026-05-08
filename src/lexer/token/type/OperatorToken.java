@@ -1,8 +1,8 @@
-package lexer.token;
+package lexer.token.type;
 
 import lexer.Token;
-import token.TokenFamily;
-import token.family.Operator;
+import lexer.token.TokenFamily;
+import lexer.token.family.Operator;
 
 /**
  * Token representing an operator.

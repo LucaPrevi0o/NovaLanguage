@@ -2,9 +2,9 @@ package parser.parser.util;
 
 import lexer.Token;
 import parser.ast.SymbolTable;
-import token.TokenFamily;
-import token.TypeRegistry;
-import token.family.AccessModifier;
+import lexer.token.TokenFamily;
+import lexer.token.TypeRegistry;
+import lexer.token.family.AccessModifier;
 
 import java.util.ArrayList;
 

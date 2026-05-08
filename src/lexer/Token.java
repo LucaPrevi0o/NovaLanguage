@@ -1,6 +1,6 @@
 package lexer;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 //// Base class for all tokens produced by the lexer.
 /// Each token has a type (from a specific TokenFamily) and positional information (line and column).

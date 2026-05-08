@@ -1,22 +1,13 @@
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
-import token.TypeRegistry;
 import static org.junit.jupiter.api.Assertions.*;
 
 /// Test suite for the Parser class
 public class ParserTest {
-
-    @BeforeEach
-    void setUp() {
-
-        // Reset TypeRegistry before each test
-        TypeRegistry.reset();
-    }
 
     @Test
     void testMinimalVariableDeclaration() {

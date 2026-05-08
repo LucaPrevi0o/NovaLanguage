@@ -4,7 +4,6 @@ import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import token.TypeRegistry;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ public class DeclarationParserTest {
 
     private List<StatementNode> parse(String source) {
 
-        TypeRegistry.reset();
         var tokens = new Lexer(source).tokenize();
         return new Parser(tokens).parse();
     }
@@ -171,7 +169,6 @@ public class DeclarationParserTest {
     void testFunctionRegisteredInEnclosingScope() {
 
         // After parsing, the function symbol must be in the top-level symbol table
-        TypeRegistry.reset();
         var tokens = new Lexer("int compute() { return 1; }").tokenize();
         var parser = new Parser(tokens);
         parser.parse();

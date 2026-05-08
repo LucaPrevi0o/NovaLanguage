@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents delimiters in the programming language, such as parentheses, braces, and semicolons.
 public enum Delimiter implements TokenFamily {

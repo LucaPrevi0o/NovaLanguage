@@ -6,7 +6,7 @@ import parser.ast.AstNode;
 import parser.ast.Printable;
 import parser.ast.Printable.PrintEntry;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
-import token.ReturnType;
+import lexer.token.ReturnType;
 
 /// A utility class for printing the Abstract Syntax Tree (AST) of a program in a readable format.
 ///
@@ -14,7 +14,7 @@ import token.ReturnType;
 /// <ul>
 ///   <li>{@link Printable#toPrintString()} – the one-line label shown for that node.</li>
 ///   <li>{@link Printable#getPrintEntries()} – the ordered list of informational lines and child
-///       sub-trees belonging to that node.</li>
+///       subtrees belonging to that node.</li>
 /// </ul>
 ///
 /// This class is responsible only for managing indentation depth and the branch characters

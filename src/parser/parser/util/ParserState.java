@@ -1,11 +1,11 @@
 package parser.parser.util;
 
 import lexer.Token;
-import lexer.token.LiteralToken;
-import token.family.Literal;
-import lexer.token.TypeToken;
-import token.TokenFamily;
-import token.family.Special;
+import lexer.token.type.LiteralToken;
+import lexer.token.family.Literal;
+import lexer.token.type.TypeToken;
+import lexer.token.TokenFamily;
+import lexer.token.family.Special;
 
 import java.util.List;
 
@@ -51,7 +51,7 @@ public class ParserState {
     ///   <li>If {@code type} has a non-null value (e.g. {@code BooleanLiteral.TRUE} / {@code BooleanLiteral.FALSE}),
     ///       the token's value must equal that specific value — this correctly distinguishes TRUE from FALSE.</li>
     ///   <li>If {@code type} has a null value (wildcard/placeholder, e.g. {@code new Literal.NumberLiteral()}),
-    ///       the token only needs to be the same sub-class of {@code Literal}.</li>
+    ///       the token only needs to be the same subclass of {@code Literal}.</li>
     /// </ul>
     ///
     /// @param type The token family to check against the current token.

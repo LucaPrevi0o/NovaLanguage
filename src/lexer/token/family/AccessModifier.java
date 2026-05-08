@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents access modifiers in the programming language, such as public, private, and protected.
 public enum AccessModifier implements TokenFamily { 

@@ -1,9 +1,9 @@
-package lexer.token;
+package lexer.token.type;
 
 import lexer.Token;
-import token.TokenFamily;
-import token.family.NonPrimitiveType;
-import token.family.PrimitiveType;
+import lexer.token.TokenFamily;
+import lexer.token.family.NonPrimitiveType;
+import lexer.token.family.PrimitiveType;
 
 /// Represents a token that corresponds to a type in the programming language, such as primitive types (int, long, byte,
 /// float, double, char, bool, void) or non-primitive types (class names, interface names).

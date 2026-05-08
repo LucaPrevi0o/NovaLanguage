@@ -1,6 +1,6 @@
 package parser.ast.nodes.expression;
 
-import lexer.token.OperatorToken;
+import lexer.token.type.OperatorToken;
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 

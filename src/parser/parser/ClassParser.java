@@ -1,5 +1,6 @@
 package parser.parser;
 
+import lexer.token.family.literal.IdentifierLiteral;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
@@ -7,13 +8,12 @@ import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
 import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
-import token.ReturnType;
-import token.family.AccessModifier;
-import token.family.Delimiter;
-import token.family.GenericParameterType;
-import token.family.Keyword;
-import token.family.Literal;
-import token.family.Operator;
+import lexer.token.ReturnType;
+import lexer.token.family.AccessModifier;
+import lexer.token.family.Delimiter;
+import lexer.token.family.GenericParameterType;
+import lexer.token.family.Keyword;
+import lexer.token.family.Operator;
 
 import java.util.ArrayList;
 
@@ -72,7 +72,7 @@ public class ClassParser extends ParserBase {
     public ClassDeclarationStatement parseClassDeclaration(AccessModifier classAccessModifier) {
 
         var classToken = previous();
-        var nameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'class'");
+        var nameToken = consume(new IdentifierLiteral(), "Expect class name after 'class'");
         var className = getLiteralValue(nameToken);
 
         var superClasses = new ArrayList<ReturnType>();
@@ -80,7 +80,7 @@ public class ClassParser extends ParserBase {
 
         if (match(Delimiter.LSQUARE)) {
 
-            var genToken = consume(new Literal.IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+            var genToken = consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
             var genericParameterName = getLiteralValue(genToken);
             var genericType = new GenericParameterType(genericParameterName);
             genericClassParameter = new ReturnType(genericType, new ExpressionNode[0], null, null,  true);
@@ -92,14 +92,14 @@ public class ClassParser extends ParserBase {
 
         if (match(Delimiter.DOUBLE_COLON)) {
 
-            var superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
+            var superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
             var superClassName = getLiteralValue(superClassToken);
             superClasses.add(typeRegistry.getReturnType(superClassName));
             if (superClasses.getFirst() == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
 
             while (match(Delimiter.COMMA)) {
 
-                superClassToken = consume(new Literal.IdentifierLiteral(), "Expect superclass name after '::'");
+                superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
                 superClassName = getLiteralValue(superClassToken);
                 superClasses.add(typeRegistry.getReturnType(superClassName));
                 if (superClasses.getLast() == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
@@ -147,7 +147,7 @@ public class ClassParser extends ParserBase {
                     continue;
                 }
 
-                if (check(new Literal.IdentifierLiteral()) && getLiteralValue(peek()).equals(className)) {
+                if (check(new IdentifierLiteral()) && getLiteralValue(peek()).equals(className)) {
 
                     advance();  // consume class name
                     constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
@@ -157,7 +157,7 @@ public class ClassParser extends ParserBase {
                 if (!declarationParser.isValidType(peek())) throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", peek());
 
                 var type = declarationParser.parseType();
-                var memberNameToken = consume(new Literal.IdentifierLiteral(), "Expect member name");
+                var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
                 var memberName = getLiteralValue(memberNameToken);
 
                 if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));

@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents primitive types in the programming language, such as int, long, byte, float, double, char, bool, and void.
 public enum PrimitiveType implements TokenFamily {

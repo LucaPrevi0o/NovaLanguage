@@ -1,7 +1,7 @@
 package parser.ast.nodes.statement.declaration;
 
 import parser.ast.nodes.Symbol;
-import token.ReturnType;
+import lexer.token.ReturnType;
 
 /// Represents a parameter in a function declaration, including its type and name.
 public class FunctionParameter extends Symbol {

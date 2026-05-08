@@ -1,8 +1,8 @@
-package token;
+package lexer.token;
 
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import token.family.NonPrimitiveType;
-import token.family.PrimitiveType;
+import lexer.token.family.NonPrimitiveType;
+import lexer.token.family.PrimitiveType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,8 +54,4 @@ public class TypeRegistry {
         return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).anyMatch(ReturnType::isGeneric);
     }
 
-    /// No-op method kept for test API compatibility.
-    /// With per-instance TypeRegistry, each {@link parser.Parser} creates a fresh registry,
-    /// so no global reset is needed.
-    public static void reset() { }
 }

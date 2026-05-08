@@ -1,7 +1,9 @@
 package parser.parser;
 
 import lexer.Token;
-import lexer.token.*;
+import lexer.token.family.literal.*;
+import lexer.token.type.LiteralToken;
+import lexer.token.type.OperatorToken;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.expression.*;
@@ -16,11 +18,10 @@ import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
-import token.TypeRegistry;
-import token.family.Delimiter;
-import token.family.Keyword;
-import token.family.Literal;
-import token.family.Operator;
+import lexer.token.TypeRegistry;
+import lexer.token.family.Delimiter;
+import lexer.token.family.Keyword;
+import lexer.token.family.Operator;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity.
@@ -214,7 +215,7 @@ public class ExpressionParser extends ParserBase {
             if (match(Delimiter.LPAREN)) expr = finishCall(expr);
             else if (match(Delimiter.DOT)) {
 
-                var nameToken = consume(new Literal.IdentifierLiteral(), "Expect property name after '.'");
+                var nameToken = consume(new IdentifierLiteral(), "Expect property name after '.'");
                 expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue(nameToken));
             } else if (match(Delimiter.LSQUARE)) {
 
@@ -255,19 +256,19 @@ public class ExpressionParser extends ParserBase {
 
         var token = peek();
 
-        if (match(Literal.BooleanLiteral.TRUE))  return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
-        if (match(Literal.BooleanLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
-        if (match(Keyword.NULL))                 return new NullLiteralExpression(token.getLine(), token.getColumn());
+        if (match(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
+        if (match(BoolLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
+        if (match(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
 
-        if (match(new Literal.NumberLiteral())) return parseNumber((LiteralToken) previous());
+        if (match(new NumberLiteral())) return parseNumber((LiteralToken) previous());
 
-        if (match(new Literal.StringLiteral())) {
+        if (match(new StringLiteral())) {
 
             var lit = (LiteralToken) previous();
             return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getValue());
         }
 
-        if (match(new Literal.CharLiteral())) {
+        if (match(new CharLiteral())) {
 
             var lit = (LiteralToken) previous();
             var value = lit.getValue();
@@ -275,7 +276,7 @@ public class ExpressionParser extends ParserBase {
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
 
-        if (match(new Literal.IdentifierLiteral())) {
+        if (match(new IdentifierLiteral())) {
 
             var lit = (LiteralToken) previous();
             var name = lit.getValue();
@@ -295,7 +296,7 @@ public class ExpressionParser extends ParserBase {
                 throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().get() + "'. Use a class name instead.", badToken);
             }
 
-            var classNameToken = consume(new Literal.IdentifierLiteral(), "Expect class name after 'new'");
+            var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
             var className = getLiteralValue(classNameToken);
 
             if (!typeRegistry.isCustomClass(className)) throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);

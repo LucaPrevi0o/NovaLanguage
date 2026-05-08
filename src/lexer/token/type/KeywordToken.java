@@ -1,9 +1,9 @@
-package lexer.token;
+package lexer.token.type;
 
 import lexer.Token;
-import token.TokenFamily;
-import token.family.AccessModifier;
-import token.family.Keyword;
+import lexer.token.TokenFamily;
+import lexer.token.family.AccessModifier;
+import lexer.token.family.Keyword;
 
  /// Token representing a language keyword ({@code if}, {@code else}, {@code while}, etc.).
 public class KeywordToken extends Token {

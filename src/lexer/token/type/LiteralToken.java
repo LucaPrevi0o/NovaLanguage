@@ -1,9 +1,9 @@
-package lexer.token;
+package lexer.token.type;
 
 import lexer.Token;
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
- /// Token representing a literal value (number, identifier, string).
+/// Token representing a literal value (number, identifier, string).
  /// Stores the actual value as a string.
 public class LiteralToken extends Token {
 

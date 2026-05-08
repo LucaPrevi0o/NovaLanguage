@@ -4,7 +4,6 @@ import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
-import token.TypeRegistry;
 
 import java.util.List;
 
@@ -17,7 +16,6 @@ public class IntegrationTest {
 
     private List<StatementNode> parse(String source) {
 
-        TypeRegistry.reset();
         var tokens = new Lexer(source).tokenize();
         return new Parser(tokens).parse();
     }
@@ -95,7 +93,6 @@ public class IntegrationTest {
     void testWhileLoopWithSwitch() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer(
                 "int state; " +
                 "while (state < 3) { " +
@@ -116,7 +113,6 @@ public class IntegrationTest {
     void testTernaryInVariableInitializer() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer("int x; int y; int max = x > y ? x : y;").tokenize();
             new Parser(tokens).parse();
         });
@@ -153,7 +149,6 @@ public class IntegrationTest {
     void testStdlibReadAndParse() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer("string s; s = readLine(); int n; n = parseInt(s);").tokenize();
             new Parser(tokens).parse();
         });
@@ -165,7 +160,6 @@ public class IntegrationTest {
     void testGenericClassCanBeInstantiated() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer("public class Stack[T] { } Stack s; s = new Stack();").tokenize();
             new Parser(tokens).parse();
         });
@@ -199,7 +193,6 @@ public class IntegrationTest {
     void testInheritanceAndMethodCall() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer(
                 "public class Animal { " +
                 "  public void speak() { print(\"...\"); } " +
@@ -237,7 +230,6 @@ public class IntegrationTest {
     void testClassWithInnerClassAndMethod() {
 
         assertDoesNotThrow(() -> {
-            TypeRegistry.reset();
             var tokens = new Lexer(
                 "public class Outer { " +
                 "  public class Inner { " +

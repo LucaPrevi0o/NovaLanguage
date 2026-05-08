@@ -4,7 +4,7 @@ import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ConditionalStatement;
-import token.ReturnType;
+import lexer.token.ReturnType;
 
 import java.util.List;
 

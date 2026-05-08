@@ -1,6 +1,6 @@
-package token.family;
+package lexer.token.family;
 
-import token.TokenFamily;
+import lexer.token.TokenFamily;
 
 /// Represents a generic parameter type in the programming language, allowing for the use of type parameters in generic classes and functions.
 public class GenericParameterType implements TokenFamily {
