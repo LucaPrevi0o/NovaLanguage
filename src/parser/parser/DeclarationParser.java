@@ -232,12 +232,10 @@ public class DeclarationParser extends ParserBase {
         this.symbolTable.register(decl);
 
         var functionScope = enterScope();
-
         this.symbolTable = functionScope;
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
         try {
-
             for (var param : parameters) this.symbolTable.register(param);
             consume(Delimiter.LBRACE, "Expect '{' before function body");
 
@@ -247,7 +245,6 @@ public class DeclarationParser extends ParserBase {
             decl.setBody(body);  // Attach parsed body to the pre-registered declaration
             return decl;
         } finally {
-
             this.symbolTable = exitScope(functionScope);
             this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         }
@@ -551,18 +548,16 @@ public class DeclarationParser extends ParserBase {
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
         try {
-
             var statements = getStatementList();
             return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
         } finally {
-
             this.symbolTable = exitScope(blockScope);
             this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         }
     }
 
-    /// Helper method to parse a list of statements within a block/function body, until the closing right brace is encountered.
-    /// @return An ArrayList of StatementNode objects.
+    /// Parses statements until the closing right brace of the current block/function body.
+    /// @return The parsed statements.
     private ArrayList<StatementNode> getStatementList() {
 
         var statements = new ArrayList<StatementNode>();
