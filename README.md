@@ -179,7 +179,10 @@ Two utility classes render the internal structures to standard output for inspec
 - **Error handling**: The parser already implements top-level error recovery with synchronization and multi-error collection across declaration boundaries. Possible extensions include:
   - Finer-grained recovery inside statement and expression parsing, not just at the top-level declaration boundary, to surface more errors per run.
   - Richer semantic checks beyond out-of-scope symbol detection — for example, type mismatch, return-type consistency, duplicate class/method overloads, and unreachable code.
+  - Warning detections for non-critical issues (e.g. unused variables, unreachable code after return, deprecated constructs) that do not prevent successful parsing but should be flagged to the developer.
+  - Code suggestions in error messages, such as "Did you mean `foo`?" when an unknown identifier is encountered, or "Expected `;` here" when a statement is missing its terminator.
   - Detailed error messages with column-accurate caret indicators to pinpoint issues visually in the source text.
+  - Expandable error types with specific subclasses for different categories of errors (e.g. `SyntaxError`, `SemanticError`, `TypeError`) to allow more precise handling and reporting.
 
 - **Multi-file parsing**: The current pipeline handles a single source file. Supporting real projects requires a multi-file orchestration layer:
   - A project-level entry point that discovers, orders, and feeds multiple source files to the lexer and parser in dependency order.
