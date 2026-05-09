@@ -24,16 +24,6 @@ public final class AstPrinter {
     /// Private constructor to prevent instantiation, since this class only contains static methods.
     private AstPrinter() {}
 
-    // ─── Public API ────────────────────────────────────────────────────────────
-
-    /// Prints the AST starting from the given node with the specified header.
-    /// @param node    The root node of the AST to print.
-    /// @param spacers A list of strings used for indentation and visual structure.
-    /// @param header  A string to prefix the root node (e.g. {@code "├─ "} or {@code "└─ "}).
-    public static void printASTNode(AstNode node, List<String> spacers, String header) {
-        printASTNode(node, spacers, header, false);
-    }
-
     // ─── Core recursive printer ────────────────────────────────────────────────
 
     /// Recursively prints a node and all of its children.
@@ -41,52 +31,50 @@ public final class AstPrinter {
     /// @param node    The AST node to print.
     /// @param spacers Mutable list of indentation segments accumulated from ancestor nodes.
     /// @param header  Branch prefix for this node ({@code "├─ "} or {@code "└─ "}).
-    /// @param vLine   When {@code true}, a {@code "│  "} spacer is added so that the vertical
-    ///                bar continues past this subtree to the next sibling at the parent level.
-    ///                When {@code false}, a plain {@code "   "} spacer is added instead.
-    private static void printASTNode(AstNode node, List<String> spacers, String header, boolean vLine) {
+    public static void printASTNode(Printable node, List<String> spacers, String header) {
 
         if (node == null) return;
-        spacers.add(vLine ? "│  " : "   ");
-        if (node instanceof Printable p) {
-
-            printLine(spacers, header + p.toPrintString());
-            printEntries(p.getPrintEntries(), spacers);
-        } else printLine(spacers, header + node.getClass().getSimpleName() + " [line " + node.getLine() + "]");
-        spacers.removeLast();
+        printLine(spacers, header + node.toPrintString());
+        printEntries(node.getPrintEntries(), spacers, header.equals("├─ "));
     }
 
     // ─── Entry iteration ───────────────────────────────────────────────────────
 
     /// Iterates over a node's {@link PrintEntry} list and prints each one, using
     /// {@code ├─} for non-last entries and {@code └─} for the last entry.
-    private static void printEntries(List<PrintEntry> entries, List<String> spacers) {
+    private static void printEntries(List<PrintEntry> entries, List<String> spacers, boolean vLine) {
 
         for (var i = 0; i < entries.size(); i++) {
 
             var entry = entries.get(i);
             var isLast = (i == entries.size() - 1);
             var prefix = isLast ? "└─ " : "├─ ";
-            var hasMoreAfter = !isLast;
+
+            spacers.add(vLine ? "│  " : "   ");
             switch (entry) {
 
                 case PrintEntry.Info info -> printLine(spacers, prefix + info.text());
                 case PrintEntry.Child child -> {
 
                     printLine(spacers, prefix + child.label() + ":");
-                    printASTNode(child.node(), spacers, "└─ ", hasMoreAfter);
+                    spacers.add(!isLast ? "│  " : "   ");
+                    printASTNode((Printable) child.node(), spacers, "└─ ");
+                    spacers.removeLast();
                 }
 
                 case PrintEntry.Children children -> {
 
                     printLine(spacers, prefix + children.label() + ": " + children.nodes().length);
+                    spacers.add(!isLast ? "│  " : "   ");
                     for (var j = 0; j < children.nodes().length; j++) {
 
                         var isLastChild = (j == children.nodes().length - 1);
-                        printASTNode(children.nodes()[j], spacers, isLastChild ? "└─ " : "├─ ", !isLastChild || hasMoreAfter);
+                        printASTNode((Printable) children.nodes()[j], spacers, isLastChild ? "└─ " : "├─ ");
                     }
+                    spacers.removeLast();
                 }
             }
+            spacers.removeLast();
         }
     }
 

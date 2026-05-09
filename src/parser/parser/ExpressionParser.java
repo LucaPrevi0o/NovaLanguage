@@ -68,14 +68,11 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the assignment expression, which may be a simple assignment or a compound assignment.
     private ExpressionNode assignment() {
 
-        System.out.println("Parsing assignment expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = ternary();
         if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
 
             var operator = previous();
             var value = assignment();
-
-            System.out.println("Parsing assignment: " + operator.getType() + " with target " + expr.getClass().getSimpleName() + " and value " + value.getClass().getSimpleName());
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
@@ -89,7 +86,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the ternary expression if the `?` operator is present, or the result of `logicOr()` if not.
     private ExpressionNode ternary() {
 
-        System.out.println("Parsing ternary expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = logicOr();
         if (match(Operator.QUESTION)) {
 
@@ -107,7 +103,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the logical OR expression, which may consist of multiple `||` operations.
     private ExpressionNode logicOr() {
 
-        System.out.println("Parsing logical OR expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = logicAnd();
         while (match(Operator.LOGICAL_OR)) {
 
@@ -123,7 +118,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the logical AND expression, which may consist of multiple `&&` operations.
     private ExpressionNode logicAnd() {
 
-        System.out.println("Parsing logical AND expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = equality();
         while (match(Operator.LOGICAL_AND)) {
 
@@ -139,7 +133,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the equality expression, which may consist of multiple `==` or `!=` operations.
     private ExpressionNode equality() {
 
-        System.out.println("Parsing equality expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = comparison();
         while (match(Operator.EQUAL, Operator.NOT_EQUAL)) {
 
@@ -155,7 +148,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the comparison expression, which may consist of multiple `<`, `>`, `<=`, or `>=` operations.
     private ExpressionNode comparison() {
 
-        System.out.println("Parsing comparison expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = term();
         while (match(Operator.LESS_THAN, Operator.GREATER_THAN, Operator.LESS_EQUAL, Operator.GREATER_EQUAL)) {
 
@@ -171,7 +163,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the addition/subtraction expression, which may consist of multiple `+` or `-` operations.
     private ExpressionNode term() {
 
-        System.out.println("Parsing term expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = factor();
         while (match(Operator.PLUS, Operator.MINUS)) {
 
@@ -187,7 +178,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the multiplication/division/modulo expression, which may consist of multiple `*`, `/`, or `%` operations.
     private ExpressionNode factor() {
 
-        System.out.println("Parsing factor expression at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = unary();
         while (match(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
 
@@ -203,7 +193,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the unary expression if a unary operator is present, or the result of `call()` if not.
     private ExpressionNode unary() {
 
-        System.out.println("Parsing unary expression at line " + peek().getLine() + ", column " + peek().getColumn());
         if (match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
 
             var op = (OperatorToken) previous();
@@ -219,7 +208,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the call expression, which may include nested member access, array access, function calls, and postfix operators.
     private ExpressionNode call() {
 
-        System.out.println("Parsing call expression starting with primary at line " + peek().getLine() + ", column " + peek().getColumn());
         var expr = primary();
         while (true) {
 
@@ -230,7 +218,6 @@ public class ExpressionParser extends ParserBase {
                 expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue((LiteralToken) nameToken));
             } else if (match(Delimiter.LSQUARE)) {
 
-                System.out.println("Parsing array access at line " + peek().getLine() + ", column " + peek().getColumn());
                 var index = parseExpression();
                 var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
@@ -242,7 +229,6 @@ public class ExpressionParser extends ParserBase {
             } else break;
         }
 
-        System.out.println("Finished parsing call expression at line " + peek().getLine() + ", column " + peek().getColumn());
         return expr;
     }
 
@@ -268,7 +254,6 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the primary expression, which may be a literal, an identifier, an object creation expression, or a parenthesized expression.
     private ExpressionNode primary() {
 
-        System.out.println("Parsing primary expression at line " + peek().getLine() + ", column " + peek().getColumn() + ": " + peek().getType());
         var token = peek();
 
         if (match(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
@@ -293,21 +278,16 @@ public class ExpressionParser extends ParserBase {
 
         if (match(new IdentifierLiteral())) {
 
-            System.out.println("Parsing identifier literal at line " + peek().getLine() + ", column " + peek().getColumn());
             var lit = (LiteralToken) previous();
             var name = lit.getType().token();
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
-        System.out.println("Checking for 'new' keyword at line " + peek().getLine() + ", column " + peek().getColumn());
-
         if (match(Keyword.NEW)) {
 
             var newToken = previous();
-            // Require an identifier (class name); reject primitive types with a clear error
-            if (peek() instanceof TypeToken) {
+            if (peek() instanceof TypeToken) { // Require an identifier (class name); reject primitive types with a clear error
 
-                System.out.println("Error: 'new' cannot be used with primitive type '" + peek().getType().token() + "' at line " + peek().getLine() + ", column " + peek().getColumn());
                 // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
                 throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.", badToken);
@@ -331,9 +311,6 @@ public class ExpressionParser extends ParserBase {
             consume(Delimiter.RPAREN, "Expect ')' after expression");
             return expr;
         }
-
-        System.out.println("Error: Expected expression but found '" + peek().getType().token() + "' at line " + peek().getLine() + ", column " + peek().getColumn());
-        System.out.println("Previous token: " + (previous() != null ? previous().getType().token() : "null"));
 
         throw new ParseException("Expect expression", peek());
     }

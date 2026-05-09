@@ -150,6 +150,7 @@ public class DeclarationParser extends ParserBase {
         if (!(token.getType() instanceof IdentifierLiteral)) return false;
 
         var name = token.getType().token();
+        if (name == null) return false;
         return typeRegistry.isCustomType(name);  // Allow generic types as valid types in declarations
     }
 
@@ -187,26 +188,22 @@ public class DeclarationParser extends ParserBase {
         var accessModifier = parseAccessModifier();
         if (match(Keyword.CLASS)) {
 
-            System.out.println("Parsing class declaration with access modifier: " + accessModifier + " at line " + peek().getLine() + ", column " + peek().getColumn());
             if (accessModifier == null) throw new ParseException("Class declaration requires an access modifier", previous());
             return classParser.parseClassDeclaration(accessModifier);
         }
 
         if (isValidType(peek())) {
 
-            System.out.println("Parsing declaration starting with type: " + peek().getType().token() + " at line " + peek().getLine() + ", column " + peek().getColumn());
             var returnType = parseType();
             if (check(new IdentifierLiteral())) {
 
                 var nameToken = advance();
                 var name = getLiteralValue((LiteralToken) nameToken);
-
                 if (check(Delimiter.LPAREN)) return parseFunctionDeclaration(returnType, name, nameToken.getLine(), nameToken.getColumn());
                 return parseVariableDeclaration(returnType, name, nameToken.getLine(), nameToken.getColumn());
             }
         }
 
-        System.out.println("Parsing statement starting with token: " + peek().getType().token() + " at line " + peek().getLine() + ", column " + peek().getColumn());
         return parseStatement();
     }
 

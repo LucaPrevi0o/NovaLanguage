@@ -44,8 +44,7 @@ public class ClassMethodDeclaration extends FunctionDeclarationStatement {
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
         entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
         var params = getParameters();
-        entries.add(new PrintEntry.Info("Parameters: " + params.length));
-        appendParameterEntries(entries, params);
+        entries.add(new PrintEntry.Children("Parameters", params));
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Child("Body", getBody()));
         return entries;

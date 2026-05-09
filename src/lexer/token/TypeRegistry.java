@@ -33,7 +33,9 @@ public class TypeRegistry {
     /// @return {@code true} if the name is a registered type;
     public boolean isCustomType(String typeName) {
 
-        var returnType = getReturnType(typeName).getTokenClass();
-        return returnType instanceof NonPrimitiveType || returnType instanceof GenericParameterType;
+        var returnType = getReturnType(typeName);
+        if (returnType == null) return false;
+        var tokenClass = returnType.getTokenClass();
+        return tokenClass instanceof NonPrimitiveType || tokenClass instanceof GenericParameterType;
     }
 }

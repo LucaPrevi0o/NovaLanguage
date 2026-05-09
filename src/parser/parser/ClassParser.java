@@ -5,7 +5,6 @@ import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
-import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
@@ -83,7 +82,6 @@ public class ClassParser extends ParserBase {
 
             consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
 
-            System.out.println("Parsing generic parameter: " + genericParameterName);
             genericClassParameter = new ReturnType(new GenericParameterType(genericParameterName));
             typeRegistry.registerType(genericClassParameter); // Register generic parameter as a type to allow it to be used in member declarations
         }
@@ -110,8 +108,6 @@ public class ClassParser extends ParserBase {
 
         typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
         this.symbolTable.register(classDecl); // Register class declaration as a symbol in the current scope
-
-        System.out.println("Registered class: " + className);
 
         consume(Delimiter.LBRACE, "Expect '{' before class body");
 
@@ -140,7 +136,6 @@ public class ClassParser extends ParserBase {
 
                 if (check(new IdentifierLiteral()) && peek().getType().token().equals(className)) {
 
-                    System.out.println("Parsing constructor for class: " + className);
                     advance();  // consume class name
                     constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
                     continue;
@@ -151,7 +146,6 @@ public class ClassParser extends ParserBase {
                 var type = declarationParser.parseType();
                 var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
                 var memberName = getLiteralValue((LiteralToken) memberNameToken);
-                System.out.println("Parsing member: " + memberName + " with type: " + type.getTokenClass().token());
 
                 if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
                 else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
@@ -267,19 +261,13 @@ public class ClassParser extends ParserBase {
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
         for (var param : parameters) this.symbolTable.register(param);
 
-        System.out.println("Parsing constructor with parameters: " + String.join(", ", java.util.Arrays.stream(parameters).map(Symbol::getName).toArray(String[]::new)));
-        System.out.println("Types of parameters: " + String.join(", ", java.util.Arrays.stream(parameters).map(p -> p.getType().getTokenClass().token()).toArray(String[]::new)));
-
         try {
 
             consume(Delimiter.LBRACE, "Expect '{' before constructor body");
-            System.out.println("Parsing constructor body...");
 
             var bodyStatements = new ArrayList<StatementNode>();
             while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
             consume(Delimiter.RBRACE, "Expect '}' after constructor body");
-
-            System.out.println("Parsed constructor body with " + bodyStatements.size() + " statements");
 
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
             return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);

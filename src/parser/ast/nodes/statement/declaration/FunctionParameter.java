@@ -1,10 +1,14 @@
 package parser.ast.nodes.statement.declaration;
 
+import parser.ast.Printable;
 import parser.ast.nodes.Symbol;
 import lexer.token.ReturnType;
+import printer.AstPrinter;
+
+import java.util.List;
 
 /// Represents a parameter in a function declaration, including its type and name.
-public class FunctionParameter extends Symbol {
+public class FunctionParameter extends Symbol implements Printable {
 
     private final ReturnType type;
 
@@ -22,4 +26,12 @@ public class FunctionParameter extends Symbol {
     /// Returns the return type of the parameter.
     /// @return The return type of the parameter.
     public ReturnType getType() { return type; }
+
+    @Override
+    public String toPrintString() { return "FunctionParameter [line " + getLine() + "]"; }
+
+    @Override
+    public List<PrintEntry> getPrintEntries() {
+        return List.of(new PrintEntry.Info("Name: " + getName()), new PrintEntry.Info("Type: " + AstPrinter.buildTypeStringWithSizes(type)));
+    }
 }
