@@ -104,7 +104,7 @@ Common patterns like collections, data structures, and algorithms can be impleme
 
 ### Lambda expressions and functional programming
 Nova supports lambda expressions and functional programming constructs, but they are designed to be fully statically typed and optimized at compile time.
-- An abstract generic class `Function[{A}, R]` is provided as the base for all function types, where `{A}` is a variadic list of type parameters representing the argument types, and `R` is the return type.
+- An abstract generic class `Function[{A}, R]` is provided as the base for all function types, where `{A}` is a list of type parameters representing the argument types, and `R` is the return type.
 - Lambda expressions are syntactic sugar for anonymous subclasses of `Function`:
   - A lambda expression like `(x: int, y: int) -> int { return x + y; }` is parsed into an anonymous class that extends `Function[{int, int}, int]` (with `{A} = int, int` and `R = int`), and implements the `call` method with the provided body.
   - The compiler generates a concrete class for each unique lambda expression, with the appropriate type parameters based on the lambda's argument and return types.
