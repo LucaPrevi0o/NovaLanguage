@@ -111,7 +111,7 @@ public class ClassParser extends ParserBase {
 
         consume(Delimiter.LBRACE, "Expect '{' before class body");
 
-        var classScope = enterScope();
+        var classScope = enterScope(classDecl);
         var savedSymbolTable = this.symbolTable;
 
         this.symbolTable = classScope;
@@ -212,7 +212,7 @@ public class ClassParser extends ParserBase {
         var placeholder = new ClassMethodDeclaration(line, column, returnType, name, parameters, null, accessModifier);
         this.symbolTable.register(placeholder);
 
-        var methodScope = enterScope();
+        var methodScope = enterScope(placeholder);
         var savedSymbolTable = this.symbolTable;
 
         this.symbolTable = methodScope;

@@ -49,7 +49,7 @@ public class Main {
             for (var node : ast) AstPrinter.printASTNode((Printable) node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
 
             System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable(), new ArrayList<>());
+            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable());
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");

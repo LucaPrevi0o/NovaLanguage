@@ -231,7 +231,7 @@ public class DeclarationParser extends ParserBase {
         var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
         this.symbolTable.register(decl);
 
-        var functionScope = enterScope();
+        var functionScope = enterScope(decl);
         this.symbolTable = functionScope;
 
         for (var param : parameters) this.symbolTable.register(param);

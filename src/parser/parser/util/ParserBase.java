@@ -6,8 +6,7 @@ import parser.ast.SymbolTable;
 import lexer.token.TokenClass;
 import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
-
-import java.util.ArrayList;
+import parser.ast.nodes.Symbol;
 
 /// Base class for all parsers, providing common state and symbol table management.
 public abstract class ParserBase {
@@ -23,7 +22,7 @@ public abstract class ParserBase {
 
         this.state = state;
         this.typeRegistry = typeRegistry;
-        this.symbolTable = new SymbolTable(null, new ArrayList<>(), new ArrayList<>());
+        this.symbolTable = new SymbolTable(null);  // Start with global scope (no parent)
     }
 
     /// Constructor for child parsers (inherits current scope).
@@ -52,6 +51,12 @@ public abstract class ParserBase {
     /// Enters a new scope by creating a child symbol table of the current scope.
     /// @return The new child symbol table representing the new scope.
     protected SymbolTable enterScope() { return symbolTable.createChildScope(); }
+
+    /// Enters a new scope owned by the specified symbol (e.g., a function or class declaration) by creating a child symbol
+    /// table of the current scope and associating it with the owner symbol.
+    /// @param owner The symbol that owns the new scope (e.g., a function or class declaration).
+    /// @return The new child symbol table representing the new scope owned by the specified symbol.
+    protected SymbolTable enterScope(Symbol owner) { return symbolTable.createChildScope(owner); }
 
     /// Exits the current scope by returning the parent symbol table of the current scope.
     /// @param scope The current symbol table representing the current scope.
