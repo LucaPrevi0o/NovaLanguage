@@ -1,10 +1,9 @@
 package parser.parser.util;
 
 import lexer.Token;
+import lexer.token.TokenClass;
 import lexer.token.type.LiteralToken;
 import lexer.token.family.Literal;
-import lexer.token.type.TypeToken;
-import lexer.token.TokenFamily;
 import lexer.token.family.Special;
 
 import java.util.List;
@@ -56,15 +55,15 @@ public class ParserState {
     ///
     /// @param type The token family to check against the current token.
     /// @return True if the current token matches the specified token family, false otherwise.
-    public boolean check(TokenFamily type) {
+    public boolean check(TokenClass type) {
 
         if (isAtEnd()) return false;
         var currentType = peek().getType();
 
         if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
 
-            var typeVal = litType.get();
-            if (typeVal != null) return typeVal.equals(litCurrent.get());  // specific-value match (e.g. TRUE vs FALSE)
+            var typeVal = litType.token();
+            if (typeVal != null) return typeVal.equals(litCurrent.token());  // specific-value match (e.g. TRUE vs FALSE)
             return type.getClass() == currentType.getClass();              // wildcard class match
         }
         return currentType == type;
@@ -73,7 +72,7 @@ public class ParserState {
     /// Checks if the current token matches any of the specified token families. If a match is found, advances the position.
     /// @param types The token families to check against the current token.
     /// @return True if the current token matches any of the specified token families, false otherwise.
-    public boolean match(TokenFamily... types) {
+    public boolean match(TokenClass... types) {
 
         for (var type : types) if (check(type)) {
 
@@ -88,7 +87,7 @@ public class ParserState {
     /// @param message The error message to include in the ParseException if the current token does not match the specified token family.
     /// @return The token that was consumed if it matches the specified token family.
     /// @throws ParseException If the current token does not match the specified token family.
-    public Token consume(TokenFamily type, String message) {
+    public Token consume(TokenClass type, String message) {
 
         if (check(type)) return advance();
         throw new ParseException(message, peek());
@@ -98,17 +97,11 @@ public class ParserState {
 
     /// Checks if the current token is a literal token.
     /// @param token The token to check.
-    /// @return True if the token is an instance of LiteralToken, false otherwise.
-    public boolean isTypeToken(Token token) { return token instanceof TypeToken; }
-
-    /// Checks if the current token is a literal token.
-    /// @param token The token to check.
     /// @return The literal value of the token if it is an instance of LiteralToken.
     /// @throws ParseException If the token is not an instance of LiteralToken.
-    public String getLiteralValue(Token token) {
+    public String getLiteralValue(LiteralToken token) {
 
-        if (token instanceof LiteralToken lit) return lit.getValue();
-        throw new ParseException("Expected literal token", token);
+        return token.getType().token();
     }
 
     /// Returns the current token stream position.

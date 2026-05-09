@@ -54,7 +54,7 @@ public class ParserTest {
         var source = "public class Counter { " +
                      "  private int count; " +
                      "  public Counter() { count = 0; } " +
-                     "  public int get() { return count; } " +
+                     "  public int token() { return count; } " +
                      "}";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();

@@ -1,6 +1,6 @@
 package lexer.token;
 
-import parser.ast.nodes.statement.ClassDeclarationStatement;
+import lexer.token.family.GenericParameterType;
 import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.PrimitiveType;
 import java.util.ArrayList;
@@ -17,10 +17,6 @@ public class TypeRegistry {
     /// Creates a new TypeRegistry pre-populated with all primitive types.
     public TypeRegistry() { for (var primitive : PrimitiveType.values()) types.add(new ReturnType(primitive)); }
 
-    /// Registers a new class declaration as a return type in the registry.
-    /// @param classDecl The ClassDeclarationStatement representing the class to register.
-    public void registerClass(ClassDeclarationStatement classDecl) { types.add(new ReturnType(new NonPrimitiveType(classDecl))); }
-
     /// Registers a new ReturnType in the registry.
     /// @param returnType The ReturnType to register.
     public void registerType(ReturnType returnType) { types.add(returnType); }
@@ -29,29 +25,15 @@ public class TypeRegistry {
     /// @param typeName The string representation of the return type (e.g., "int", "MyClass").
     /// @return The matching ReturnType, or {@code null} if not found.
     public ReturnType getReturnType(String typeName) {
-        return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).findFirst().orElse(null);
-    }
-
-    /// Retrieves a ReturnType for a registered class by its class name.
-    /// @param className The class name.
-    /// @return The ReturnType wrapping the class declaration, or {@code null} if not found.
-    public ReturnType getClassDeclaration(String className) {
-
-        for (var type : types) if (type.getBaseType() instanceof NonPrimitiveType npt)
-            if (npt.getClassDeclaration().getName().equals(className)) return type;
-        return null;
+        return types.stream().filter(t -> t.getTokenClass().token().equals(typeName)).findFirst().orElse(null);
     }
 
     /// Determines whether the given name corresponds to a registered custom class.
     /// @param typeName The class name to check.
-    /// @return {@code true} if the name is a registered custom class.
-    public boolean isCustomClass(String typeName) { return getClassDeclaration(typeName) != null; }
+    /// @return {@code true} if the name is a registered type;
+    public boolean isCustomType(String typeName) {
 
-    /// Determines whether the given name corresponds to a registered primitive type.
-    /// @param typeName The type name to check.
-    /// @return {@code true} if the name is a registered primitive type.
-    public boolean isGenericType(String typeName) {
-        return types.stream().filter(t -> t.getBaseType().get().equals(typeName)).anyMatch(ReturnType::isGeneric);
+        var returnType = getReturnType(typeName).getTokenClass();
+        return returnType instanceof NonPrimitiveType || returnType instanceof GenericParameterType;
     }
-
 }

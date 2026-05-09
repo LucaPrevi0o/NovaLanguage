@@ -1,6 +1,7 @@
 package parser.ast.nodes.statement;
 
 import parser.ast.Printable;
+import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import lexer.token.ReturnType;
@@ -17,13 +18,13 @@ import static printer.AstPrinter.buildTypeStringWithSizes;
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
 public class ClassDeclarationStatement extends Symbol implements Printable {
 
+    private final AccessModifier accessModifier;
     private ClassMethodDeclaration[] methods;
     private ClassFieldDeclaration[] fields;
+    private ClassConstructorDeclaration[] constructors;
+    private ClassDeclarationStatement[] innerClasses;
     private final ReturnType[] superClasses;
     private final ReturnType genericClassParameter;
-    private ClassDeclarationStatement[] innerClasses;
-    private final AccessModifier accessModifier;
-    private ClassConstructorDeclaration[] constructors;
 
     /// Constructs a new ClassDeclarationStatement.
     ///
@@ -76,7 +77,15 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
     /// This ReturnType is consistent with how the class is registered in TypeRegistry.
     /// @return A ReturnType representing the type of this class.
-    public ReturnType getReturnType() { return new ReturnType(new NonPrimitiveType(this)); }
+    public ReturnType getReturnType() {
+
+        return new ReturnType(
+            new NonPrimitiveType(this.getName()),
+            new ExpressionNode[0],
+            superClasses,
+            genericClassParameter
+        );
+    }
 
     /// Returns the constructors declared within the class.
     /// @return An array of ClassConstructorDeclaration objects representing the constructors declared within the class.

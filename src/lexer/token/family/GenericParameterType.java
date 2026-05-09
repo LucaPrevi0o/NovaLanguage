@@ -1,16 +1,11 @@
 package lexer.token.family;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
-/// Represents a generic parameter type in the programming language, allowing for the use of type parameters in generic classes and functions.
-public class GenericParameterType implements TokenFamily {
-
-    private final String parameterName;
-
-    /// Constructs a new GenericParameterType with the specified parameter name.
-    /// @param parameterName The name of the generic parameter (e.g., "T", "E").
-    public GenericParameterType(String parameterName) { this.parameterName = parameterName; }
+/// Represents a generic parameter type, which is a placeholder for a type that will be specified when the generic class or method is instantiated.
+/// It is used in the context of generic programming to allow for type flexibility and reuse of code with different types.
+public record GenericParameterType(String typeName) implements TokenClass {
 
     @Override
-    public String get() { return parameterName; }
+    public String token() { return typeName; }
 }

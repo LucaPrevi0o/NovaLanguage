@@ -1,9 +1,9 @@
 package lexer.token.family;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
 /// Represents delimiters in the programming language, such as parentheses, braces, and semicolons.
-public enum Delimiter implements TokenFamily {
+public enum Delimiter implements TokenClass {
 
     /// The left parenthesis delimiter, used for grouping expressions and function calls.
     LPAREN("("),
@@ -38,12 +38,12 @@ public enum Delimiter implements TokenFamily {
     /// The dot delimiter, used for member access and method calls.
     DOT(".");
 
-    private final String symbol;
+    private final String delimiter;
 
     /// Constructs a new Delimiter with the specified symbol.
-    /// @param symbol The string representation of the delimiter (e.g., "(", ")", "{", "}").
-    Delimiter(String symbol) { this.symbol = symbol; }
+    /// @param delimiter The string representation of the delimiter (e.g., "(", ")", "{", "}").
+    Delimiter(String delimiter) { this.delimiter = delimiter; }
 
     @Override
-    public String get() { return symbol; }
+    public String token() { return delimiter; }
 }

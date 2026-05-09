@@ -62,7 +62,7 @@ public class ClassParserTest {
             "public class Counter { " +
             "  private int count; " +
             "  public Counter() { count = 0; } " +
-            "  public int get() { return count; } " +
+            "  public int token() { return count; } " +
             "}"
         );
         var cls = (ClassDeclarationStatement) ast.getFirst();
@@ -120,7 +120,7 @@ public class ClassParserTest {
     @Test
     void testClassAstNodeAndSymbolTableAreSameObject() {
 
-        var tokens = new Lexer("public class Linked { private int val; public int get() { return val; } }").tokenize();
+        var tokens = new Lexer("public class Linked { private int val; public int token() { return val; } }").tokenize();
         var parser = new Parser(tokens);
         var ast = parser.parse();
 

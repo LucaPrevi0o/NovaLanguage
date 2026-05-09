@@ -71,7 +71,6 @@ public final class AstPrinter {
             switch (entry) {
 
                 case PrintEntry.Info info -> printLine(spacers, prefix + info.text());
-
                 case PrintEntry.Child child -> {
 
                     printLine(spacers, prefix + child.label() + ":");
@@ -106,7 +105,7 @@ public final class AstPrinter {
     public static String buildTypeStringWithSizes(ReturnType type) {
 
         if (type == null) return "null";
-        var baseTypeStr = type.getBaseType().get();
+        var baseTypeStr = type.getTokenClass().token();
 
         var sizes = type.getSizes();
         if (sizes == null || sizes.length == 0) return baseTypeStr;

@@ -43,7 +43,7 @@ public class LexerTest {
 
         for (var keyword : Keyword.values()) {
 
-            var lexer = new Lexer(keyword.get());
+            var lexer = new Lexer(keyword.token());
             var tokens = lexer.tokenize();
             assertEquals(2, tokens.size());
             assertEquals(keyword, tokens.getFirst().getType());
@@ -64,7 +64,7 @@ public class LexerTest {
 
         for (var operator : Operator.values()) {
 
-            var lexer = new Lexer(operator.get());
+            var lexer = new Lexer(operator.token());
             var tokens = lexer.tokenize();
             assertEquals(2, tokens.size());
             assertEquals(operator, tokens.getFirst().getType());

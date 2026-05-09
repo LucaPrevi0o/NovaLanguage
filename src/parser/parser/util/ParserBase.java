@@ -1,8 +1,9 @@
 package parser.parser.util;
 
 import lexer.Token;
+import lexer.token.type.LiteralToken;
 import parser.ast.SymbolTable;
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
 
@@ -83,28 +84,23 @@ public abstract class ParserBase {
     /// Checks if the current token matches the specified type.
     /// @param type The token family to check against the current token.
     /// @return True if the current token matches the specified type; otherwise, false.
-    protected boolean check(TokenFamily type) { return state.check(type); }
+    protected boolean check(TokenClass type) { return state.check(type); }
 
     /// Checks if the current token matches any of the specified types.
     /// @param types The token families to check against the current token.
     /// @return True if the current token matches any of the specified types; otherwise, false.
-    protected boolean match(TokenFamily... types) { return state.match(types); }
+    protected boolean match(TokenClass... types) { return state.match(types); }
 
     /// Consumes the current token if it matches the specified type; otherwise, throws a ParseException with the provided error message.
     /// @param type The token family to check against the current token.
     /// @param message The error message to include in the ParseException if the current token does not match the specified type.
     /// @return The token that was consumed if it matches the specified type.
-    protected Token consume(TokenFamily type, String message) { return state.consume(type, message); }
+    protected Token consume(TokenClass type, String message) { return state.consume(type, message); }
 
-    /// Checks if the current token is a type token (e.g., int, string, etc.).
-    /// @param token The token to check.
-    /// @return True if the token is a type token; otherwise, false.
-    protected boolean isTypeToken(Token token) { return state.isTypeToken(token); }
-
-     /// Retrieves the literal value associated with the specified token, if applicable.
+    /// Retrieves the literal value associated with the specified token, if applicable.
      /// @param token The token for which to retrieve the literal value.
      /// @return The literal value associated with the specified token, or null if the token does not have a literal value.
-     protected String getLiteralValue(Token token) { return state.getLiteralValue(token); }
+     protected String getLiteralValue(LiteralToken token) { return state.getLiteralValue(token); }
 
      /// Parses an access modifier, which can be "public", "private", or "protected".
      /// If no access modifier is present, returns null (indicating package-private).

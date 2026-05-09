@@ -1,9 +1,9 @@
 package lexer.token.family;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
 /// Represents keywords in the programming language, such as if, else, while, for, class, and return.
-public enum Keyword implements TokenFamily {
+public enum Keyword implements TokenClass {
 
     /// The if keyword, used for conditional statements.
     IF("if"),
@@ -54,5 +54,5 @@ public enum Keyword implements TokenFamily {
     Keyword(String keyword) { this.keyword = keyword; }
 
     @Override
-    public String get() { return keyword; }
+    public String token() { return keyword; }
 }

@@ -1,7 +1,7 @@
 package lexer.token.type;
 
 import lexer.Token;
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.PrimitiveType;
 
@@ -9,14 +9,19 @@ import lexer.token.family.PrimitiveType;
 /// float, double, char, bool, void) or non-primitive types (class names, interface names).
 public class TypeToken extends Token {
 
-    /// Constructs a TypeToken with the given type, line, and column.
-    /// @param type The specific type.
+    /// Constructs a new TypeToken with the specified primitive type, line, and column.
+    /// @param primitiveType The specific primitive type token (must be a member of the {@link PrimitiveType} family).
     /// @param line The line number where the token appears.
     /// @param column The column number where the token starts.
-    /// @throws IllegalArgumentException if the provided type is not a valid type token.
-    public TypeToken(TokenFamily type, int line, int column) {
+    public TypeToken(PrimitiveType primitiveType, int line, int column) {
+        super(primitiveType, line, column);
+    }
 
-        super(type, line, column);
-        if (!(type instanceof PrimitiveType || type instanceof NonPrimitiveType)) throw new IllegalArgumentException("TokenType " + type + " is not a type");
+    /// Constructs a new TypeToken with the specified non-primitive type, line, and column.
+    /// @param nonPrimitiveType The specific non-primitive type token (must be a member of the {@link NonPrimitiveType} family).
+    /// @param line The line number where the token appears.
+    /// @param column The column number where the token starts.
+    public TypeToken(NonPrimitiveType nonPrimitiveType, int line, int column) {
+        super(nonPrimitiveType, line, column);
     }
 }

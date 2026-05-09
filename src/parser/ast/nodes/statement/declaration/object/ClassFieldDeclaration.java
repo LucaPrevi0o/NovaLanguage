@@ -40,7 +40,7 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
 
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
-        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType()) + (getDeclaredType().isGeneric() ? " (Generic Type)" : "")));
+        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
         if (getInitialValue() != null) entries.add(new PrintEntry.Child("Initializer", getInitialValue()));
         return entries;
