@@ -15,4 +15,9 @@ public class LiteralToken extends Token {
     public LiteralToken(Literal type, int line, int column) {
         super(type, line, column);
     }
+
+    /// Returns the string value of this literal token (e.g., the identifier name, number text, or string content).
+    /// Convenience method equivalent to {@code getType().token()}.
+    /// @return The string value of the literal, or {@code null} if not applicable.
+    public String getValue() { return getType().token(); }
 }

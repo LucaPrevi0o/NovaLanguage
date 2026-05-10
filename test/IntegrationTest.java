@@ -170,7 +170,8 @@ public class IntegrationTest {
     @Test
     void testMultipleTopLevelErrors() {
 
-        var tokens = new Lexer("badA + 1; badB + 2; badC + 3;").tokenize();
+        // Each statement has a missing right-hand operand, producing one parse error per statement.
+        var tokens = new Lexer("1 + ; 2 + ; 3 + ;").tokenize();
         var parser = new Parser(tokens);
         var ex = assertThrows(ParseErrorsException.class, parser::parse);
         assertEquals(3, ex.getErrors().size(), "All three errors should be reported");
@@ -179,9 +180,9 @@ public class IntegrationTest {
     @Test
     void testValidDeclarationAfterError() {
 
-        // First statement has an error; second is valid.
-        // Error count should be 1 (only the bad statement).
-        var tokens = new Lexer("undeclaredVar; int x;").tokenize();
+        // First statement has a syntax error (missing variable name after type);
+        // second is a valid declaration — error count should be exactly 1.
+        var tokens = new Lexer("int ; int x = 5;").tokenize();
         var parser = new Parser(tokens);
         var ex = assertThrows(ParseErrorsException.class, parser::parse);
         assertEquals(1, ex.getErrors().size(), "Only 1 error expected — the second statement is valid");

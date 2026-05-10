@@ -1,7 +1,7 @@
 package parser.parser;
 
 import error.ErrorCollector;
-import error.syntax.MissingTokenError;
+import error.syntax.UnexpectedTokenError;
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
@@ -129,7 +129,6 @@ public class ClassParser extends ParserBase {
             while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
 
                 var memberAccessModifier = parseAccessModifier();
-                if (memberAccessModifier == null) ErrorCollector.add(new MissingTokenError());
                 if (match(Keyword.CLASS)) {
 
                     //if (memberAccessModifier == null) throw new ParseException("Inner class declaration requires an access modifier", previous());
@@ -144,9 +143,12 @@ public class ClassParser extends ParserBase {
                     continue;
                 }
 
-                if (!declarationParser.isValidType(peek())) //throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", peek());
-                ErrorCollector.add(new MissingTokenError());
+                if (!declarationParser.isValidType(peek())) {
 
+                    var badToken = peek();
+                    ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+                    throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", badToken);
+                }
                 var type = declarationParser.parseType();
                 var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
                 var memberName = getLiteralValue((LiteralToken) memberNameToken);

@@ -1,5 +1,6 @@
 package parser;
 
+import error.ErrorCollector;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
@@ -59,6 +60,7 @@ public class Parser extends ParserBase {
 
         super(new ParserState(tokens), new TypeRegistry());
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
+        ErrorCollector.clear();  // Reset the global collector for each new parse session
         registerStdLib();
     }
 

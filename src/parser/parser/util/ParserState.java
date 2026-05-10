@@ -1,7 +1,7 @@
 package parser.parser.util;
 
 import error.ErrorCollector;
-import error.syntax.UnexpectedTokenError;
+import error.syntax.MissingTokenError;
 import lexer.Token;
 import lexer.token.TokenClass;
 import lexer.token.type.LiteralToken;
@@ -84,7 +84,9 @@ public class ParserState {
         return false;
     }
 
-    /// Consumes the current token if it matches the specified token family; otherwise, throws a ParseException with the provided message.
+    /// Consumes the current token if it matches the specified token family; otherwise, records a
+    /// {@link error.syntax.MissingTokenError} in the {@link error.ErrorCollector} and throws a
+    /// {@link ParseException} so that the top-level parser can synchronize and continue.
     /// @param type The token family to check against the current token.
     /// @param message The error message to include in the ParseException if the current token does not match the specified token family.
     /// @return The token that was consumed if it matches the specified token family.
@@ -92,8 +94,9 @@ public class ParserState {
     public Token consume(TokenClass type, String message) {
 
         if (check(type)) return advance();
-        ErrorCollector.add(new UnexpectedTokenError(type));
-        return null;
+        var errorToken = peek();
+        ErrorCollector.add(new MissingTokenError(errorToken.getLine(), errorToken.getColumn(), type));
+        throw new ParseException(message, errorToken);
     }
     
     // ========== Helper Methods ==========

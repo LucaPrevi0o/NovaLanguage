@@ -2,8 +2,6 @@ package error;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 /// Collects errors during a process (e.g., parsing) and allows retrieval of all collected errors at the end.
 ///
@@ -22,7 +20,13 @@ public class ErrorCollector {
 
     /// Adds one or more errors to the collector. Null errors are ignored.
     /// @param error One or more {@link Error}s to be collected. Null values will be filtered out and not added to the collection.
-    public static synchronized void add(Error error) { errors = List.copyOf(Stream.of(error).filter(Objects::nonNull).toList()); }
+    public static synchronized void add(Error error) {
+
+        if (error == null) return;
+        var newList = new ArrayList<>(errors);
+        newList.add(error);
+        errors = List.copyOf(newList);
+    }
 
     /// Clears all collected errors from the collector, resetting it to an empty state.
     public static synchronized void clear() { errors = new ArrayList<>(); }

@@ -1,7 +1,7 @@
 package parser.parser;
 
 import error.ErrorCollector;
-import error.syntax.MissingTokenError;
+import error.syntax.UnexpectedTokenError;
 import lexer.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
@@ -140,8 +140,8 @@ public class DeclarationParser extends ParserBase {
         }
 
         //throw new ParseException("Expect type (primitive or class name)", token);
-        ErrorCollector.add(new MissingTokenError());
-        return null;
+        ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+        throw new ParseException("Expect type (primitive or class name)", token);
     }
 
     /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
@@ -190,8 +190,7 @@ public class DeclarationParser extends ParserBase {
     public StatementNode parseDeclaration() {
 
         var accessModifier = parseAccessModifier();
-        if (accessModifier == null) ErrorCollector.add(new MissingTokenError());
-        consume(Keyword.CLASS, "Expect class name");
+        if (match(Keyword.CLASS)) return classParser.parseClassDeclaration(accessModifier);
 
         if (isValidType(peek())) {
 
@@ -503,8 +502,12 @@ public class DeclarationParser extends ParserBase {
             consume(Delimiter.COLON, "Expect ':' after 'default'");
             var body = parseStatement();
             cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
-        } else //throw new ParseException("Expect 'case' or 'default' in switch body", peek());
-        ErrorCollector.add(new MissingTokenError());
+        } else {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            throw new ParseException("Expect 'case' or 'default' in switch body", badToken);
+        }
 
         consume(Delimiter.RBRACE, "Expect '}' after switch body");
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));

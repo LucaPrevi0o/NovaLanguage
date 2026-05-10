@@ -1,8 +1,8 @@
 package parser.parser;
 
 import error.ErrorCollector;
-import error.syntax.MissingTokenError;
 import error.syntax.UnexpectedTokenError;
+import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
 import lexer.token.family.literal.*;
 import lexer.token.type.LiteralToken;
@@ -27,6 +27,7 @@ import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
+import lexer.token.family.Special;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity.
@@ -293,8 +294,7 @@ public class ExpressionParser extends ParserBase {
 
                 // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
-                ErrorCollector.add(new UnexpectedTokenError(badToken.getType()));
-                //throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.", badToken);
+                ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
             }
 
             var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
@@ -316,8 +316,11 @@ public class ExpressionParser extends ParserBase {
             return expr;
         }
 
-        ErrorCollector.add(new MissingTokenError());
-        return null;
+        if (token.getType() == Special.UNKNOWN)
+            ErrorCollector.add(new UnrecognizedTokenError(token.toString(), token.getLine(), token.getColumn()));
+        else
+            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+        throw new ParseException("Expect expression", token);
         //throw new ParseException("Expect expression", peek());
     }
 
@@ -339,11 +342,7 @@ public class ExpressionParser extends ParserBase {
             case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
             case DIVIDE_ASSIGN   -> Operator.DIVIDE;
             case MODULO_ASSIGN   -> Operator.MODULO;
-            default -> //throw new ParseException("Unknown compound assignment operator", operator);
-            {
-                ErrorCollector.add(new MissingTokenError());
-                yield null;
-            }
+            default -> throw new ParseException("Unknown compound assignment operator", operator);
         };
 
         return new BinaryExpression(
@@ -382,9 +381,8 @@ public class ExpressionParser extends ParserBase {
             return new IntegerLiteralExpression(line, col, Integer.parseInt(value));
         } catch (NumberFormatException e) {
 
-            ErrorCollector.add(new MissingTokenError());
-            return null;
-            //throw new ParseException("Invalid number format: " + value, token);
+            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+            throw new ParseException("Invalid number format: " + value, token);
         }
     }
 }
