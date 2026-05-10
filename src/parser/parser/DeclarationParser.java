@@ -1,5 +1,7 @@
 package parser.parser;
 
+import error.ErrorCollector;
+import error.syntax.MissingTokenError;
 import lexer.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
@@ -137,7 +139,9 @@ public class DeclarationParser extends ParserBase {
             return new ReturnType(classType.getTokenClass(), arrayDims, superTypes, genericParamType);
         }
 
-        throw new ParseException("Expect type (primitive or class name)", token);
+        //throw new ParseException("Expect type (primitive or class name)", token);
+        ErrorCollector.add(new MissingTokenError());
+        return null;
     }
 
     /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
@@ -169,7 +173,7 @@ public class DeclarationParser extends ParserBase {
         var parameters = new ArrayList<FunctionParameter>();
         if (!check(Delimiter.RPAREN)) do {
 
-            if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
+            //if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
             var paramType = parseType();
             var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue((LiteralToken) paramName), paramType));
@@ -186,11 +190,8 @@ public class DeclarationParser extends ParserBase {
     public StatementNode parseDeclaration() {
 
         var accessModifier = parseAccessModifier();
-        if (match(Keyword.CLASS)) {
-
-            if (accessModifier == null) throw new ParseException("Class declaration requires an access modifier", previous());
-            return classParser.parseClassDeclaration(accessModifier);
-        }
+        if (accessModifier == null) ErrorCollector.add(new MissingTokenError());
+        consume(Keyword.CLASS, "Expect class name");
 
         if (isValidType(peek())) {
 
@@ -502,7 +503,8 @@ public class DeclarationParser extends ParserBase {
             consume(Delimiter.COLON, "Expect ':' after 'default'");
             var body = parseStatement();
             cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
-        } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
+        } else //throw new ParseException("Expect 'case' or 'default' in switch body", peek());
+        ErrorCollector.add(new MissingTokenError());
 
         consume(Delimiter.RBRACE, "Expect '}' after switch body");
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));

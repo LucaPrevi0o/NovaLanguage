@@ -1,5 +1,8 @@
 package parser.parser;
 
+import error.ErrorCollector;
+import error.syntax.MissingTokenError;
+import error.syntax.UnexpectedTokenError;
 import lexer.Token;
 import lexer.token.family.literal.*;
 import lexer.token.type.LiteralToken;
@@ -241,7 +244,7 @@ public class ExpressionParser extends ParserBase {
         var arguments = new ArrayList<ExpressionNode>();
         if (!check(Delimiter.RPAREN)) do {
 
-            if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", peek());
+            //if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", peek());
             arguments.add(parseExpression());
         } while (match(Delimiter.COMMA));
 
@@ -290,7 +293,8 @@ public class ExpressionParser extends ParserBase {
 
                 // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
-                throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.", badToken);
+                ErrorCollector.add(new UnexpectedTokenError(badToken.getType()));
+                //throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.", badToken);
             }
 
             var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
@@ -312,7 +316,9 @@ public class ExpressionParser extends ParserBase {
             return expr;
         }
 
-        throw new ParseException("Expect expression", peek());
+        ErrorCollector.add(new MissingTokenError());
+        return null;
+        //throw new ParseException("Expect expression", peek());
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -333,7 +339,11 @@ public class ExpressionParser extends ParserBase {
             case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
             case DIVIDE_ASSIGN   -> Operator.DIVIDE;
             case MODULO_ASSIGN   -> Operator.MODULO;
-            default -> throw new ParseException("Unknown compound assignment operator", operator);
+            default -> //throw new ParseException("Unknown compound assignment operator", operator);
+            {
+                ErrorCollector.add(new MissingTokenError());
+                yield null;
+            }
         };
 
         return new BinaryExpression(
@@ -370,6 +380,11 @@ public class ExpressionParser extends ParserBase {
                 return new ByteLiteralExpression(line, col, Byte.parseByte(value.substring(0, value.length() - 1)));
 
             return new IntegerLiteralExpression(line, col, Integer.parseInt(value));
-        } catch (NumberFormatException e) { throw new ParseException("Invalid number format: " + value, token); }
+        } catch (NumberFormatException e) {
+
+            ErrorCollector.add(new MissingTokenError());
+            return null;
+            //throw new ParseException("Invalid number format: " + value, token);
+        }
     }
 }

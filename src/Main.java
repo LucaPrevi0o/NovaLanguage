@@ -1,3 +1,4 @@
+import error.ErrorCollector;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.Printable;
@@ -50,6 +51,12 @@ public class Main {
 
             System.out.println("\n=== SYMBOL TABLE ===\n");
             SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable());
+
+            if (!ErrorCollector.hasErrors()) {
+
+                System.out.println("Errors:");
+                for (var error : ErrorCollector.getErrors()) System.out.println(error);
+            }
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");

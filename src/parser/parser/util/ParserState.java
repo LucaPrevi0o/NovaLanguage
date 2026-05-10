@@ -1,5 +1,7 @@
 package parser.parser.util;
 
+import error.ErrorCollector;
+import error.syntax.UnexpectedTokenError;
 import lexer.Token;
 import lexer.token.TokenClass;
 import lexer.token.type.LiteralToken;
@@ -90,7 +92,8 @@ public class ParserState {
     public Token consume(TokenClass type, String message) {
 
         if (check(type)) return advance();
-        throw new ParseException(message, peek());
+        ErrorCollector.add(new UnexpectedTokenError(type));
+        return null;
     }
     
     // ========== Helper Methods ==========
@@ -100,7 +103,6 @@ public class ParserState {
     /// @return The literal value of the token if it is an instance of LiteralToken.
     /// @throws ParseException If the token is not an instance of LiteralToken.
     public String getLiteralValue(LiteralToken token) {
-
         return token.getType().token();
     }
 
