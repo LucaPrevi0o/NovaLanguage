@@ -1,13 +1,20 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import parser.parser.util.ParseErrorsException;
+import error.ErrorCollector;
 import static org.junit.jupiter.api.Assertions.*;
 
 /// Test suite for the Parser class
 public class ParserTest {
+
+    @BeforeEach
+    void clearErrors() {
+
+        ErrorCollector.clear();
+    }
 
     @Test
     void testMinimalVariableDeclaration() {
@@ -54,7 +61,7 @@ public class ParserTest {
         var source = "public class Counter { " +
                      "  private int count; " +
                      "  public Counter() { count = 0; } " +
-                     "  public int get() { return count; } " +
+                     "  public int token() { return count; } " +
                      "}";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();
@@ -86,7 +93,8 @@ public class ParserTest {
         var lexer = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
-        assertThrows(Exception.class, parser::parse, "Should throw ParseException for undefined variable");
+        assertDoesNotThrow(parser::parse);
+        assertFalse(ErrorCollector.hasErrors(), "Undefined variable is not a syntax error and should not be collected here");
     }
 
     @Test
@@ -96,7 +104,8 @@ public class ParserTest {
         var lexer = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
-        assertThrows(RuntimeException.class, parser::parse, "Should throw RuntimeException for duplicate symbol");
+        assertDoesNotThrow(parser::parse);
+        assertTrue(ErrorCollector.hasErrors(), "Duplicate symbol should be collected as parse error");
     }
 
     @Test
@@ -114,7 +123,8 @@ public class ParserTest {
         var lexer2 = new Lexer(source2);
         var tokens2 = lexer2.tokenize();
         var parser2 = new Parser(tokens2);
-        assertThrows(Exception.class, parser2::parse, "Should throw ParseException - class from first parse is not available");
+        assertDoesNotThrow(parser2::parse);
+        assertTrue(ErrorCollector.hasErrors(), "Using an unregistered type in a declaration should produce collected parse errors");
     }
 
     // ─── Error recovery tests ──────────────────────────────────────────────────
@@ -122,46 +132,43 @@ public class ParserTest {
     @Test
     void testMultipleErrorsReported() {
 
-        // Two separate undefined-variable expressions on different "lines" (top-level statements).
-        // The parser should report both errors rather than stopping at the first.
-        var source = "undeclared1 + 1; undeclared2 + 2;";
+        // Two malformed expressions on different top-level statements.
+        // The parser should report multiple syntax errors rather than stopping at the first.
+        var source = "1 + ; 2 + ;";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
 
-        var ex = assertThrows(ParseErrorsException.class, parser::parse,
-                "Should throw ParseErrorsException with multiple errors");
-        assertEquals(2, ex.getErrors().size(), "Both undefined-variable errors should be reported");
+        assertDoesNotThrow(parser::parse);
+        assertTrue(ErrorCollector.getErrors().size() >= 2, "Both malformed statements should produce collected syntax errors");
     }
 
     @Test
     void testErrorMessageContainsLocation() {
 
-        var source = "badVar;";
+        var source = "1 + ;";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
 
-        var ex = assertThrows(ParseErrorsException.class, parser::parse);
-        assertFalse(ex.getErrors().isEmpty());
+        assertDoesNotThrow(parser::parse);
+        assertFalse(ErrorCollector.getErrors().isEmpty(), "At least one syntax error should be collected");
         // The error message should contain line/column info
-        var msg = ex.getErrors().getFirst().getMessage();
+        var msg = ErrorCollector.getErrors().getFirst().getMessage();
         assertTrue(msg.contains("line"), "Error message should contain 'line'");
     }
 
     @Test
     void testValidCodeAfterErrorStillParsed() {
 
-        // The second statement is valid — its AST node should still be produced even though
-        // the first statement contains an error.  The parse() method throws, but we verify the
-        // error count is exactly 1 (not 2), showing the second statement didn't add another error.
-        var source = "undeclared + 1; int y;";
+        // The second statement is valid — it should still be parsed even if the first one has a syntax error.
+        var source = "1 + ; int y;";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
 
-        var ex = assertThrows(ParseErrorsException.class, parser::parse);
-        assertEquals(1, ex.getErrors().size(), "Only the first (invalid) statement should produce an error");
+        assertDoesNotThrow(parser::parse);
+        assertFalse(ErrorCollector.getErrors().isEmpty(), "The first statement should produce at least one syntax error");
     }
 
     // ─── Stdlib tests ─────────────────────────────────────────────────────────

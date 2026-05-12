@@ -1,15 +1,17 @@
 package parser.parser;
 
+import error.ErrorCollector;
+import error.syntax.UnexpectedTokenError;
 import lexer.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
+import lexer.token.type.TypeToken;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
 import parser.ast.nodes.statement.declaration.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.ReturnType;
@@ -97,7 +99,7 @@ public class DeclarationParser extends ParserBase {
                 var sizeExpr = expressionParser.parseExpression();
                 arraySizes.add(sizeExpr);
             } else arraySizes.add(null);  // No size specified
-            consume(Delimiter.RSQUARE, "Expect ']' after array dimension");
+            consume(Delimiter.RSQUARE);
         }
         return arraySizes.toArray(new ExpressionNode[0]);
     }
@@ -105,7 +107,7 @@ public class DeclarationParser extends ParserBase {
     /// Checks if a token is a valid type token (either a primitive type or a class name).
     /// @param token The token to check.
     /// @return True if the token is a valid type token (primitive or class name), false otherwise.
-    public boolean isValidType(Token token) { return isTypeToken(token) || isClassName(token); }
+    public boolean isValidType(Token token) { return (token instanceof TypeToken) || isTypeName(token); }
 
     /// Parses a type, which can be either a primitive type or a class name, along with any array dimensions.
     ///
@@ -115,42 +117,45 @@ public class DeclarationParser extends ParserBase {
     protected ReturnType parseType() {
 
         var token = peek();
-        if (isTypeToken(token)) {
+        if (token instanceof TypeToken) {
 
             var typeToken = advance();
-            var baseType = typeToken.getType(); // TokenFamily (PrimitiveType etc.)
+            var baseType = typeToken.getType(); // TokenClass (PrimitiveType etc.)
             var arrayDims = parseArrayDimensions();
-            return new ReturnType(baseType, arrayDims, null, null, false);
-        } else if (isClassName(token)) {
+            return new ReturnType(baseType, arrayDims, null, null);
+        } else if (isTypeName(token)) {
 
             var classToken = (LiteralToken) advance();
-            var className = classToken.getValue();
+            var className = classToken.getType().token();
 
             var classType = typeRegistry.getReturnType(className);
-            if (classType == null) throw new ParseException("Class '" + className + "' not found", classToken);
 
             var superTypes = classType.getSuperTypes();
             var genericParamType = classType.getGenericParameterType();
 
             var arrayDims = parseArrayDimensions();
             if (arrayDims.length == 0) return classType;
-            return new ReturnType(classType.getBaseType(), arrayDims, superTypes, genericParamType, false);
+            return new ReturnType(classType.getTokenClass(), arrayDims, superTypes, genericParamType);
         }
 
-        throw new ParseException("Expect type (primitive or class name)", token);
+        //throw new ParseException("Expect type (primitive or class name)", token);
+        ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+        this.state.synchronize();  // Skip the invalid token to continue parsing
+        return null;  // Return null to indicate a parsing error, but allow parsing to continue
     }
 
     /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
     /// a registered custom class in the TypeRegistry.
     /// @param token The token to check.
     /// @return True if the token is a valid class name, false otherwise.
-    private boolean isClassName(Token token) {
+    private boolean isTypeName(Token token) {
 
         if (!(token instanceof LiteralToken)) return false;
         if (!(token.getType() instanceof IdentifierLiteral)) return false;
 
-        var name = ((LiteralToken) token).getValue();
-        return typeRegistry.isCustomClass(name) || typeRegistry.isGenericType(name);  // Allow generic types as valid types in declarations
+        var name = token.getType().token();
+        if (name == null) return false;
+        return typeRegistry.isCustomType(name);  // Allow generic types as valid types in declarations
     }
 
     /// Parses an expression using the ExpressionParser.
@@ -168,11 +173,10 @@ public class DeclarationParser extends ParserBase {
         var parameters = new ArrayList<FunctionParameter>();
         if (!check(Delimiter.RPAREN)) do {
 
-            if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
-
+            //if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
             var paramType = parseType();
-            var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
-            parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue(paramName), paramType));
+            var paramName = consume(new IdentifierLiteral());
+            parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue((LiteralToken) paramName), paramType));
         } while (match(Delimiter.COMMA));
         return parameters.toArray(new FunctionParameter[0]);
     }
@@ -186,11 +190,7 @@ public class DeclarationParser extends ParserBase {
     public StatementNode parseDeclaration() {
 
         var accessModifier = parseAccessModifier();
-        if (match(Keyword.CLASS)) {
-
-            if (accessModifier == null) throw new ParseException("Class declaration requires an access modifier", previous());
-            return classParser.parseClassDeclaration(accessModifier);
-        }
+        if (match(Keyword.CLASS)) return classParser.parseClassDeclaration(accessModifier);
 
         if (isValidType(peek())) {
 
@@ -198,12 +198,12 @@ public class DeclarationParser extends ParserBase {
             if (check(new IdentifierLiteral())) {
 
                 var nameToken = advance();
-                var name = getLiteralValue(nameToken);
-
+                var name = getLiteralValue((LiteralToken) nameToken);
                 if (check(Delimiter.LPAREN)) return parseFunctionDeclaration(returnType, name, nameToken.getLine(), nameToken.getColumn());
                 return parseVariableDeclaration(returnType, name, nameToken.getLine(), nameToken.getColumn());
             }
         }
+
         return parseStatement();
     }
 
@@ -222,22 +222,22 @@ public class DeclarationParser extends ParserBase {
     /// @return A FunctionDeclarationStatement representing the parsed function declaration.
     private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after function name");
+        consume(Delimiter.LPAREN);
 
         var parameters = parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        consume(Delimiter.RPAREN);
 
         // Pre-register with null body in the enclosing scope so recursive calls resolve.
         var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
         this.symbolTable.register(decl);
 
-        var functionScope = enterScope();
+        var functionScope = enterScope(decl);
         this.symbolTable = functionScope;
 
         for (var param : parameters) this.symbolTable.register(param);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
-        consume(Delimiter.LBRACE, "Expect '{' before function body");
+        consume(Delimiter.LBRACE);
 
         var bodyStatements = getStatementList(functionScope);
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
@@ -276,8 +276,8 @@ public class DeclarationParser extends ParserBase {
 
             do {
 
-                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
-                var varName = getLiteralValue(nameToken);
+                var nameToken = consume(new IdentifierLiteral());
+                var varName = getLiteralValue((LiteralToken) nameToken);
 
                 ExpressionNode init = null;
                 if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
@@ -287,11 +287,11 @@ public class DeclarationParser extends ParserBase {
                 declarations.add(decl);
             } while (match(Delimiter.COMMA));
 
-            consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+            consume(Delimiter.SEMICOLON);
             return new BlockStatement(line, column, declarations.toArray(new StatementNode[0]));
         }
 
-        consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+        consume(Delimiter.SEMICOLON);
         return firstDecl;
     }
 
@@ -310,13 +310,13 @@ public class DeclarationParser extends ParserBase {
          if (match(Keyword.BREAK)) {
 
              var breakToken = previous();
-             consume(Delimiter.SEMICOLON, "Expect ';' after break statement");
+             consume(Delimiter.SEMICOLON);
              return new BreakStatement(breakToken.getLine(), breakToken.getColumn());
          }
          if (match(Keyword.CONTINUE)) {
 
              var continueToken = previous();
-             consume(Delimiter.SEMICOLON, "Expect ';' after continue statement");
+             consume(Delimiter.SEMICOLON);
              return new ContinueStatement(continueToken.getLine(), continueToken.getColumn());
          }
         if (match(Keyword.RETURN)) return parseReturnStatement();
@@ -333,9 +333,9 @@ public class DeclarationParser extends ParserBase {
 
         var ifToken = previous();
 
-        consume(Delimiter.LPAREN, "Expect '(' after 'if'");
+        consume(Delimiter.LPAREN);
         var condition = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after if condition");
+        consume(Delimiter.RPAREN);
 
         var thenBranch = parseStatement();
         StatementNode elseBranch = null;
@@ -353,9 +353,9 @@ public class DeclarationParser extends ParserBase {
 
         var whileToken = previous();
 
-        consume(Delimiter.LPAREN, "Expect '(' after 'while'");
+        consume(Delimiter.LPAREN);
         var condition = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after while condition");
+        consume(Delimiter.RPAREN);
 
         var body = parseStatement();
         return new WhileStatement(whileToken.getLine(), whileToken.getColumn(), condition, body);
@@ -374,7 +374,7 @@ public class DeclarationParser extends ParserBase {
     private StatementNode parseForOrForEachStatement() {
 
         var forToken = previous();
-        consume(Delimiter.LPAREN, "Expect '(' after 'for'");
+        consume(Delimiter.LPAREN);
 
         // Peek ahead: if we see <type> <identifier> ":" it's a for-each
         if (isValidType(peek())) {
@@ -389,7 +389,7 @@ public class DeclarationParser extends ParserBase {
                 if (match(Delimiter.COLON)) {
 
                     // for-each: for (Type name : iterable) body
-                    var elementName = getLiteralValue(nameToken);
+                    var elementName = getLiteralValue((LiteralToken) nameToken);
                     var forEachScope = enterScope();
                     this.symbolTable = forEachScope;
                     this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
@@ -400,7 +400,7 @@ public class DeclarationParser extends ParserBase {
                         this.symbolTable.register(elementDecl);
 
                         var iterable = expressionParser.parseExpression();
-                        consume(Delimiter.RPAREN, "Expect ')' after for-each expression");
+                        consume(Delimiter.RPAREN);
                         var body = parseStatement();
                         return new ForEachStatement(forToken.getLine(), forToken.getColumn(), type, elementName, iterable, body);
                     } finally {
@@ -437,29 +437,34 @@ public class DeclarationParser extends ParserBase {
             else if (isValidType(peek())) {
 
                 var type = parseType();
-                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
-                var name = getLiteralValue(nameToken);
+                var nameToken = consume(new IdentifierLiteral());
+                if (nameToken == null) {
+
+                    // Error already recorded in consume(); synchronize and return null to continue parsing}
+                    return null;
+                }
+                var name = getLiteralValue((LiteralToken) nameToken);
 
                 ExpressionNode init = null;
                 if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+                consume(Delimiter.SEMICOLON);
 
                 initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, name, init);
                 this.symbolTable.register((VariableDeclarationStatement) initializer);
             } else {
 
                 var expr = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after expression");
+                consume(Delimiter.SEMICOLON);
                 initializer = new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
             }
 
             ExpressionNode condition = null;
             if (!check(Delimiter.SEMICOLON)) condition = expressionParser.parseExpression();
-            consume(Delimiter.SEMICOLON, "Expect ';' after loop condition");
+            consume(Delimiter.SEMICOLON);
 
             ExpressionNode incrementExpr = null;
             if (!check(Delimiter.RPAREN)) incrementExpr = expressionParser.parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after for clauses");
+            consume(Delimiter.RPAREN);
 
             StatementNode increment = null;
             if (incrementExpr != null) increment = new ExpressionStatement(incrementExpr.getLine(), incrementExpr.getColumn(), incrementExpr);
@@ -483,28 +488,34 @@ public class DeclarationParser extends ParserBase {
     private SwitchStatement parseSwitchStatement() {
 
         var switchToken = previous();
-        consume(Delimiter.LPAREN, "Expect '(' after 'switch'");
+        consume(Delimiter.LPAREN);
         var subject = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after switch expression");
-        consume(Delimiter.LBRACE, "Expect '{' before switch body");
+        consume(Delimiter.RPAREN);
+        consume(Delimiter.LBRACE);
 
         var cases = new ArrayList<SwitchCase>();
         while (!check(Delimiter.RBRACE) && isNotAtEnd()) if (match(Keyword.CASE)) {
 
             var caseToken = previous();
             var value = expressionParser.parseExpression();
-            consume(Delimiter.COLON, "Expect ':' after case value");
+            consume(Delimiter.COLON);
             var body = parseStatement();
             cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
         } else if (match(Keyword.DEFAULT)) {
 
             var defaultToken = previous();
-            consume(Delimiter.COLON, "Expect ':' after 'default'");
+            consume(Delimiter.COLON);
             var body = parseStatement();
             cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
-        } else throw new ParseException("Expect 'case' or 'default' in switch body", peek());
+        } else {
 
-        consume(Delimiter.RBRACE, "Expect '}' after switch body");
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();  // Skip to the next case/default or end of switch to continue parsing
+            return null;  // Return null to indicate a parsing error, but allow parsing to continue
+        }
+
+        consume(Delimiter.RBRACE);
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));
     }
 
@@ -520,7 +531,7 @@ public class DeclarationParser extends ParserBase {
         ExpressionNode value = null;
         if (!check(Delimiter.SEMICOLON)) value = expressionParser.parseExpression();
 
-        consume(Delimiter.SEMICOLON, "Expect ';' after return value");
+        consume(Delimiter.SEMICOLON);
         return new ReturnStatement(returnToken.getLine(), returnToken.getColumn(), value);
     }
 
@@ -549,7 +560,7 @@ public class DeclarationParser extends ParserBase {
         var statements = new ArrayList<StatementNode>();
 
         while (!check(Delimiter.RBRACE) && isNotAtEnd()) statements.add(parseDeclaration());
-        consume(Delimiter.RBRACE, "Expect '}' after block");
+        consume(Delimiter.RBRACE);
 
         this.symbolTable = exitScope(blockScope);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
@@ -564,7 +575,7 @@ public class DeclarationParser extends ParserBase {
     private ExpressionStatement parseExpressionStatement() {
 
         var expr = expressionParser.parseExpression();
-        consume(Delimiter.SEMICOLON, "Expect ';' after expression");
+        consume(Delimiter.SEMICOLON);
         return new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
     }
 }

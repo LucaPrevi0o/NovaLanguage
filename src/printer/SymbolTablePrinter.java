@@ -9,10 +9,8 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 
-import java.util.List;
-
 /// Utility class for printing the symbol table in a readable format, showing the hierarchy of scopes and symbols.
-public class SymbolTablePrinter {
+public final class SymbolTablePrinter {
 
     /// Prints a symbol with its name and type information, formatted with indentation to show hierarchy.
     /// @param symbol The symbol to print.
@@ -37,59 +35,44 @@ public class SymbolTablePrinter {
         System.out.println(line);
     }
 
-    /// Determines whether a given symbol introduces a new scope (e.g., classes and functions).
-    /// @param symbol The symbol to check.
-    /// @return true if the symbol introduces a new scope, false otherwise.
-    private static boolean introducesScope(Symbol symbol) {
-        return symbol instanceof ClassDeclarationStatement || symbol instanceof FunctionDeclarationStatement;
-    }
-
     /// Recursively prints the symbol table and its child scopes, showing the hierarchy of symbols and scopes.
     /// @param scope The symbol table to print.
-    /// @param indent The indentation string to use for formatting.
-    /// @param isLast Indicates whether this scope is the last one in its parent scope, affecting the formatting of the tree structure.
-    /// @param label The label to use for this scope (e.g., "Global Scope", "Scope", "Anonymous Scope").
+    public static void printSymbolTableNode(SymbolTable scope) {
+        printScope(scope, "", true, "Global Scope");
+    }
+
+    /// Helper method to recursively print a symbol table and its child scopes with proper indentation and formatting.
+    /// @param scope  The symbol table to print.
+    /// @param indent The indentation string to use for formatting the current level of the symbol table.
+    /// @param label  The label to print for the current scope (e.g., "Global Scope", "Scope").
     private static void printScope(SymbolTable scope, String indent, boolean isLast, String label) {
 
-        System.out.println(indent + (isLast ? "└─ " : "├─ ") + label);
+        System.out.println(indent + "└─ " + label);
         var childIndent = indent + (isLast ? "   " : "│  ");
 
         var symbols = scope.symbols();
-        var children = scope.children();
-        var attachedChildIndex = 0;
+        var ownedScopes = scope.ownedScopes().values();
+        var anonymousScopes = scope.children().stream().filter(c -> !ownedScopes.contains(c)).toList();
 
         for (var i = 0; i < symbols.size(); i++) {
 
             var symbol = symbols.get(i);
-            var symbolHasScope = introducesScope(symbol) && attachedChildIndex < children.size();
-            var hasMoreSymbols = i < symbols.size() - 1;
-            var hasAnonymousChildrenAfter = attachedChildIndex + (symbolHasScope ? 1 : 0) < children.size();
-            var isLastSymbol = !hasMoreSymbols && !hasAnonymousChildrenAfter;
+            var ownedScope = scope.getOwnedScope(symbol);
 
-            printSymbol(symbol, childIndent, isLastSymbol && !symbolHasScope);
-            if (symbolHasScope) {
+            // Last entry overall only if this is the last symbol AND there are no anonymous scopes after
+            var isLastSymbolWithScope = (i == symbols.size() - 1) && anonymousScopes.isEmpty() ;
+            printSymbol(symbol, childIndent, isLastSymbolWithScope);
+            if (ownedScope != null) {
 
-                var symbolIndent = childIndent + (isLastSymbol ? "   " : "│  ");
-                printScope(children.get(attachedChildIndex++), symbolIndent, true, "Scope");
+                var symbolIndent = childIndent + (isLastSymbolWithScope ? "   " : "│  ");
+                printScope(ownedScope, symbolIndent, true, "Scope");
             }
         }
 
-        while (attachedChildIndex < children.size()) {
+        for (var i = 0; i < anonymousScopes.size(); i++) {
 
-            var isLastAnonymous = attachedChildIndex == children.size() - 1;
-            printScope(children.get(attachedChildIndex++), childIndent, isLastAnonymous, "Anonymous Scope");
+            var isLastAnon = (i == anonymousScopes.size() - 1);
+            printScope(anonymousScopes.get(i), childIndent, isLastAnon, "[anonymous block]");
         }
-    }
-
-    /// Prints the symbol table starting from the given node, showing the hierarchy of scopes and symbols.
-    /// @param node The root symbol table to print, typically representing the global scope.
-    /// @param spacers A list of strings to use as indentation for the root scope, allowing for proper formatting when printing nested scopes.
-    public static void printSymbolTableNode(SymbolTable node, List<String> spacers) {
-
-        if (node == null) return;
-
-        var rootIndent = new StringBuilder();
-        for (var spacer : spacers) rootIndent.append(spacer);
-        printScope(node, rootIndent.toString(), true, "Global Scope");
     }
 }

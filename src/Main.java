@@ -1,5 +1,8 @@
+import error.ErrorCollector;
+import error.exception.ParseErrorsException;
 import lexer.Lexer;
 import parser.Parser;
+import parser.ast.Printable;
 import printer.AstPrinter;
 import printer.SymbolTablePrinter;
 
@@ -37,25 +40,20 @@ public class Main {
         for (var token : tokens) System.out.println(token);
 
         System.out.println("\n=== PARSING ===\n");
-        try {
 
-            var parser = new Parser(tokens);
-            var ast = parser.parse();
-            System.out.println("Parsing completed successfully!");
-            System.out.println("Total AST nodes: " + ast.size());
+        var parser = new Parser(tokens);
+        var ast = parser.parse();
 
-            System.out.println("\n=== AST STRUCTURE ===\n");
-            for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
+        if (ErrorCollector.hasErrors()) throw new ParseErrorsException(ErrorCollector.getErrors());
 
-            System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable(), new ArrayList<>());
-        } catch (Exception e) {
+        System.out.println("Parsing completed successfully!");
+        System.out.println("Total AST nodes: " + ast.size());
 
-            System.err.println("\n=== PARSING ERROR ===");
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
+        System.out.println("\n=== AST STRUCTURE ===\n");
+        for (var node : ast) AstPrinter.printASTNode((Printable) node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
+
+        System.out.println("\n=== SYMBOL TABLE ===\n");
+        SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable());
     }
 
     private static String readFile(String filePath) throws IOException { return Files.readString(Paths.get(filePath)); }

@@ -1,9 +1,13 @@
 package parser.parser;
 
+import error.ErrorCollector;
+import error.syntax.UnexpectedTokenError;
+import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
 import lexer.token.family.literal.*;
 import lexer.token.type.LiteralToken;
 import lexer.token.type.OperatorToken;
+import lexer.token.type.TypeToken;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.expression.*;
@@ -15,13 +19,14 @@ import parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
 import parser.ast.nodes.expression.literal.NullLiteralExpression;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.expression.literal.StringLiteralExpression;
-import parser.parser.util.ParseException;
+import parser.ast.nodes.expression.literal.number.*;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
+import lexer.token.family.Special;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity.
@@ -72,10 +77,7 @@ public class ExpressionParser extends ParserBase {
             var operator = previous();
             var value = assignment();
 
-            if (!(expr instanceof IdentifierLiteralExpression ||
-            expr instanceof ArrayAccessExpression ||
-            expr instanceof MemberAccessExpression)) throw new ParseException("Invalid assignment target", operator);
-
+            // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
             return new AssignmentExpression(operator.getLine(), operator.getColumn(), expr, assignmentValue);
         }
@@ -92,7 +94,7 @@ public class ExpressionParser extends ParserBase {
 
             var questionToken = previous();
             var thenExpr = parseExpression();
-            consume(Delimiter.COLON, "Expect ':' in ternary expression");
+            consume(Delimiter.COLON);
             var elseExpr = parseExpression();
             return new TernaryExpression(questionToken.getLine(), questionToken.getColumn(), expr, thenExpr, elseExpr);
         }
@@ -215,12 +217,12 @@ public class ExpressionParser extends ParserBase {
             if (match(Delimiter.LPAREN)) expr = finishCall(expr);
             else if (match(Delimiter.DOT)) {
 
-                var nameToken = consume(new IdentifierLiteral(), "Expect property name after '.'");
-                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue(nameToken));
+                var nameToken = consume(new IdentifierLiteral());
+                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue((LiteralToken) nameToken));
             } else if (match(Delimiter.LSQUARE)) {
 
                 var index = parseExpression();
-                var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
+                var bracket = consume(Delimiter.RSQUARE);
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
             } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
 
@@ -229,6 +231,7 @@ public class ExpressionParser extends ParserBase {
                 expr = new PostfixUnaryExpression(op.getLine(), op.getColumn(), expr, op);
             } else break;
         }
+
         return expr;
     }
 
@@ -241,11 +244,11 @@ public class ExpressionParser extends ParserBase {
         var arguments = new ArrayList<ExpressionNode>();
         if (!check(Delimiter.RPAREN)) do {
 
-            if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", peek());
+            //if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", peek());
             arguments.add(parseExpression());
         } while (match(Delimiter.COMMA));
 
-        var paren = consume(Delimiter.RPAREN, "Expect ')' after arguments");
+        var paren = consume(Delimiter.RPAREN);
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
 
@@ -265,13 +268,13 @@ public class ExpressionParser extends ParserBase {
         if (match(new StringLiteral())) {
 
             var lit = (LiteralToken) previous();
-            return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getValue());
+            return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getType().token());
         }
 
         if (match(new CharLiteral())) {
 
             var lit = (LiteralToken) previous();
-            var value = lit.getValue();
+            var value = lit.getType().token();
             var ch = (value != null && !value.isEmpty()) ? value.charAt(0) : '\0';
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
@@ -279,45 +282,44 @@ public class ExpressionParser extends ParserBase {
         if (match(new IdentifierLiteral())) {
 
             var lit = (LiteralToken) previous();
-            var name = lit.getValue();
-            var symbol = symbolTable.lookup(name);
-            if (symbol == null) throw new ParseException("Undefined variable '" + name + "'", lit);
+            var name = lit.getType().token();
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
         if (match(Keyword.NEW)) {
 
             var newToken = previous();
-            // Require an identifier (class name); reject primitive types with a clear error
-            if (isTypeToken(peek()) && !(peek() instanceof LiteralToken)) {
+            if (peek() instanceof TypeToken) { // Require an identifier (class name); reject primitive types with a clear error
 
                 // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
-                throw new ParseException("Cannot use 'new' with primitive type '" + badToken.getType().get() + "'. Use a class name instead.", badToken);
+                ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
             }
 
-            var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
-            var className = getLiteralValue(classNameToken);
+            var classNameToken = consume(new IdentifierLiteral());
+            var className = getLiteralValue((LiteralToken) classNameToken);
 
-            if (!typeRegistry.isCustomClass(className)) throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
-
-            consume(Delimiter.LPAREN, "Expect '(' after class name");
+            consume(Delimiter.LPAREN);
             var arguments = new ArrayList<ExpressionNode>();
             if (!check(Delimiter.RPAREN)) do {
                 arguments.add(parseExpression());
             } while (match(Delimiter.COMMA));
-            consume(Delimiter.RPAREN, "Expect ')' after arguments");
+            consume(Delimiter.RPAREN);
             return new ObjectCreationExpression(newToken.getLine(), newToken.getColumn(), className, arguments.toArray(new ExpressionNode[0]));
         }
 
         if (match(Delimiter.LPAREN)) {
 
             var expr = parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after expression");
+            consume(Delimiter.RPAREN);
             return expr;
         }
 
-        throw new ParseException("Expect expression", peek());
+        // If we reach here, the token does not match any valid primary expression. Record an error and attempt to recover.
+        if (token.getType() == Special.UNKNOWN) ErrorCollector.add(new UnrecognizedTokenError(token.toString(), token.getLine(), token.getColumn()));
+        else ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+        this.state.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+        return null;  // Return null to indicate that an expression could not be parsed, but allow parsing to continue
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -338,7 +340,11 @@ public class ExpressionParser extends ParserBase {
             case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
             case DIVIDE_ASSIGN   -> Operator.DIVIDE;
             case MODULO_ASSIGN   -> Operator.MODULO;
-            default -> throw new ParseException("Unknown compound assignment operator", operator);
+            default -> {
+
+                ErrorCollector.add(new UnexpectedTokenError(operator.getType(), operator.getLine(), operator.getColumn()));
+                yield null;  // Return null to indicate that the operator was not recognized, but allow
+            }
         };
 
         return new BinaryExpression(
@@ -355,7 +361,7 @@ public class ExpressionParser extends ParserBase {
     /// @return A NumberLiteralExpression representing the parsed numeric literal, with the appropriate type based on the suffix or format of the value.
     private NumberLiteralExpression parseNumber(LiteralToken token) {
 
-        var value = token.getValue();
+        var value = token.getType().token();
         var line  = token.getLine();
         var col   = token.getColumn();
         var lower = value.toLowerCase();
@@ -363,18 +369,23 @@ public class ExpressionParser extends ParserBase {
         try {
 
             if (lower.endsWith("l"))
-                return new NumberLiteralExpression.LongLiteralExpression(line, col, Long.parseLong(value.substring(0, value.length() - 1)));
+                return new LongLiteralExpression(line, col, Long.parseLong(value.substring(0, value.length() - 1)));
 
             if (lower.endsWith("f"))
-                return new NumberLiteralExpression.FloatLiteralExpression(line, col, Float.parseFloat(value));
+                return new FloatLiteralExpression(line, col, Float.parseFloat(value));
 
             if (lower.endsWith("d") || value.contains("."))
-                return new NumberLiteralExpression.DoubleLiteralExpression(line, col, Double.parseDouble(value.replaceAll("[dD]$", "")));
+                return new DoubleLiteralExpression(line, col, Double.parseDouble(value.replaceAll("[dD]$", "")));
 
             if (lower.endsWith("b"))
-                return new NumberLiteralExpression.ByteLiteralExpression(line, col, Byte.parseByte(value.substring(0, value.length() - 1)));
+                return new ByteLiteralExpression(line, col, Byte.parseByte(value.substring(0, value.length() - 1)));
 
-            return new NumberLiteralExpression.IntegerLiteralExpression(line, col, Integer.parseInt(value));
-        } catch (NumberFormatException e) { throw new ParseException("Invalid number format: " + value, token); }
+            return new IntegerLiteralExpression(line, col, Integer.parseInt(value));
+        } catch (NumberFormatException e) {
+
+            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+            this.state.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+            return null;  // Return null to indicate that the numeric literal could not be parsed, but allow parsing to continue
+        }
     }
 }

@@ -1,20 +1,17 @@
 package parser;
 
+import error.ErrorCollector;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.parser.DeclarationParser;
-import parser.parser.util.ParseErrorsException;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import parser.parser.ClassParser;
 import parser.parser.ExpressionParser;
 import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
-import lexer.token.family.Delimiter;
-import lexer.token.family.Keyword;
 import lexer.token.family.PrimitiveType;
 
 import java.util.ArrayList;
@@ -38,11 +35,9 @@ import java.util.List;
 /// followed by an end-of-file marker. The specialized parsers handle the specific details of each
 /// declaration type and statement.
 ///
-/// <p>The parser implements <em>error recovery</em>: when a {@link ParseException} is thrown while
-/// parsing a top-level declaration the parser records the error, skips tokens until a safe
-/// synchronization point, and then continues with the next declaration.  At the end of the run,
-/// if any errors were collected, a {@link ParseErrorsException} is thrown containing all of them so
-/// that callers receive a complete picture of every problem in a single pass.</p>
+/// The parser implements *error recovery*: when a syntax error is encountered, it is recorded in the global
+/// {@link ErrorCollector}, and the parser synchronizes to the next plausible statement boundary to continue parsing.
+/// This allows multiple syntax errors to be collected in a single run, rather than stopping at the first error.
 ///
 /// @see DeclarationParser
 /// @see ClassParser
@@ -59,6 +54,7 @@ public class Parser extends ParserBase {
 
         super(new ParserState(tokens), new TypeRegistry());
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
+        ErrorCollector.clear();  // Reset the global collector for each new parse session
         registerStdLib();
     }
 
@@ -101,58 +97,17 @@ public class Parser extends ParserBase {
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
-    /// <p>Errors are collected via {@link #synchronize() error recovery}: parsing continues after
-    /// each top-level error.  When the token stream is exhausted, a {@link ParseErrorsException}
-    /// is thrown if any errors were recorded during the run.</p>
+    /// The parser implements error recovery: if a syntax error is encountered, it is recorded in the global
+    /// {@link ErrorCollector}, and the parser synchronizes to the next plausible statement boundary to
+    /// continue parsing.
+    /// This allows multiple syntax errors to be collected in a single run, rather than stopping at the first error.
     ///
     /// @return A list of StatementNode objects representing the parsed program (contains only
-    ///         successfully parsed nodes).
-    /// @throws ParseErrorsException if one or more parse errors were encountered.
+    /// successfully parsed nodes).
     public List<StatementNode> parse() {
 
         var statements = new ArrayList<StatementNode>();
-        var errors     = new ArrayList<ParseException>();
-
-        while (isNotAtEnd()) try {
-            statements.add(declarationParser.parseDeclaration());
-        } catch (ParseException e) {
-
-            errors.add(e);
-            synchronize();
-        }
-
-        if (!errors.isEmpty()) throw new ParseErrorsException(errors);
+        while (isNotAtEnd()) statements.add(declarationParser.parseDeclaration());
         return statements;
-    }
-
-    // ─── Error recovery ────────────────────────────────────────────────────────
-
-    /// Advances the token stream to the next plausible statement boundary so that parsing
-    /// can resume after an error.
-    ///
-    /// <p>The synchronization heuristics are (in order):</p>
-    /// <ul>
-    ///   <li>Skip the current token (the one that caused the error).</li>
-    ///   <li>Stop at a semicolon (end of an expression statement).</li>
-    ///   <li>Stop before any keyword that typically starts a new declaration or statement:
-    ///       {@code class}, {@code if}, {@code while}, {@code for}, {@code switch}, {@code return},
-    ///       {@code break}, {@code continue}.</li>
-    /// </ul>
-    private void synchronize() {
-
-        if (isNotAtEnd()) advance();  // always skip the offending token
-        while (isNotAtEnd()) {
-
-            // A semicolon marks the end of the previous statement — safe to resume after it.
-            if (previous().getType() == Delimiter.SEMICOLON) return;
-
-            // Keywords that begin a new declaration or statement are also safe resume points.
-            var next = peek().getType();
-            if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
-                next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
-                next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
-
-            advance();
-        }
     }
 }

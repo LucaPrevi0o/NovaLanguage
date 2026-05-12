@@ -2,7 +2,6 @@ package parser.ast.nodes.statement.declaration.object;
 
 import parser.ast.Printable;
 import parser.ast.nodes.StatementNode;
-import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import lexer.token.family.AccessModifier;
 
@@ -51,8 +50,7 @@ public class ClassConstructorDeclaration extends StatementNode implements Printa
 
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
-        entries.add(new PrintEntry.Info("Parameters: " + parameters.length));
-        FunctionDeclarationStatement.appendParameterEntries(entries, parameters);
+        entries.add(new PrintEntry.Children("Parameters", parameters));
         entries.add(new PrintEntry.Child("Body", body));
         return entries;
     }

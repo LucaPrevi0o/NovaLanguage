@@ -1,20 +1,22 @@
 package lexer;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
+import lexer.token.family.Literal;
 
 //// Base class for all tokens produced by the lexer.
-/// Each token has a type (from a specific TokenFamily) and positional information (line and column).
+/// Each token has a type (from a specific TokenClass) and positional information (line and column).
 public class Token {
 
-    private final TokenFamily type;
+    private final TokenClass type;
     private final int line;
     private final int column;
 
     /// Constructs a Token with the given type, line, and column.
-    /// @param type The specific token type (must be a member of a TokenFamily).
+    /// @param type The specific token type (must be a member of a TokenClass).
+    /// @param value The string value of the token as it appears in the source code.
     /// @param line The line number where the token appears.
     /// @param column The column number where the token starts.
-    public Token(TokenFamily type, int line, int column) {
+    public Token(TokenClass type, int line, int column) {
 
         this.type = type;
         this.line = line;
@@ -23,7 +25,7 @@ public class Token {
 
     /// Returns the token's type.
     /// @return The token type.
-    public TokenFamily getType() { return type; }
+    public TokenClass getType() { return type; }
 
     /// Returns the line number where the token appears.
     /// @return The line number.
@@ -34,5 +36,9 @@ public class Token {
     public int getColumn() { return column; }
 
     @Override
-    public String toString() { return this.getClass().getSimpleName() + "{type=" + type + ", line=" + line + ", col=" + column + "}"; }
+    public String toString() {
+
+        return this.getClass().getSimpleName() + "{line=" + line + ", col=" + column + "} = " +
+        (type instanceof Literal ? "\"" + type.token() + "\"" : type);
+    }
 }

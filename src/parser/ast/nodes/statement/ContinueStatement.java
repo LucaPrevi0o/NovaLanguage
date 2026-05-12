@@ -7,9 +7,7 @@ import java.util.List;
 
 public class ContinueStatement extends StatementNode implements Printable {
 
-    public ContinueStatement(int line, int column) {
-        super(line, column);
-    }
+    public ContinueStatement(int line, int column) { super(line, column); }
 
     @Override
     public String toPrintString() { return "ContinueStatement [line " + getLine() + "]"; }

@@ -1,9 +1,11 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import error.ErrorCollector;
 
 import java.util.List;
 
@@ -12,6 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /// Tests for variable and function declarations, including multi-variable declarations,
 /// scope rules, duplicate detection, and parameter parsing.
 public class DeclarationParserTest {
+
+    @BeforeEach
+    void clearErrors() {
+
+        ErrorCollector.clear();
+    }
 
     private List<StatementNode> parse(String source) {
 
@@ -104,7 +112,8 @@ public class DeclarationParserTest {
     void testDuplicateVariableThrows() {
 
         var tokens = new Lexer("int x; int x;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertTrue(ErrorCollector.hasErrors(), "Duplicate variable should be collected as parse error");
     }
 
     @Test
@@ -112,17 +121,18 @@ public class DeclarationParserTest {
 
         // The ParseException for a duplicate variable should carry line/column info.
         var tokens = new Lexer("int x;\nint x;").tokenize();
-        var ex = assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
-        // The message (or a wrapped ParseException) should contain location info
-        assertTrue(ex.getMessage() != null && !ex.getMessage().isEmpty(),
-                "Exception should have a message");
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.getErrors().isEmpty(), "Duplicate declaration should produce at least one collected error");
+        var msg = ErrorCollector.getErrors().getFirst().getMessage();
+        assertTrue(msg.contains("line"), "Collected error message should contain line information");
     }
 
     @Test
     void testUndefinedVariableThrows() {
 
         var tokens = new Lexer("unknownVar;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Undefined variable resolution is semantic, not syntax");
     }
 
     // ─── Function declarations ────────────────────────────────────────────────
@@ -206,7 +216,8 @@ public class DeclarationParserTest {
 
         // x is only declared inside the block, so it is not visible outside
         var tokens = new Lexer("{ int x; } x;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Scope visibility is semantic, not syntax");
     }
 
     @Test
@@ -221,6 +232,7 @@ public class DeclarationParserTest {
 
         // Variables inside a function are not visible at the outer scope
         var tokens = new Lexer("void fn() { int inner; } inner;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Function-scope visibility is semantic, not syntax");
     }
 }

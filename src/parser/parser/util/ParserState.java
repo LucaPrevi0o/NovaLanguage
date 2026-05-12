@@ -1,11 +1,11 @@
 package parser.parser.util;
 
+import error.ErrorCollector;
+import error.syntax.MissingTokenError;
 import lexer.Token;
+import lexer.token.TokenClass;
+import lexer.token.family.*;
 import lexer.token.type.LiteralToken;
-import lexer.token.family.Literal;
-import lexer.token.type.TypeToken;
-import lexer.token.TokenFamily;
-import lexer.token.family.Special;
 
 import java.util.List;
 
@@ -56,15 +56,15 @@ public class ParserState {
     ///
     /// @param type The token family to check against the current token.
     /// @return True if the current token matches the specified token family, false otherwise.
-    public boolean check(TokenFamily type) {
+    public boolean check(TokenClass type) {
 
         if (isAtEnd()) return false;
         var currentType = peek().getType();
 
         if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
 
-            var typeVal = litType.get();
-            if (typeVal != null) return typeVal.equals(litCurrent.get());  // specific-value match (e.g. TRUE vs FALSE)
+            var typeVal = litType.token();
+            if (typeVal != null) return typeVal.equals(litCurrent.token());  // specific-value match (e.g. TRUE vs FALSE)
             return type.getClass() == currentType.getClass();              // wildcard class match
         }
         return currentType == type;
@@ -73,7 +73,7 @@ public class ParserState {
     /// Checks if the current token matches any of the specified token families. If a match is found, advances the position.
     /// @param types The token families to check against the current token.
     /// @return True if the current token matches any of the specified token families, false otherwise.
-    public boolean match(TokenFamily... types) {
+    public boolean match(TokenClass... types) {
 
         for (var type : types) if (check(type)) {
 
@@ -83,33 +83,28 @@ public class ParserState {
         return false;
     }
 
-    /// Consumes the current token if it matches the specified token family; otherwise, throws a ParseException with the provided message.
-    /// @param type The token family to check against the current token.
-    /// @param message The error message to include in the ParseException if the current token does not match the specified token family.
-    /// @return The token that was consumed if it matches the specified token family.
-    /// @throws ParseException If the current token does not match the specified token family.
-    public Token consume(TokenFamily type, String message) {
+    /// Consumes the current token if it matches the specified token family; otherwise, records a
+    /// {@link MissingTokenError} in the global {@link ErrorCollector} and attempts to recover by synchronizing to the
+    /// next statement boundary.
+    /// @param type The token family that the current token is expected to match.
+    public Token consume(TokenClass type) {
 
         if (check(type)) return advance();
-        throw new ParseException(message, peek());
+
+        System.out.println("\nError: expected token of type " + type.token() + " but found " + peek() + " at line " + peek().getLine() + ", column " + peek().getColumn());
+        var errorToken = peek();
+        ErrorCollector.add(new MissingTokenError(errorToken.getLine(), errorToken.getColumn(), type));
+        //throw new ParseException(message, errorToken);
+        this.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+        return null;  // Return null to indicate that the expected token was not found, but allow parsing to continue
     }
     
     // ========== Helper Methods ==========
 
     /// Checks if the current token is a literal token.
     /// @param token The token to check.
-    /// @return True if the token is an instance of LiteralToken, false otherwise.
-    public boolean isTypeToken(Token token) { return token instanceof TypeToken; }
-
-    /// Checks if the current token is a literal token.
-    /// @param token The token to check.
     /// @return The literal value of the token if it is an instance of LiteralToken.
-    /// @throws ParseException If the token is not an instance of LiteralToken.
-    public String getLiteralValue(Token token) {
-
-        if (token instanceof LiteralToken lit) return lit.getValue();
-        throw new ParseException("Expected literal token", token);
-    }
+    public String getLiteralValue(LiteralToken token) { return token.getType().token(); }
 
     /// Returns the current token stream position.
     /// Used to save and restore the position for backtracking during ambiguous parses (e.g. for vs for-each).
@@ -119,4 +114,45 @@ public class ParserState {
     /// Restores a previously saved token stream position for backtracking.
     /// @param position The position to restore to.
     public void setCurrentPosition(int position) { current = position; }
+
+    /// Sync point for error recovery: advances the token stream until it finds a token that likely indicates the start
+    /// of a new statement or declaration, allowing the parser to resume parsing after encountering an error.
+    public void synchronize() {
+
+        System.out.println("Synchronizing: starting at token " + peek() + " (position " + current + ")");
+        while (!isAtEnd()) {
+
+            /*if (previous().getType() == Delimiter.SEMICOLON) {
+
+                System.out.println("Synchronizing: previous token was a semicolon, likely end of previous statement, resuming parse...");
+                return;  // likely end of previous statement
+            }*/
+            if (previous().getType() == Delimiter.RBRACE) {
+
+                System.out.println("Synchronizing: previous token was a closing brace, likely end of previous block, resuming parse...");
+                return;  // likely end of previous block
+            }
+
+            var currentType = peek().getType();
+            if (currentType == Delimiter.LPAREN) {
+
+                while (!isAtEnd() && peek().getType() != Delimiter.RPAREN) advance();  // Skip to the end of the current parentheses
+                System.out.println("Synchronizing: current token is a left parenthesis, skipping to matching right parenthesis and resuming parse...");
+                return;
+            }
+            if (currentType instanceof AccessModifier) {
+
+                System.out.println("Synchronizing: current token " + peek() + " is an access modifier, likely start of new declaration, resuming parse...");
+                return;  // likely start of new declaration
+            }
+            if (currentType instanceof Keyword) {
+
+                System.out.println("Synchronizing: current token " + peek() + " is a keyword, likely start of new statement or declaration, resuming parse...");
+                return;  // likely start of new statement or declaration (e.g. if, while, for, class, return)
+            }
+
+            System.out.println("Synchronizing: current token " + peek() + " is not a sync point, advancing...");
+            advance();  // Keep advancing until we find a sync point or reach the end of the token stream
+        }
+    }
 }

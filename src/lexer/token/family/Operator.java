@@ -1,9 +1,9 @@
 package lexer.token.family;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
 /// Represents operators in the programming language, such as arithmetic, assignment, and logical operators.
-public enum Operator implements TokenFamily {
+public enum Operator implements TokenClass {
 
     /// The plus operator, used for addition.
     PLUS("+"),
@@ -81,5 +81,5 @@ public enum Operator implements TokenFamily {
     Operator(String symbol) { this.symbol = symbol; }
 
     @Override
-    public String get() { return symbol; }
+    public String token() { return symbol; }
 }
