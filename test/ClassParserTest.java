@@ -1,9 +1,10 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import lexer.token.TypeRegistry;
+import error.ErrorCollector;
 
 import java.util.List;
 
@@ -12,6 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /// Tests for class declarations, including methods, fields, constructors,
 /// inner classes, generics, super-classes, and access modifiers.
 public class ClassParserTest {
+
+    @BeforeEach
+    void clearErrors() {
+
+        ErrorCollector.clear();
+    }
 
     private List<StatementNode> parse(String source) {
 
@@ -91,7 +98,8 @@ public class ClassParserTest {
     void testClassWithoutAccessModifierThrows() {
 
         var tokens = new Lexer("class Bare { }").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Class access modifier is optional at syntax level");
     }
 
     @Test
@@ -178,7 +186,8 @@ public class ClassParserTest {
     void testClassWithUndefinedSuperclassThrows() {
 
         var tokens = new Lexer("public class Orphan :: NoParent { }").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Undefined superclass is semantic and should not be a syntax error");
     }
 
     // ─── Generics ─────────────────────────────────────────────────────────────
@@ -266,6 +275,7 @@ public class ClassParserTest {
         var tokens = new Lexer(
             "public class Dup { public int x; public int x; }"
         ).tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertTrue(ErrorCollector.hasErrors(), "Duplicate field should be collected as parse error");
     }
 }

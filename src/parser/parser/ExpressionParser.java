@@ -20,7 +20,6 @@ import parser.ast.nodes.expression.literal.NullLiteralExpression;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.ast.nodes.expression.literal.number.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.TypeRegistry;
@@ -95,7 +94,7 @@ public class ExpressionParser extends ParserBase {
 
             var questionToken = previous();
             var thenExpr = parseExpression();
-            consume(Delimiter.COLON, "Expect ':' in ternary expression");
+            consume(Delimiter.COLON);
             var elseExpr = parseExpression();
             return new TernaryExpression(questionToken.getLine(), questionToken.getColumn(), expr, thenExpr, elseExpr);
         }
@@ -218,12 +217,12 @@ public class ExpressionParser extends ParserBase {
             if (match(Delimiter.LPAREN)) expr = finishCall(expr);
             else if (match(Delimiter.DOT)) {
 
-                var nameToken = consume(new IdentifierLiteral(), "Expect property name after '.'");
+                var nameToken = consume(new IdentifierLiteral());
                 expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue((LiteralToken) nameToken));
             } else if (match(Delimiter.LSQUARE)) {
 
                 var index = parseExpression();
-                var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
+                var bracket = consume(Delimiter.RSQUARE);
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
             } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
 
@@ -249,7 +248,7 @@ public class ExpressionParser extends ParserBase {
             arguments.add(parseExpression());
         } while (match(Delimiter.COMMA));
 
-        var paren = consume(Delimiter.RPAREN, "Expect ')' after arguments");
+        var paren = consume(Delimiter.RPAREN);
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
 
@@ -297,31 +296,30 @@ public class ExpressionParser extends ParserBase {
                 ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
             }
 
-            var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
+            var classNameToken = consume(new IdentifierLiteral());
             var className = getLiteralValue((LiteralToken) classNameToken);
 
-            consume(Delimiter.LPAREN, "Expect '(' after class name");
+            consume(Delimiter.LPAREN);
             var arguments = new ArrayList<ExpressionNode>();
             if (!check(Delimiter.RPAREN)) do {
                 arguments.add(parseExpression());
             } while (match(Delimiter.COMMA));
-            consume(Delimiter.RPAREN, "Expect ')' after arguments");
+            consume(Delimiter.RPAREN);
             return new ObjectCreationExpression(newToken.getLine(), newToken.getColumn(), className, arguments.toArray(new ExpressionNode[0]));
         }
 
         if (match(Delimiter.LPAREN)) {
 
             var expr = parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after expression");
+            consume(Delimiter.RPAREN);
             return expr;
         }
 
-        if (token.getType() == Special.UNKNOWN)
-            ErrorCollector.add(new UnrecognizedTokenError(token.toString(), token.getLine(), token.getColumn()));
-        else
-            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
-        throw new ParseException("Expect expression", token);
-        //throw new ParseException("Expect expression", peek());
+        // If we reach here, the token does not match any valid primary expression. Record an error and attempt to recover.
+        if (token.getType() == Special.UNKNOWN) ErrorCollector.add(new UnrecognizedTokenError(token.toString(), token.getLine(), token.getColumn()));
+        else ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
+        this.state.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+        return null;  // Return null to indicate that an expression could not be parsed, but allow parsing to continue
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -342,7 +340,11 @@ public class ExpressionParser extends ParserBase {
             case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
             case DIVIDE_ASSIGN   -> Operator.DIVIDE;
             case MODULO_ASSIGN   -> Operator.MODULO;
-            default -> throw new ParseException("Unknown compound assignment operator", operator);
+            default -> {
+
+                ErrorCollector.add(new UnexpectedTokenError(operator.getType(), operator.getLine(), operator.getColumn()));
+                yield null;  // Return null to indicate that the operator was not recognized, but allow
+            }
         };
 
         return new BinaryExpression(
@@ -382,7 +384,8 @@ public class ExpressionParser extends ParserBase {
         } catch (NumberFormatException e) {
 
             ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
-            throw new ParseException("Invalid number format: " + value, token);
+            this.state.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+            return null;  // Return null to indicate that the numeric literal could not be parsed, but allow parsing to continue
         }
     }
 }

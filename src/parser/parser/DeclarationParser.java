@@ -12,7 +12,6 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
 import parser.ast.nodes.statement.declaration.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.ReturnType;
@@ -100,7 +99,7 @@ public class DeclarationParser extends ParserBase {
                 var sizeExpr = expressionParser.parseExpression();
                 arraySizes.add(sizeExpr);
             } else arraySizes.add(null);  // No size specified
-            consume(Delimiter.RSQUARE, "Expect ']' after array dimension");
+            consume(Delimiter.RSQUARE);
         }
         return arraySizes.toArray(new ExpressionNode[0]);
     }
@@ -141,7 +140,8 @@ public class DeclarationParser extends ParserBase {
 
         //throw new ParseException("Expect type (primitive or class name)", token);
         ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
-        throw new ParseException("Expect type (primitive or class name)", token);
+        this.state.synchronize();  // Skip the invalid token to continue parsing
+        return null;  // Return null to indicate a parsing error, but allow parsing to continue
     }
 
     /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
@@ -175,7 +175,7 @@ public class DeclarationParser extends ParserBase {
 
             //if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", peek());
             var paramType = parseType();
-            var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
+            var paramName = consume(new IdentifierLiteral());
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue((LiteralToken) paramName), paramType));
         } while (match(Delimiter.COMMA));
         return parameters.toArray(new FunctionParameter[0]);
@@ -222,10 +222,10 @@ public class DeclarationParser extends ParserBase {
     /// @return A FunctionDeclarationStatement representing the parsed function declaration.
     private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after function name");
+        consume(Delimiter.LPAREN);
 
         var parameters = parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        consume(Delimiter.RPAREN);
 
         // Pre-register with null body in the enclosing scope so recursive calls resolve.
         var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
@@ -237,7 +237,7 @@ public class DeclarationParser extends ParserBase {
         for (var param : parameters) this.symbolTable.register(param);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
 
-        consume(Delimiter.LBRACE, "Expect '{' before function body");
+        consume(Delimiter.LBRACE);
 
         var bodyStatements = getStatementList(functionScope);
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
@@ -276,7 +276,7 @@ public class DeclarationParser extends ParserBase {
 
             do {
 
-                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
+                var nameToken = consume(new IdentifierLiteral());
                 var varName = getLiteralValue((LiteralToken) nameToken);
 
                 ExpressionNode init = null;
@@ -287,11 +287,11 @@ public class DeclarationParser extends ParserBase {
                 declarations.add(decl);
             } while (match(Delimiter.COMMA));
 
-            consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+            consume(Delimiter.SEMICOLON);
             return new BlockStatement(line, column, declarations.toArray(new StatementNode[0]));
         }
 
-        consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+        consume(Delimiter.SEMICOLON);
         return firstDecl;
     }
 
@@ -310,13 +310,13 @@ public class DeclarationParser extends ParserBase {
          if (match(Keyword.BREAK)) {
 
              var breakToken = previous();
-             consume(Delimiter.SEMICOLON, "Expect ';' after break statement");
+             consume(Delimiter.SEMICOLON);
              return new BreakStatement(breakToken.getLine(), breakToken.getColumn());
          }
          if (match(Keyword.CONTINUE)) {
 
              var continueToken = previous();
-             consume(Delimiter.SEMICOLON, "Expect ';' after continue statement");
+             consume(Delimiter.SEMICOLON);
              return new ContinueStatement(continueToken.getLine(), continueToken.getColumn());
          }
         if (match(Keyword.RETURN)) return parseReturnStatement();
@@ -333,9 +333,9 @@ public class DeclarationParser extends ParserBase {
 
         var ifToken = previous();
 
-        consume(Delimiter.LPAREN, "Expect '(' after 'if'");
+        consume(Delimiter.LPAREN);
         var condition = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after if condition");
+        consume(Delimiter.RPAREN);
 
         var thenBranch = parseStatement();
         StatementNode elseBranch = null;
@@ -353,9 +353,9 @@ public class DeclarationParser extends ParserBase {
 
         var whileToken = previous();
 
-        consume(Delimiter.LPAREN, "Expect '(' after 'while'");
+        consume(Delimiter.LPAREN);
         var condition = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after while condition");
+        consume(Delimiter.RPAREN);
 
         var body = parseStatement();
         return new WhileStatement(whileToken.getLine(), whileToken.getColumn(), condition, body);
@@ -374,7 +374,7 @@ public class DeclarationParser extends ParserBase {
     private StatementNode parseForOrForEachStatement() {
 
         var forToken = previous();
-        consume(Delimiter.LPAREN, "Expect '(' after 'for'");
+        consume(Delimiter.LPAREN);
 
         // Peek ahead: if we see <type> <identifier> ":" it's a for-each
         if (isValidType(peek())) {
@@ -400,7 +400,7 @@ public class DeclarationParser extends ParserBase {
                         this.symbolTable.register(elementDecl);
 
                         var iterable = expressionParser.parseExpression();
-                        consume(Delimiter.RPAREN, "Expect ')' after for-each expression");
+                        consume(Delimiter.RPAREN);
                         var body = parseStatement();
                         return new ForEachStatement(forToken.getLine(), forToken.getColumn(), type, elementName, iterable, body);
                     } finally {
@@ -437,29 +437,29 @@ public class DeclarationParser extends ParserBase {
             else if (isValidType(peek())) {
 
                 var type = parseType();
-                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
+                var nameToken = consume(new IdentifierLiteral());
                 var name = getLiteralValue((LiteralToken) nameToken);
 
                 ExpressionNode init = null;
                 if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
+                consume(Delimiter.SEMICOLON);
 
                 initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, name, init);
                 this.symbolTable.register((VariableDeclarationStatement) initializer);
             } else {
 
                 var expr = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after expression");
+                consume(Delimiter.SEMICOLON);
                 initializer = new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
             }
 
             ExpressionNode condition = null;
             if (!check(Delimiter.SEMICOLON)) condition = expressionParser.parseExpression();
-            consume(Delimiter.SEMICOLON, "Expect ';' after loop condition");
+            consume(Delimiter.SEMICOLON);
 
             ExpressionNode incrementExpr = null;
             if (!check(Delimiter.RPAREN)) incrementExpr = expressionParser.parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after for clauses");
+            consume(Delimiter.RPAREN);
 
             StatementNode increment = null;
             if (incrementExpr != null) increment = new ExpressionStatement(incrementExpr.getLine(), incrementExpr.getColumn(), incrementExpr);
@@ -483,33 +483,34 @@ public class DeclarationParser extends ParserBase {
     private SwitchStatement parseSwitchStatement() {
 
         var switchToken = previous();
-        consume(Delimiter.LPAREN, "Expect '(' after 'switch'");
+        consume(Delimiter.LPAREN);
         var subject = expressionParser.parseExpression();
-        consume(Delimiter.RPAREN, "Expect ')' after switch expression");
-        consume(Delimiter.LBRACE, "Expect '{' before switch body");
+        consume(Delimiter.RPAREN);
+        consume(Delimiter.LBRACE);
 
         var cases = new ArrayList<SwitchCase>();
         while (!check(Delimiter.RBRACE) && isNotAtEnd()) if (match(Keyword.CASE)) {
 
             var caseToken = previous();
             var value = expressionParser.parseExpression();
-            consume(Delimiter.COLON, "Expect ':' after case value");
+            consume(Delimiter.COLON);
             var body = parseStatement();
             cases.add(new SwitchCase(caseToken.getLine(), caseToken.getColumn(), value, body));
         } else if (match(Keyword.DEFAULT)) {
 
             var defaultToken = previous();
-            consume(Delimiter.COLON, "Expect ':' after 'default'");
+            consume(Delimiter.COLON);
             var body = parseStatement();
             cases.add(new SwitchCase(defaultToken.getLine(), defaultToken.getColumn(), null, body));
         } else {
 
             var badToken = peek();
             ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
-            throw new ParseException("Expect 'case' or 'default' in switch body", badToken);
+            this.state.synchronize();  // Skip to the next case/default or end of switch to continue parsing
+            return null;  // Return null to indicate a parsing error, but allow parsing to continue
         }
 
-        consume(Delimiter.RBRACE, "Expect '}' after switch body");
+        consume(Delimiter.RBRACE);
         return new SwitchStatement(switchToken.getLine(), switchToken.getColumn(), subject, cases.toArray(new SwitchCase[0]));
     }
 
@@ -525,7 +526,7 @@ public class DeclarationParser extends ParserBase {
         ExpressionNode value = null;
         if (!check(Delimiter.SEMICOLON)) value = expressionParser.parseExpression();
 
-        consume(Delimiter.SEMICOLON, "Expect ';' after return value");
+        consume(Delimiter.SEMICOLON);
         return new ReturnStatement(returnToken.getLine(), returnToken.getColumn(), value);
     }
 
@@ -554,7 +555,7 @@ public class DeclarationParser extends ParserBase {
         var statements = new ArrayList<StatementNode>();
 
         while (!check(Delimiter.RBRACE) && isNotAtEnd()) statements.add(parseDeclaration());
-        consume(Delimiter.RBRACE, "Expect '}' after block");
+        consume(Delimiter.RBRACE);
 
         this.symbolTable = exitScope(blockScope);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
@@ -569,7 +570,7 @@ public class DeclarationParser extends ParserBase {
     private ExpressionStatement parseExpressionStatement() {
 
         var expr = expressionParser.parseExpression();
-        consume(Delimiter.SEMICOLON, "Expect ';' after expression");
+        consume(Delimiter.SEMICOLON);
         return new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
     }
 }

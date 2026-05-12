@@ -1,4 +1,6 @@
-package parser.parser.util;
+package error.exception;
+
+import error.Error;
 
 import java.util.List;
 
@@ -9,24 +11,25 @@ import java.util.List;
 /// carried inside this exception and rendered together in the message.</p>
 public class ParseErrorsException extends RuntimeException {
 
-    private final List<ParseException> errors;
+    private final List<Error> errors;
 
     /// Constructs a new ParseErrorsException from the given list of parse errors.
-    /// @param errors One or more {@link ParseException}s collected during parsing.
-    public ParseErrorsException(List<ParseException> errors) {
+    /// @param errors One or more {@link Error}s collected during parsing.
+    public ParseErrorsException(List<Error> errors) {
 
         super(buildMessage(errors));
         this.errors = List.copyOf(errors);
     }
 
     /// Returns the individual errors that were collected during parsing.
-    /// @return An unmodifiable list of {@link ParseException}s.
-    public List<ParseException> getErrors() { return errors; }
+    /// @return An unmodifiable list of {@link Error}s.
+    public List<Error> getErrors() { return errors; }
 
-    private static String buildMessage(List<ParseException> errors) {
+    private static String buildMessage(List<Error> errors) {
 
         var sb = new StringBuilder();
-        sb.append(errors.size()).append(" parse error").append(errors.size() == 1 ? "" : "s").append(":\n");
+        sb.append("\n\n === PARSING ERROR ===\n\nParse failed with ").append(errors.size()).append(" error").append(errors.size() == 1 ? "" : "s").append(".\n");
+        //sb.append(errors.size()).append(" parse error").append(errors.size() == 1 ? "" : "s").append(":\n");
         for (var e : errors) sb.append("  • ").append(e.getMessage()).append("\n");
         return sb.toString().stripTrailing();
     }

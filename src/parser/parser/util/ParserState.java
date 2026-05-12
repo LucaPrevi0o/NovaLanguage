@@ -4,9 +4,8 @@ import error.ErrorCollector;
 import error.syntax.MissingTokenError;
 import lexer.Token;
 import lexer.token.TokenClass;
+import lexer.token.family.*;
 import lexer.token.type.LiteralToken;
-import lexer.token.family.Literal;
-import lexer.token.family.Special;
 
 import java.util.List;
 
@@ -85,18 +84,17 @@ public class ParserState {
     }
 
     /// Consumes the current token if it matches the specified token family; otherwise, records a
-    /// {@link error.syntax.MissingTokenError} in the {@link error.ErrorCollector} and throws a
-    /// {@link ParseException} so that the top-level parser can synchronize and continue.
-    /// @param type The token family to check against the current token.
-    /// @param message The error message to include in the ParseException if the current token does not match the specified token family.
-    /// @return The token that was consumed if it matches the specified token family.
-    /// @throws ParseException If the current token does not match the specified token family.
-    public Token consume(TokenClass type, String message) {
+    /// {@link MissingTokenError} in the global {@link ErrorCollector} and attempts to recover by synchronizing to the
+    /// next statement boundary.
+    /// @param type The token family that the current token is expected to match.
+    public Token consume(TokenClass type) {
 
         if (check(type)) return advance();
         var errorToken = peek();
         ErrorCollector.add(new MissingTokenError(errorToken.getLine(), errorToken.getColumn(), type));
-        throw new ParseException(message, errorToken);
+        //throw new ParseException(message, errorToken);
+        this.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
+        return null;  // Return null to indicate that the expected token was not found, but allow parsing to continue
     }
     
     // ========== Helper Methods ==========
@@ -104,10 +102,7 @@ public class ParserState {
     /// Checks if the current token is a literal token.
     /// @param token The token to check.
     /// @return The literal value of the token if it is an instance of LiteralToken.
-    /// @throws ParseException If the token is not an instance of LiteralToken.
-    public String getLiteralValue(LiteralToken token) {
-        return token.getType().token();
-    }
+    public String getLiteralValue(LiteralToken token) { return token.getType().token(); }
 
     /// Returns the current token stream position.
     /// Used to save and restore the position for backtracking during ambiguous parses (e.g. for vs for-each).
@@ -117,4 +112,21 @@ public class ParserState {
     /// Restores a previously saved token stream position for backtracking.
     /// @param position The position to restore to.
     public void setCurrentPosition(int position) { current = position; }
+
+    /// Sync point for error recovery: advances the token stream until it finds a token that likely indicates the start
+    /// of a new statement or declaration, allowing the parser to resume parsing after encountering an error.
+    public void synchronize() {
+
+        while (!isAtEnd()) {
+
+            if (previous().getType() == Delimiter.SEMICOLON) return;  // likely end of previous statement
+            if (previous().getType() == Delimiter.RBRACE) return;  // likely end of previous block
+
+            var currentType = peek().getType();
+            if (currentType instanceof AccessModifier) return;  // likely start of new declaration
+            if (currentType instanceof Keyword) return;  // likely start of new statement or declaration (e.g. if, while, for, class, return)
+
+            advance();  // Keep advancing until we find a sync point or reach the end of the token stream
+        }
+    }
 }

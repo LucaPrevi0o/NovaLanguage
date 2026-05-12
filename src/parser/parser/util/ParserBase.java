@@ -98,9 +98,8 @@ public abstract class ParserBase {
 
     /// Consumes the current token if it matches the specified type; otherwise, throws a ParseException with the provided error message.
     /// @param type The token family to check against the current token.
-    /// @param message The error message to include in the ParseException if the current token does not match the specified type.
     /// @return The token that was consumed if it matches the specified type.
-    protected Token consume(TokenClass type, String message) { return state.consume(type, message); }
+    protected Token consume(TokenClass type) { return state.consume(type); }
 
     /// Retrieves the literal value associated with the specified token, if applicable.
      /// @param token The token for which to retrieve the literal value.

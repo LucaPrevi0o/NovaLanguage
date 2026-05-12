@@ -1,9 +1,11 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.expression.*;
 import parser.ast.nodes.statement.ExpressionStatement;
+import error.ErrorCollector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,6 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /// ternary operator, postfix ++/--, binary operators,
 /// assignment (compound), member access, array access, call expressions.
 public class ExpressionParserTest {
+
+    @BeforeEach
+    void clearErrors() {
+
+        ErrorCollector.clear();
+    }
 
     private Parser parse() {
 
@@ -62,7 +70,8 @@ public class ExpressionParserTest {
 
         var tokens = new Lexer("int x; x = true ? 1;").tokenize();
         var parser = new Parser(tokens);
-        assertThrows(RuntimeException.class, parser::parse);
+        assertDoesNotThrow(parser::parse);
+        assertTrue(ErrorCollector.hasErrors(), "Missing ':' in ternary should be collected as parse error");
     }
 
     // ─── Postfix ++ / -- ──────────────────────────────────────────────────────
@@ -256,7 +265,8 @@ public class ExpressionParserTest {
     void testAssignmentToLiteral_throws() {
 
         var tokens = new Lexer("1 = 2;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "L-value validation is semantic and not enforced by syntax recovery");
     }
 
     // ─── Literals ─────────────────────────────────────────────────────────────
@@ -321,10 +331,10 @@ public class ExpressionParserTest {
     void testInvalidNumberFormatThrows() {
 
         // "1.2.3" — the lexer stops the number token at "1.2", leaving ".3" as separate
-        // tokens.  The parser will encounter an unexpected "." when parsing the expression
-        // after "1.2", so it should throw.
+        // tokens. The parser encounters an unexpected "." and should record a parse error.
         var tokens = new Lexer("int x; x = 1.2.3;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertTrue(ErrorCollector.hasErrors(), "Malformed numeric expression should be collected as parse error");
     }
 
     // ─── Parenthesised expressions ────────────────────────────────────────────
@@ -365,15 +375,17 @@ public class ExpressionParserTest {
     void testNewWithPrimitiveTypeGivesClearError() {
 
         var tokens = new Lexer("new int(1);").tokenize();
-        var ex = assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
-        assertTrue(ex.getMessage().contains("primitive") || ex.getMessage().contains("new"),
-                "Error should mention 'primitive' or 'new'");
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertTrue(ErrorCollector.hasErrors(), "Using 'new' with primitive type should be collected as parse error");
+        var msg = ErrorCollector.getErrors().getFirst().getMessage();
+        assertTrue(msg.contains("line") || msg.contains("Unexpected"), "Collected error should include useful diagnostics");
     }
 
     @Test
     void testNewWithUndefinedClassThrows() {
 
         var tokens = new Lexer("new UndefinedClass();").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> new Parser(tokens).parse());
+        assertFalse(ErrorCollector.hasErrors(), "Undefined class resolution is semantic, not syntax");
     }
 }

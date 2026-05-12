@@ -5,8 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import error.ErrorCollector;
+import error.parsing.DuplicateSymbolError;
 import parser.ast.nodes.Symbol;
-import parser.parser.util.ParseException;
 
 /// Represents a symbol table for managing variable and function scopes in the abstract syntax tree (AST).
 ///
@@ -41,16 +42,12 @@ public record SymbolTable(SymbolTable parent, List<Symbol> symbols, List<SymbolT
     }
 
     /// Registers a new symbol in the current symbol table.
-    /// Throws a {@link ParseException} with source location if the name is already declared in this scope.
-    /// @param symbol The symbol to register in the current symbol table.
+    /// Checks for duplicate symbol names in the current scope and collects a {@link DuplicateSymbolError} if a duplicate is found.
+    /// @param symbol The Symbol instance to be registered in the current symbol table.
     public void register(Symbol symbol) {
 
         for (var sym : symbols) if (sym.getName().equals(symbol.getName()))
-            throw new ParseException(
-                "Symbol '" + symbol.getName() + "' is already defined in this scope.",
-                symbol.getLine(),
-                symbol.getColumn()
-            );
+            ErrorCollector.add(new DuplicateSymbolError(symbol.getName(), symbol.getLine(), symbol.getColumn()));
 
         symbols.add(symbol);
     }

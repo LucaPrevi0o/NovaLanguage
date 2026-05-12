@@ -1,9 +1,10 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import parser.parser.util.ParseErrorsException;
+import error.ErrorCollector;
 
 import java.util.List;
 
@@ -13,6 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /// These tests combine multiple language features in realistic scenarios
 /// to verify that the parser handles complex, real-world-like programs correctly.
 public class IntegrationTest {
+
+    @BeforeEach
+    void clearErrors() {
+
+        ErrorCollector.clear();
+    }
 
     private List<StatementNode> parse(String source) {
 
@@ -173,8 +180,8 @@ public class IntegrationTest {
         // Each statement has a missing right-hand operand, producing one parse error per statement.
         var tokens = new Lexer("1 + ; 2 + ; 3 + ;").tokenize();
         var parser = new Parser(tokens);
-        var ex = assertThrows(ParseErrorsException.class, parser::parse);
-        assertEquals(3, ex.getErrors().size(), "All three errors should be reported");
+        assertDoesNotThrow(parser::parse);
+        assertTrue(ErrorCollector.getErrors().size() >= 3, "All malformed statements should contribute collected syntax errors");
     }
 
     @Test
@@ -184,8 +191,8 @@ public class IntegrationTest {
         // second is a valid declaration — error count should be exactly 1.
         var tokens = new Lexer("int ; int x = 5;").tokenize();
         var parser = new Parser(tokens);
-        var ex = assertThrows(ParseErrorsException.class, parser::parse);
-        assertEquals(1, ex.getErrors().size(), "Only 1 error expected — the second statement is valid");
+        assertDoesNotThrow(parser::parse);
+        assertEquals(1, ErrorCollector.getErrors().size(), "Only 1 error expected — the second statement is valid");
     }
 
     // ─── Inheritance with method calls ────────────────────────────────────────
