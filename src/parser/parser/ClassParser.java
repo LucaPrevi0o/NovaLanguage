@@ -227,13 +227,7 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            consume(Delimiter.LBRACE);
-
-            var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE);
-
-            var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+            var body = parseClassMemberBody(line, column);
             placeholder.setBody(body);
             return placeholder;
         } finally {
@@ -269,18 +263,26 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            consume(Delimiter.LBRACE);
-
-            var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE);
-
-            var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+            var body = parseClassMemberBody(line, column);
             return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);
         } finally {
 
             this.symbolTable = exitScope(constructorScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }
+    }
+
+    /// Parses the body of a class member (method or constructor), which consists of a block of statements.
+    /// @param line The line number where the member body starts.
+    /// @param column The column number where the member body starts.
+    /// @return A BlockStatement representing the parsed body of the class member.
+    private BlockStatement parseClassMemberBody(int line, int column) {
+
+        consume(Delimiter.LBRACE);
+        var bodyStatements = new ArrayList<StatementNode>();
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+        consume(Delimiter.RBRACE);
+
+        return new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
     }
 }

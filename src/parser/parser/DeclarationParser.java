@@ -438,6 +438,11 @@ public class DeclarationParser extends ParserBase {
 
                 var type = parseType();
                 var nameToken = consume(new IdentifierLiteral());
+                if (nameToken == null) {
+
+                    // Error already recorded in consume(); synchronize and return null to continue parsing}
+                    return null;
+                }
                 var name = getLiteralValue((LiteralToken) nameToken);
 
                 ExpressionNode init = null;

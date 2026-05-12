@@ -90,6 +90,8 @@ public class ParserState {
     public Token consume(TokenClass type) {
 
         if (check(type)) return advance();
+
+        System.out.println("\nError: expected token of type " + type.token() + " but found " + peek() + " at line " + peek().getLine() + ", column " + peek().getColumn());
         var errorToken = peek();
         ErrorCollector.add(new MissingTokenError(errorToken.getLine(), errorToken.getColumn(), type));
         //throw new ParseException(message, errorToken);
@@ -117,15 +119,39 @@ public class ParserState {
     /// of a new statement or declaration, allowing the parser to resume parsing after encountering an error.
     public void synchronize() {
 
+        System.out.println("Synchronizing: starting at token " + peek() + " (position " + current + ")");
         while (!isAtEnd()) {
 
-            if (previous().getType() == Delimiter.SEMICOLON) return;  // likely end of previous statement
-            if (previous().getType() == Delimiter.RBRACE) return;  // likely end of previous block
+            /*if (previous().getType() == Delimiter.SEMICOLON) {
+
+                System.out.println("Synchronizing: previous token was a semicolon, likely end of previous statement, resuming parse...");
+                return;  // likely end of previous statement
+            }*/
+            if (previous().getType() == Delimiter.RBRACE) {
+
+                System.out.println("Synchronizing: previous token was a closing brace, likely end of previous block, resuming parse...");
+                return;  // likely end of previous block
+            }
 
             var currentType = peek().getType();
-            if (currentType instanceof AccessModifier) return;  // likely start of new declaration
-            if (currentType instanceof Keyword) return;  // likely start of new statement or declaration (e.g. if, while, for, class, return)
+            if (currentType == Delimiter.LPAREN) {
 
+                while (!isAtEnd() && peek().getType() != Delimiter.RPAREN) advance();  // Skip to the end of the current parentheses
+                System.out.println("Synchronizing: current token is a left parenthesis, skipping to matching right parenthesis and resuming parse...");
+                return;
+            }
+            if (currentType instanceof AccessModifier) {
+
+                System.out.println("Synchronizing: current token " + peek() + " is an access modifier, likely start of new declaration, resuming parse...");
+                return;  // likely start of new declaration
+            }
+            if (currentType instanceof Keyword) {
+
+                System.out.println("Synchronizing: current token " + peek() + " is a keyword, likely start of new statement or declaration, resuming parse...");
+                return;  // likely start of new statement or declaration (e.g. if, while, for, class, return)
+            }
+
+            System.out.println("Synchronizing: current token " + peek() + " is not a sync point, advancing...");
             advance();  // Keep advancing until we find a sync point or reach the end of the token stream
         }
     }
