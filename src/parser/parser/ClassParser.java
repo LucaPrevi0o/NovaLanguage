@@ -1,6 +1,7 @@
 package parser.parser;
 
 import error.ErrorCollector;
+import error.syntax.MissingTokenError;
 import error.syntax.UnexpectedTokenError;
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
@@ -70,26 +71,57 @@ public class ClassParser extends ParserBase {
     public ClassDeclarationStatement parseClassDeclaration(AccessModifier classAccessModifier) {
 
         var classToken = previous();
-        var nameToken = consume(new IdentifierLiteral());
+
+        advance();
+        var nameToken = peek();
+        if (!match(new IdentifierLiteral())) {
+
+            ErrorCollector.add(new UnexpectedTokenError(nameToken.getType(), nameToken.getLine(), nameToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
         var className = getLiteralValue((LiteralToken) nameToken);
 
         var superClasses = new ArrayList<ReturnType>();
         ReturnType genericClassParameter = null;
 
+        advance();  // consume class name
         if (match(Delimiter.LSQUARE)) {
 
-            var genToken = consume(new IdentifierLiteral());
+            advance();  // consume '['
+            var genToken = peek();
+            if (!match(new IdentifierLiteral())) {
+
+                ErrorCollector.add(new UnexpectedTokenError(genToken.getType(), genToken.getLine(), genToken.getColumn()));
+                this.state.synchronize();
+                return null;
+            }
             var genericParameterName = getLiteralValue((LiteralToken) genToken);
 
-            consume(Delimiter.RSQUARE);
+            advance();
+            if (!match(Delimiter.RSQUARE)) {
+
+                var badToken = peek();
+                ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+                this.state.synchronize();
+                return null;
+            }
 
             genericClassParameter = new ReturnType(new GenericParameterType(genericParameterName));
             typeRegistry.registerType(genericClassParameter); // Register generic parameter as a type to allow it to be used in member declarations
         }
 
+        advance();
         if (match(Delimiter.DOUBLE_COLON)) do {
 
-            var superClassToken = consume(new IdentifierLiteral());
+            advance();
+            var superClassToken = peek();
+            if (!match(new IdentifierLiteral())) {
+
+                ErrorCollector.add(new UnexpectedTokenError(superClassToken.getType(), superClassToken.getLine(), superClassToken.getColumn()));
+                this.state.synchronize();
+                return null;
+            }
             var superClassName = getLiteralValue((LiteralToken) superClassToken);
             superClasses.add(typeRegistry.getReturnType(superClassName));
         } while (match(Delimiter.COMMA));
@@ -110,7 +142,13 @@ public class ClassParser extends ParserBase {
         typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
         this.symbolTable.register(classDecl); // Register class declaration as a symbol in the current scope
 
-        consume(Delimiter.LBRACE);
+        advance();
+        if (!match(Delimiter.LBRACE)) {
+
+            ErrorCollector.add(new UnexpectedTokenError(classToken.getType(), classToken.getLine(), classToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         var classScope = enterScope(classDecl);
         var savedSymbolTable = this.symbolTable;
@@ -125,40 +163,60 @@ public class ClassParser extends ParserBase {
 
         try {
 
+            advance();
             while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
 
+                advance();
                 var memberAccessModifier = parseAccessModifier();
-                if (match(Keyword.CLASS)) {
+                if (memberAccessModifier == null) {
 
-                    //if (memberAccessModifier == null) throw new ParseException("Inner class declaration requires an access modifier", previous());
-                    innerClasses.add(parseClassDeclaration(memberAccessModifier));
-                    continue;
+                    ErrorCollector.add(new MissingTokenError());
+                    this.state.synchronize();
+                    return null;
                 }
 
-                if (check(new IdentifierLiteral()) && peek().getType().token().equals(className)) {
+                advance();
+                if (match(Keyword.CLASS)) {
+
+                    advance();
+                    innerClasses.add(parseClassDeclaration(memberAccessModifier));
+                    continue;
+                } else if (match(new IdentifierLiteral(className))) {
 
                     advance();  // consume class name
                     constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
                     continue;
-                }
-
-                if (!declarationParser.isValidType(peek())) {
+                } else if (!declarationParser.isValidType(peek())) {
 
                     var badToken = peek();
                     ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
                     this.state.synchronize();  // Attempt to recover by synchronizing to the next statement/declaration
                     continue; // Skip the invalid member and continue parsing the rest of the class
                 }
-                var type = declarationParser.parseType();
-                var memberNameToken = consume(new IdentifierLiteral());
-                var memberName = getLiteralValue((LiteralToken) memberNameToken);
 
+                advance();
+                var type = declarationParser.parseType();
+                var memberNameToken = peek();
+                if (!match(new IdentifierLiteral())) {
+
+                    ErrorCollector.add(new UnexpectedTokenError(memberNameToken.getType(), memberNameToken.getLine(), memberNameToken.getColumn()));
+                    this.state.synchronize();
+                    continue; // Skip the invalid member and continue parsing the rest of the class
+                }
+
+                var memberName = getLiteralValue((LiteralToken) memberNameToken);
                 if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
                 else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
             }
         } finally {
 
-            consume(Delimiter.RBRACE);
+            advance();
+            if (!match(Delimiter.RBRACE)) {
+
+                var badToken = peek();
+                ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+                this.state.synchronize();
+            }
             this.symbolTable = exitScope(classScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }
@@ -209,10 +267,24 @@ public class ClassParser extends ParserBase {
     /// @return A ClassMethodDeclaration representing the parsed class method declaration.
     private ClassMethodDeclaration parseClassMethod(ReturnType returnType, String name, int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN);
+        advance();
+        if (!match(Delimiter.LPAREN)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN);
+        advance();
+        if (!match(Delimiter.RPAREN)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         // Pre-register method in class scope so recursive calls resolve
         var placeholder = new ClassMethodDeclaration(line, column, returnType, name, parameters, null, accessModifier);
@@ -249,10 +321,24 @@ public class ClassParser extends ParserBase {
     /// @return A ClassConstructorDeclaration representing the parsed class constructor declaration.
     private ClassConstructorDeclaration parseConstructor(int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN);
+        advance();
+        if (!match(Delimiter.LPAREN)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN);
+        advance();
+        if (!match(Delimiter.RPAREN)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         var constructorScope = enterScope();
         var savedSymbolTable = this.symbolTable;
@@ -278,10 +364,25 @@ public class ClassParser extends ParserBase {
     /// @return A BlockStatement representing the parsed body of the class member.
     private BlockStatement parseClassMemberBody(int line, int column) {
 
-        consume(Delimiter.LBRACE);
+        advance();
+        if (!match(Delimiter.LBRACE)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
         var bodyStatements = new ArrayList<StatementNode>();
         while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-        consume(Delimiter.RBRACE);
+
+        advance();
+        if (!match(Delimiter.RBRACE)) {
+
+            var badToken = peek();
+            ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+            this.state.synchronize();
+            return null;
+        }
 
         return new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
     }
