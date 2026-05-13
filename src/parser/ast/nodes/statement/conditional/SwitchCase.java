@@ -20,7 +20,7 @@ public class SwitchCase extends AstNode implements Printable {
     /// Constructs a new SwitchCase.
     /// @param line   Line number of the case keyword.
     /// @param column Column number of the case keyword.
-    /// @param value  The value expression to match, or {@code null} for the default arm.
+    /// @param value  The value expression to checkCurrentTokenType, or {@code null} for the default arm.
     /// @param body   The statement body to execute when this case matches.
     public SwitchCase(int line, int column, ExpressionNode value, StatementNode body) {
 
@@ -29,7 +29,7 @@ public class SwitchCase extends AstNode implements Printable {
         this.body = body;
     }
 
-    /// Returns the match value, or {@code null} if this is the default arm.
+    /// Returns the checkCurrentTokenType value, or {@code null} if this is the default arm.
     /// @return The case value expression.
     public ExpressionNode getValue() { return value; }
 

@@ -29,7 +29,7 @@ public class TypeRegistry {
     }
 
     /// Determines whether the given name corresponds to a registered custom class.
-    /// @param typeName The class name to check.
+    /// @param typeName The class name to checkCurrentTokenType.
     /// @return {@code true} if the name is a registered type;
     public boolean isCustomType(String typeName) {
 

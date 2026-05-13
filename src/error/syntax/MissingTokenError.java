@@ -5,8 +5,8 @@ import lexer.token.TokenClass;
 
 /// Represents a syntax error where an expected token is absent at a given position in the source.
 ///
-/// This error is raised by the parser when {@code consume()} is called and the current token does
-/// not match the expected token type (i.e., the expected token is simply missing from the source).
+/// This error is raised by the parser when {@code getNextToken()} is called and the current token does
+/// not checkCurrentTokenType the expected token type (i.e., the expected token is simply missing from the source).
 /// The error records the source position and the token that was expected, so that diagnostic messages
 /// can pinpoint exactly where the omission occurred.
 @SyntaxError

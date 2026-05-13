@@ -147,7 +147,7 @@ public class Lexer {
     }
 
     /// Read an identifier or keyword, which starts with a letter or underscore and can contain letters, digits, and underscores.
-    /// After reading the sequence, check if it matches a keyword or type; if not, treat it as an identifier.
+    /// After reading the sequence, checkCurrentTokenType if it matches a keyword or type; if not, treat it as an identifier.
     /// @return A KeywordToken, TypeToken, or LiteralToken representing the identifier or keyword.
     private Token readIdentifierOrKeyword() {
 

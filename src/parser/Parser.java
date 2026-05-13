@@ -142,19 +142,19 @@ public class Parser extends ParserBase {
     /// </ul>
     private void synchronize() {
 
-        if (isNotAtEnd()) advance();  // always skip the offending token
+        if (isNotAtEnd()) getNextToken();  // always skip the offending token
         while (isNotAtEnd()) {
 
-            // A semicolon marks the end of the previous statement — safe to resume after it.
-            if (previous().getType() == Delimiter.SEMICOLON) return;
+            // A semicolon marks the end of the getPreviousToken statement — safe to resume after it.
+            if (getPreviousToken().getType() == Delimiter.SEMICOLON) return;
 
             // Keywords that begin a new declaration or statement are also safe resume points.
-            var next = peek().getType();
+            var next = getCurrentToken().getType();
             if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
                 next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
                 next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
 
-            advance();
+            getNextToken();
         }
     }
 }

@@ -15,6 +15,7 @@ import parser.parser.util.ParserBase;
 import lexer.token.ReturnType;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /// Parses class declarations, including their methods, fields, superclasses, generic parameters, inner classes, access modifiers, and constructors.
 ///
@@ -70,31 +71,59 @@ public class ClassParser extends ParserBase {
     /// @return A ClassDeclarationStatement representing the parsed class declaration.
     public ClassDeclarationStatement parseClassDeclaration(AccessModifier classAccessModifier) {
 
-        var classToken = previous();
-        var nameToken = consume(new IdentifierLiteral(), "Expect class name after 'class'");
-        var className = getLiteralValue((LiteralToken) nameToken);
+        var classToken = getPreviousToken(); // 'class' token was consumed by caller to determine access modifier
+
+        // Parse class name
+        var nextToken = getNextToken(new IdentifierLiteral(), new UnexpectedTokenError(
+            new IdentifierLiteral(),
+            getCurrentToken().getLine(),
+            getCurrentToken().getColumn()
+        ));
+
+        var className = getLiteralValue((LiteralToken) nextToken);
 
         var superClasses = new ArrayList<ReturnType>();
         ReturnType genericClassParameter = null;
 
-        if (match(Delimiter.LSQUARE)) {
+        nextToken = getNextToken(); // Advance past class name for next parsing steps
 
-            var genToken = consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+        // Parse optional generic parameter
+        if (nextToken.getType().equals(Delimiter.LSQUARE)) {
+
+            // Only one generic parameter allowed for simplicity; can be extended to multiple if needed
+            var genToken = getNextToken(new IdentifierLiteral(), new UnexpectedTokenError(
+                new IdentifierLiteral(),
+                getCurrentToken().getLine(),
+                getCurrentToken().getColumn())
+            );
             var genericParameterName = getLiteralValue((LiteralToken) genToken);
 
-            consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+            // Expect closing square bracket after generic parameter
+            getNextToken(Delimiter.RSQUARE, new UnexpectedTokenError(
+                Delimiter.RSQUARE,
+                getCurrentToken().getLine(),
+                getCurrentToken().getColumn()
+            ));
 
             genericClassParameter = new ReturnType(new GenericParameterType(genericParameterName));
             typeRegistry.registerType(genericClassParameter); // Register generic parameter as a type to allow it to be used in member declarations
-        }
+        } else if (nextToken.getType().equals(Delimiter.DOUBLE_COLON)) do {
 
-        if (match(Delimiter.DOUBLE_COLON)) do {
+            var superClassToken = getNextToken(new IdentifierLiteral(), new UnexpectedTokenError(
+                new IdentifierLiteral(),
+                getCurrentToken().getLine(),
+                getCurrentToken().getColumn()
+            ));
 
-            var superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
+            // Look up superclass type in registry to ensure it exists and to get its ReturnType for the ClassDeclarationStatement
             var superClassName = getLiteralValue((LiteralToken) superClassToken);
             superClasses.add(typeRegistry.getReturnType(superClassName));
-        } while (match(Delimiter.COMMA));
 
+            getNextToken();  // Advance past superclass name for next iteration (either comma or opening brace)
+        } while (this.checkCurrentTokenType(Delimiter.COMMA));
+
+        // Create a placeholder ClassDeclarationStatement and register it in the type registry and symbol table before
+        // parsing members to allow for recursive references (e.g., a method that returns the class type or a field of the class type)
         var classDecl = new ClassDeclarationStatement(
             classToken.getLine(),
             classToken.getColumn(),
@@ -111,7 +140,12 @@ public class ClassParser extends ParserBase {
         typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
         this.symbolTable.register(classDecl); // Register class declaration as a symbol in the current scope
 
-        consume(Delimiter.LBRACE, "Expect '{' before class body");
+        // Expect opening brace to start class body
+        getNextToken(Delimiter.LBRACE, new UnexpectedTokenError(
+            Delimiter.LBRACE,
+            getCurrentToken().getLine(),
+            getCurrentToken().getColumn()
+        ));
 
         var classScope = enterScope(classDecl);
         var savedSymbolTable = this.symbolTable;
@@ -126,39 +160,46 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
+            while (!checkCurrentTokenType(Delimiter.RBRACE) && isNotAtEnd()) {
 
-                var memberAccessModifier = parseAccessModifier();
-                if (match(Keyword.CLASS)) {
+                var memberAccessModifier = getNextToken();
+                if (!checkCurrentTokenType(AccessModifier.values())) {
 
-                    //if (memberAccessModifier == null) throw new ParseException("Inner class declaration requires an access modifier", previous());
-                    innerClasses.add(parseClassDeclaration(memberAccessModifier));
-                    continue;
+                    ErrorCollector.add(new UnexpectedTokenError(
+                        AccessModifier.PRIVATE,
+                        memberAccessModifier.getLine(),
+                        memberAccessModifier.getColumn()
+                    ));
+                    return null; // return null as error
                 }
 
-                if (check(new IdentifierLiteral()) && peek().getType().token().equals(className)) {
+                var nextToken = getNextToken(); // Advance past access modifier for member declaration parsing
+                if (nextToken.getType() == Keyword.CLASS) innerClasses.add(parseClassDeclaration((AccessModifier) memberAccessModifier.getType()));
+                else if (nextToken.getType().equals(new IdentifierLiteral(className))) {
 
-                    advance();  // consume class name
-                    constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
-                    continue;
+                    getNextToken();  // getNextToken class name
+                    constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), (AccessModifier) memberAccessModifier.getType()));
+                } else if (declarationParser.isValidType(nextToken)) {
+
+                    var type = nextToken.getType();
+                    var memberNameToken = getNextToken(new IdentifierLiteral(), new UnexpectedTokenError(
+                        new IdentifierLiteral(),
+                        getCurrentToken().getLine(),
+                        getCurrentToken().getColumn()
+                    ));
+                    var memberName = getLiteralValue((LiteralToken) memberNameToken);
+
+                    nextToken = getCurrentToken();
+                    if (checkCurrentTokenType(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+                    else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+
+                    ErrorCollector.add(new UnexpectedTokenError(nextToken.getType(), nextToken.getLine(), nextToken.getColumn()));
+                    return null; // return null as error
                 }
-
-                if (!declarationParser.isValidType(peek())) {
-
-                    var badToken = peek();
-                    ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
-                    throw new ParseException("Expect type, constructor, inner class, or closing '}' in body", badToken);
-                }
-                var type = declarationParser.parseType();
-                var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
-                var memberName = getLiteralValue((LiteralToken) memberNameToken);
-
-                if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
-                else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
             }
         } finally {
 
-            consume(Delimiter.RBRACE, "Expect '}' after class body");
+            getNextToken(Delimiter.RBRACE, "Expect '}' after class body");
             this.symbolTable = exitScope(classScope);
             this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
         }
@@ -188,8 +229,8 @@ public class ClassParser extends ParserBase {
 
         ExpressionNode initializer = null;
 
-        if (match(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
-        consume(Delimiter.SEMICOLON, "Expect ';' after field declaration");
+        if (this.checkCurrentTokenType(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
+        getNextToken(Delimiter.SEMICOLON, "Expect ';' after field declaration");
         var decl = new ClassFieldDeclaration(line, column, type, name, initializer, accessModifier);
         this.symbolTable.register(decl); // Register field as symbol
         return decl;
@@ -209,10 +250,10 @@ public class ClassParser extends ParserBase {
     /// @return A ClassMethodDeclaration representing the parsed class method declaration.
     private ClassMethodDeclaration parseClassMethod(ReturnType returnType, String name, int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after method name");
+        getNextToken(Delimiter.LPAREN, "Expect '(' after method name");
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        getNextToken(Delimiter.RPAREN, "Expect ')' after parameters");
 
         // Pre-register method in class scope so recursive calls resolve
         var placeholder = new ClassMethodDeclaration(line, column, returnType, name, parameters, null, accessModifier);
@@ -227,11 +268,11 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            consume(Delimiter.LBRACE, "Expect '{' before method body");
+            getNextToken(Delimiter.LBRACE, "Expect '{' before method body");
 
             var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE, "Expect '}' after method body");
+            while (!checkCurrentTokenType(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+            getNextToken(Delimiter.RBRACE, "Expect '}' after method body");
 
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
             placeholder.setBody(body);
@@ -255,10 +296,10 @@ public class ClassParser extends ParserBase {
     /// @return A ClassConstructorDeclaration representing the parsed class constructor declaration.
     private ClassConstructorDeclaration parseConstructor(int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after constructor name");
+        getNextToken(Delimiter.LPAREN, "Expect '(' after constructor name");
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        getNextToken(Delimiter.RPAREN, "Expect ')' after parameters");
 
         var constructorScope = enterScope();
         var savedSymbolTable = this.symbolTable;
@@ -269,11 +310,11 @@ public class ClassParser extends ParserBase {
 
         try {
 
-            consume(Delimiter.LBRACE, "Expect '{' before constructor body");
+            getNextToken(Delimiter.LBRACE, "Expect '{' before constructor body");
 
             var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE, "Expect '}' after constructor body");
+            while (!checkCurrentTokenType(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
+            getNextToken(Delimiter.RBRACE, "Expect '}' after constructor body");
 
             var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
             return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);
