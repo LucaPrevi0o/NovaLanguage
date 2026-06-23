@@ -15,7 +15,7 @@ Current focus: Phase 4 - semantic analysis split.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
-| 4. Semantic analysis split    | In progress | Parser-owned semantic checks are being identified before moving them into semantic passes.                                      |
+| 4. Semantic analysis split    | In progress | Identifier name resolution has moved out of expression parsing; remaining parser-owned semantic checks are next.                |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -131,7 +131,8 @@ Goal: make the parser build syntax only, then validate meaning through semantic 
 
 Tasks:
 
-- [ ] Stop resolving undefined variables and classes directly in expression parsing.
+- [x] Stop resolving undefined variables directly in expression parsing.
+- [ ] Stop resolving undefined classes directly in expression parsing.
 - [ ] Add declaration collection.
 - [ ] Add scope construction.
 - [ ] Add name resolution.
@@ -145,7 +146,7 @@ Tasks:
 
 Parser-owned semantic checks inventory:
 
-- [ ] Name resolution: `ExpressionParser` rejects unresolved identifiers through `symbolTable.lookup(...)`.
+- [x] Name resolution: `ExpressionParser` no longer rejects unresolved identifiers through `symbolTable.lookup(...)`.
 - [ ] Type/name resolution: `ExpressionParser` rejects `new UndefinedClass()` through `typeRegistry.isCustomType(...)`.
 - [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
@@ -155,7 +156,7 @@ Parser-owned semantic checks inventory:
 
 Exit criteria:
 
-- [ ] `unknownVar + 1;` parses syntactically, then fails name resolution.
+- [x] `unknownVar + 1;` parses syntactically; semantic name-resolution diagnostics still need to be added.
 - [ ] `1 = 2;` parses syntactically, then fails l-value analysis.
 - [ ] Duplicate declarations become semantic diagnostics, not parser crashes.
 

@@ -119,10 +119,9 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testUndefinedVariableThrows() {
+    void testUndefinedVariableExpressionParsesSyntactically() {
 
-        var tokens = new Lexer("unknownVar;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> parse("unknownVar;"));
     }
 
     // ─── Function declarations ────────────────────────────────────────────────
@@ -185,28 +184,17 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testForwardReferenceNotSupported() {
+    void testForwardReferenceCallParsesSyntactically() {
 
-        // Calling a function declared after the call site is not supported (function must be
-        // declared before use at top level, because registering happens left-to-right).
-        var tokens = new Lexer("callMe(); void callMe() { }").tokenize();
-        // This may or may not throw depending on parse order — just make sure the parser doesn't crash
-        // with an unexpected error type (a ParseException is acceptable)
-        try {
-            new Parser(tokens).parse();
-        } catch (RuntimeException e) {
-            // expected — forward references are not supported yet
-        }
+        assertDoesNotThrow(() -> parse("callMe(); void callMe() { }"));
     }
 
     // ─── Variable scoping ─────────────────────────────────────────────────────
 
     @Test
-    void testVariableOutOfScopeThrows() {
+    void testOutOfScopeVariableExpressionParsesSyntactically() {
 
-        // x is only declared inside the block, so it is not visible outside
-        var tokens = new Lexer("{ int x; } x;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> parse("{ int x; } x;"));
     }
 
     @Test
@@ -217,10 +205,8 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testFunctionScopeIsolated() {
+    void testFunctionLocalVariableExpressionParsesSyntacticallyOutsideFunction() {
 
-        // Variables inside a function are not visible at the outer scope
-        var tokens = new Lexer("void fn() { int inner; } inner;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> parse("void fn() { int inner; } inner;"));
     }
 }

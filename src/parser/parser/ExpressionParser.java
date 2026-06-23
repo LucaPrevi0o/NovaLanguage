@@ -278,7 +278,6 @@ public class ExpressionParser extends ParserBase {
 
             var lit = (LiteralToken) previous();
             var name = lit.getType().token();
-            if (symbolTable.lookup(name) == null) throw parseError("Undefined variable '" + name + "'", lit);
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
