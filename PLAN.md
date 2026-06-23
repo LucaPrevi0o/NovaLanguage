@@ -15,7 +15,7 @@ Current focus: Phase 4 - semantic analysis split.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
-| 4. Semantic analysis split    | In progress | Expression parsing now defers identifier and constructed-class resolution; remaining parser-owned semantic checks are next.     |
+| 4. Semantic analysis split    | In progress | Expression parsing defers name resolution; semantic declaration collection is available for later validation passes.            |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -133,7 +133,7 @@ Tasks:
 
 - [x] Stop resolving undefined variables directly in expression parsing.
 - [x] Stop resolving undefined classes directly in expression parsing.
-- [ ] Add declaration collection.
+- [x] Add declaration collection.
 - [ ] Add scope construction.
 - [ ] Add name resolution.
 - [ ] Add duplicate declaration validation.
@@ -148,6 +148,7 @@ Parser-owned semantic checks inventory:
 
 - [x] Name resolution: `ExpressionParser` no longer rejects unresolved identifiers through `symbolTable.lookup(...)`.
 - [x] Type/name resolution: `ExpressionParser` no longer rejects `new UndefinedClass()` through `typeRegistry.isCustomType(...)`.
+- [x] Declaration inventory: semantic declaration collection records classes, functions, methods, fields, parameters, variables, constructors, and for-each variables.
 - [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
 - [ ] L-value validation: `ExpressionParser` rejects invalid assignment targets during parsing.
