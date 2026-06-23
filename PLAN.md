@@ -106,11 +106,11 @@ Completed:
 - [x] Migrate `DeclarationParser` direct parse errors to structured diagnostics.
 - [x] Migrate `ClassParser` direct parse errors to structured diagnostics.
 - [x] Pass diagnostics through lexer runs instead of relying only on token recovery.
+- [x] Remove the unused static `ErrorCollector` implementation.
 
 Next:
 
 - [x] Store line, column, optional span, message, expected token, and actual token in the diagnostic model.
-- [ ] Replace remaining static/global diagnostics gradually, after compatibility tests are in place.
 - [ ] Start with top-level recovery, then add block/statement recovery.
 
 Exit criteria:
@@ -258,6 +258,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Replace remaining static/global diagnostics gradually, after compatibility tests are in place.
-2. Add block/statement-level parser recovery after top-level diagnostics remain stable.
-3. Revisit parser-owned semantic checks before moving into Phase 4.
+1. Add block/statement-level parser recovery after top-level diagnostics remain stable.
+2. Revisit parser-owned semantic checks before moving into Phase 4.
+3. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters.
