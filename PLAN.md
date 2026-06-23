@@ -15,7 +15,7 @@ Current focus: Phase 4 - semantic analysis split.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
-| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name resolution, and duplicate validation are available.                   |
+| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name resolution, duplicate validation, and initial type checks exist.      |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -137,7 +137,8 @@ Tasks:
 - [x] Add scope construction.
 - [x] Add name resolution.
 - [x] Add duplicate declaration validation.
-- [ ] Add type checking.
+- [x] Add initial assignment and initializer type checking.
+- [ ] Expand type checking across calls, member access, arrays, inheritance, and overload rules.
 - [ ] Add return checking.
 - [ ] Add l-value checking.
 - [ ] Add `break`/`continue` context checking.
@@ -152,6 +153,7 @@ Parser-owned semantic checks inventory:
 - [x] Scope model: semantic scope construction creates global, class, function, constructor, block, switch, and loop scopes from the AST.
 - [x] Name resolution pass: unresolved expression identifiers and constructed class names produce semantic diagnostics.
 - [x] Duplicate validation pass: repeated non-constructor declarations in the same semantic scope produce semantic diagnostics.
+- [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for primitive and constructed class types.
 - [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
 - [ ] L-value validation: `ExpressionParser` rejects invalid assignment targets during parsing.
