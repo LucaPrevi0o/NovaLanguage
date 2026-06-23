@@ -1,7 +1,9 @@
+import error.syntax.UnrecognizedTokenError;
 import error.syntax.UnexpectedTokenError;
 import lexer.Token;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
+import lexer.token.family.Special;
 import lexer.token.family.literal.IdentifierLiteral;
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +32,27 @@ public class SyntaxErrorTest {
 
         var error = new UnexpectedTokenError(new IdentifierLiteral());
         assertEquals("Unexpected token: 'IdentifierLiteral'", error.getMessage());
+    }
+
+    @Test
+    void unrecognizedTokenWithLocationIncludesRawValue() {
+
+        var error = new UnrecognizedTokenError("@", 4, 12);
+        assertEquals("[line 4, col 12] Unrecognized token: '@'", error.getMessage());
+    }
+
+    @Test
+    void unrecognizedTokenWithoutLocationOmitsLocationPrefix() {
+
+        var error = new UnrecognizedTokenError("@");
+        assertEquals("Unrecognized token: '@'", error.getMessage());
+    }
+
+    @Test
+    void unrecognizedTokenCanBeBuiltFromLexerToken() {
+
+        var token = new Token(Special.UNKNOWN, 5, 9);
+        var error = new UnrecognizedTokenError(token);
+        assertEquals("[line 5, col 9] Unrecognized token: 'UNKNOWN'", error.getMessage());
     }
 }
