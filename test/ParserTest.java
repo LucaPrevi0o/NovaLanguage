@@ -164,6 +164,26 @@ public class ParserTest {
         assertEquals(1, ex.getErrors().size(), "Only the first (invalid) statement should produce an error");
     }
 
+    @Test
+    void testUnknownTokenReportsUnrecognizedTokenError() {
+
+        var source = "@; int y;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the unknown token should produce an error");
+
+        var msg = ex.getErrors().getFirst().getMessage();
+        assertTrue(msg.contains("Unrecognized token"), "Unknown token should use the unrecognized-token diagnostic");
+        assertTrue(msg.contains("@"), "Unknown token diagnostic should include the raw lexeme");
+
+        assertEquals(1, ex.getDiagnostics().size(), "Aggregate exception should expose structured diagnostics");
+        assertEquals(1, parser.getDiagnostics().size(), "Parser should retain diagnostics from the run");
+        assertEquals("@", parser.getDiagnostics().getFirst().getLexeme());
+    }
+
     // ─── Stdlib tests ─────────────────────────────────────────────────────────
 
     @Test
@@ -188,4 +208,3 @@ public class ParserTest {
         assertDoesNotThrow(parser::parse);
     }
 }
-

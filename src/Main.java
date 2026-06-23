@@ -1,4 +1,3 @@
-import error.ErrorCollector;
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.Printable;
@@ -55,9 +54,9 @@ public class Main {
 
         } catch (ParseErrorsException e) {
 
-            System.out.println("Parsing completed with " + e.getErrors().size() + " error(s).\n");
+            System.out.println("Parsing completed with " + e.getDiagnostics().size() + " error(s).\n");
             System.out.println("=== PARSING ERRORS ===\n");
-            for (var error : ErrorCollector.getErrors()) System.out.println("  " + error.getMessage());
+            for (var diagnostic : e.getDiagnostics()) System.out.println("  " + diagnostic.format());
 
         } catch (Exception e) {
 

@@ -1,6 +1,7 @@
 package parser;
 
-import error.ErrorCollector;
+import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticBag;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
@@ -51,6 +52,7 @@ import java.util.List;
 public class Parser extends ParserBase {
 
     private final DeclarationParser declarationParser;
+    private final DiagnosticBag diagnostics = new DiagnosticBag();
 
     /// Constructs a new Parser with the given list of tokens.
     /// Creates a fresh per-session {@link TypeRegistry}, pre-populates the global symbol table
@@ -60,7 +62,6 @@ public class Parser extends ParserBase {
 
         super(new ParserState(tokens), new TypeRegistry());
         this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
-        ErrorCollector.clear();  // Reset the global collector for each new parse session
         registerStdLib();
     }
 
@@ -101,6 +102,10 @@ public class Parser extends ParserBase {
         symbolTable.register(new FunctionDeclarationStatement(0, 0, returnType, name, params, null));
     }
 
+    /// Returns the diagnostics collected during this parser run.
+    /// @return An immutable list of parser diagnostics.
+    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
+
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
     /// <p>Errors are collected via {@link #synchronize() error recovery}: parsing continues after
@@ -112,6 +117,7 @@ public class Parser extends ParserBase {
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
+        diagnostics.clear();
         var statements = new ArrayList<StatementNode>();
         var errors     = new ArrayList<ParseException>();
 
@@ -120,6 +126,7 @@ public class Parser extends ParserBase {
         } catch (ParseException e) {
 
             errors.add(e);
+            diagnostics.report(e.getDiagnostic());
             synchronize();
         }
 
