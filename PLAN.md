@@ -8,14 +8,14 @@ In this sense, the plan is a living document that can be updated as the project 
 
 ## Current Status
 
-Current focus: Phase 3 - diagnostics hardening.
+Current focus: Phase 4 - semantic analysis split.
 
 | Phase                         | Status      | Summary                                                                                                                         |
 |-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------|
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
-| 3. Diagnostics                | In progress | Syntax error objects and UNKNOWN-token lexeme preservation are being improved.                                                  |
-| 4. Semantic analysis split    | Not started | Parser still performs some semantic checks that should become later passes.                                                     |
+| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
+| 4. Semantic analysis split    | In progress | Parser-owned semantic checks are being identified before moving them into semantic passes.                                      |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -83,7 +83,7 @@ Exit criteria:
 
 ## Phase 3 - Redesign Diagnostics
 
-Status: In progress.
+Status: Complete.
 
 Goal: replace scattered/global error handling with structured, deterministic compiler diagnostics.
 
@@ -114,17 +114,18 @@ Next:
 
 - [x] Store line, column, optional span, message, expected token, and actual token in the diagnostic model.
 - [x] Start with top-level recovery, then add block/statement recovery.
+- [x] Continue diagnostics work in Phase 4 only where semantic diagnostics need the same model.
 
 Exit criteria:
 
-- [ ] A compiler-front-end run returns AST plus diagnostics, or one aggregate diagnostic failure.
-- [ ] Multiple syntax errors are reported deterministically.
-- [ ] Diagnostics can be tested without global state leaks.
-- [ ] Lexer and parser diagnostics share one data model.
+- [x] A compiler-front-end run returns AST plus diagnostics, or one aggregate diagnostic failure.
+- [x] Multiple syntax errors are reported deterministically.
+- [x] Diagnostics can be tested without global state leaks.
+- [x] Lexer and parser diagnostics share one data model.
 
 ## Phase 4 - Split Semantic Analysis From Parsing
 
-Status: Not started.
+Status: In progress.
 
 Goal: make the parser build syntax only, then validate meaning through semantic passes.
 
@@ -260,6 +261,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Revisit parser-owned semantic checks before moving into Phase 4.
-2. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters.
-3. Confirm Phase 3 exit criteria and move remaining parser/semantic separation work into Phase 4.
+1. Inventory parser-owned semantic checks and map each one to the future semantic pass that should own it.
+2. Start moving name-resolution checks out of `ExpressionParser`.
+3. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters once semantic diagnostics exist.
