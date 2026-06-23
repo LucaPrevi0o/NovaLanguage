@@ -2,6 +2,7 @@ package parser.parser.util;
 
 import error.Error;
 import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
@@ -11,6 +12,7 @@ import lexer.token.type.LiteralToken;
 import lexer.token.family.Literal;
 import lexer.token.family.Special;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /// Represents the current state of the parser, including the list of tokens and the current position in that list.
@@ -18,11 +20,48 @@ import java.util.List;
 public class ParserState {
     
     private final List<Token> tokens;
+    private final List<ParseException> errors = new ArrayList<>();
+    private final DiagnosticBag diagnostics;
     private int current = 0;
 
     /// Constructs a new ParserState with the given list of tokens.
     /// @param tokens The list of tokens to be parsed.
-    public ParserState(List<Token> tokens) { this.tokens = tokens; }
+    public ParserState(List<Token> tokens) { this(tokens, new DiagnosticBag()); }
+
+    /// Constructs a new ParserState with the given token list and diagnostic bag.
+    /// @param tokens The list of tokens to be parsed.
+    /// @param diagnostics The diagnostic bag used to collect parser diagnostics.
+    public ParserState(List<Token> tokens, DiagnosticBag diagnostics) {
+
+        this.tokens = tokens;
+        this.diagnostics = diagnostics != null ? diagnostics : new DiagnosticBag();
+    }
+
+    // ========== Error Reporting ==========
+
+    /// Records a parse error and its structured diagnostic.
+    /// @param error The parse error to record.
+    public void report(ParseException error) {
+
+        if (error == null) return;
+        errors.add(error);
+        diagnostics.report(error.getDiagnostic());
+    }
+
+    /// Clears parse errors and diagnostics from a previous parse run.
+    public void clearErrors() {
+
+        errors.clear();
+        diagnostics.clear();
+    }
+
+    /// Returns the parse errors collected during the current parse run.
+    /// @return An immutable list of parse errors.
+    public List<ParseException> getErrors() { return List.copyOf(errors); }
+
+    /// Returns the structured diagnostics collected during the current parse run.
+    /// @return An immutable list of diagnostics.
+    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
 
     // ========== Token Navigation ==========
 

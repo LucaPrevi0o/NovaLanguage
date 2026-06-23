@@ -107,6 +107,7 @@ Completed:
 - [x] Migrate `ClassParser` direct parse errors to structured diagnostics.
 - [x] Pass diagnostics through lexer runs instead of relying only on token recovery.
 - [x] Remove the unused static `ErrorCollector` implementation.
+- [x] Centralize parser error reporting in `ParserState` to prepare nested recovery.
 
 Next:
 

@@ -1,7 +1,6 @@
 package parser;
 
 import error.diagnostic.Diagnostic;
-import error.diagnostic.DiagnosticBag;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
@@ -52,7 +51,6 @@ import java.util.List;
 public class Parser extends ParserBase {
 
     private final DeclarationParser declarationParser;
-    private final DiagnosticBag diagnostics = new DiagnosticBag();
 
     /// Constructs a new Parser with the given list of tokens.
     /// Creates a fresh per-session {@link TypeRegistry}, pre-populates the global symbol table
@@ -104,7 +102,7 @@ public class Parser extends ParserBase {
 
     /// Returns the diagnostics collected during this parser run.
     /// @return An immutable list of parser diagnostics.
-    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
+    public List<Diagnostic> getDiagnostics() { return state.getDiagnostics(); }
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
@@ -117,19 +115,18 @@ public class Parser extends ParserBase {
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
-        diagnostics.clear();
+        state.clearErrors();
         var statements = new ArrayList<StatementNode>();
-        var errors     = new ArrayList<ParseException>();
 
         while (isNotAtEnd()) try {
             statements.add(declarationParser.parseDeclaration());
         } catch (ParseException e) {
 
-            errors.add(e);
-            diagnostics.report(e.getDiagnostic());
+            state.report(e);
             synchronize();
         }
 
+        var errors = state.getErrors();
         if (!errors.isEmpty()) throw new ParseErrorsException(errors);
         return statements;
     }
