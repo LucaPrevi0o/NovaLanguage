@@ -51,8 +51,8 @@ public class SyntaxErrorTest {
     @Test
     void unrecognizedTokenCanBeBuiltFromLexerToken() {
 
-        var token = new Token(Special.UNKNOWN, 5, 9);
+        var token = new Token(Special.UNKNOWN, 5, 9, "@");
         var error = new UnrecognizedTokenError(token);
-        assertEquals("[line 5, col 9] Unrecognized token: 'UNKNOWN'", error.getMessage());
+        assertEquals("[line 5, col 9] Unrecognized token: '@'", error.getMessage());
     }
 }

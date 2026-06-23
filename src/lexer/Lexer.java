@@ -229,19 +229,22 @@ public class Lexer {
         if (currentChar == '\'') {
 
             advance(); // skip closing quote
-            return new Token(Special.UNKNOWN, startLine, startColumn);
+            return new Token(Special.UNKNOWN, startLine, startColumn, "''");
         }
 
         // Unterminated char literal: reached EOF before closing quote
-        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
+        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, "'");
 
         var ch = '\0';
+        var raw = new StringBuilder("'");
         if (currentChar == '\\') {
 
+            raw.append('\\');
             advance(); // skip backslash
-            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
+            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
 
             // Handle escape sequences
+            raw.append(currentChar);
             ch = switch (currentChar) {
                 case 'n' -> '\n';
                 case 't' -> '\t';
@@ -253,12 +256,13 @@ public class Lexer {
             advance();
         } else {
 
+            raw.append(currentChar);
             ch = currentChar;
             advance();
         }
 
         // Expect closing quote; if missing, return UNKNOWN
-        if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn);
+        if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
         advance(); // skip closing quote
         return new LiteralToken(new CharLiteral(ch), startLine, startColumn);
     }
@@ -360,8 +364,9 @@ public class Lexer {
             
             var tokenLine = line;
             var tokenColumn = column;
+            var lexeme = Character.toString(currentChar);
             advance();
-            return new Token(Special.UNKNOWN, tokenLine, tokenColumn);
+            return new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
         }
         
         return new Token(Special.EOF, line, column);

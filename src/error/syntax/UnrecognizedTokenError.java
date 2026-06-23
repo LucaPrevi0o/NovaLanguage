@@ -35,7 +35,7 @@ public class UnrecognizedTokenError implements Error {
     /// @param token The unrecognized token.
     public UnrecognizedTokenError(Token token) {
         this(
-            token != null && token.getType() != null ? token.getType().token() : null,
+            describe(token),
             token != null ? token.getLine() : -1,
             token != null ? token.getColumn() : -1
         );
@@ -50,5 +50,13 @@ public class UnrecognizedTokenError implements Error {
 
     private static String describe(String value) {
         return value != null ? value : "<unknown>";
+    }
+
+    private static String describe(Token token) {
+
+        if (token == null) return null;
+        if (token.getLexeme() != null) return token.getLexeme();
+        if (token.getType() != null) return token.getType().token();
+        return null;
     }
 }

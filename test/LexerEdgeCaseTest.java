@@ -122,6 +122,7 @@ public class LexerEdgeCaseTest {
         assertTrue(tokens.size() >= 2);
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
                 "Empty char literal should produce an UNKNOWN token");
+        assertEquals("''", tokens.getFirst().getLexeme());
     }
 
     /// Unterminated char literal at end-of-file should produce an UNKNOWN token.
@@ -132,6 +133,7 @@ public class LexerEdgeCaseTest {
         assertTrue(tokens.size() >= 2);
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
                 "Unterminated char literal should produce an UNKNOWN token");
+        assertEquals("'a", tokens.getFirst().getLexeme());
     }
 
     /// EOF immediately after opening quote should also produce UNKNOWN.
@@ -142,6 +144,7 @@ public class LexerEdgeCaseTest {
         assertTrue(tokens.size() >= 2);
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
                 "Bare opening quote should produce an UNKNOWN token");
+        assertEquals("'", tokens.getFirst().getLexeme());
     }
 
     // ─── String literals ──────────────────────────────────────────────────────
@@ -259,5 +262,6 @@ public class LexerEdgeCaseTest {
         var tokens = new Lexer("@").tokenize();
         assertEquals(2, tokens.size());
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType());
+        assertEquals("@", tokens.getFirst().getLexeme());
     }
 }
