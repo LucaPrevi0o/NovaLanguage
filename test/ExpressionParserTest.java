@@ -26,16 +26,24 @@ public class ExpressionParserTest {
         return ast.getFirst();
     }
 
+    private ExpressionStatement expressionStatement(String source, int index) {
+
+        var tokens = new Lexer(source).tokenize();
+        var ast = new Parser(tokens).parse();
+        assertInstanceOf(ExpressionStatement.class, ast.get(index));
+        return (ExpressionStatement) ast.get(index);
+    }
+
     // ─── Ternary ──────────────────────────────────────────────────────────────
 
     @Test
     void testTernaryExpression() {
 
-        var stmt = firstStatement();
-        // The second statement is an ExpressionStatement with an AssignmentExpression
-        // whose RHS is a TernaryExpression.
-        // Just asserting it parses without throwing is sufficient for the smoke test.
-        assertNotNull(stmt);
+        var stmt = expressionStatement("int x; x = true ? 1 : 0;", 1);
+        assertInstanceOf(AssignmentExpression.class, stmt.getExpression());
+
+        var assignment = (AssignmentExpression) stmt.getExpression();
+        assertInstanceOf(TernaryExpression.class, assignment.getValue());
     }
 
     @Test
@@ -210,10 +218,11 @@ public class ExpressionParserTest {
     @Test
     void testPlusAssign() {
 
-        assertDoesNotThrow(() -> {
-            var tokens = new Lexer("int x; x += 5;").tokenize();
-            new Parser(tokens).parse();
-        });
+        var stmt = expressionStatement("int x; x += 5;", 1);
+        assertInstanceOf(AssignmentExpression.class, stmt.getExpression());
+
+        var assignment = (AssignmentExpression) stmt.getExpression();
+        assertInstanceOf(BinaryExpression.class, assignment.getValue());
     }
 
     @Test

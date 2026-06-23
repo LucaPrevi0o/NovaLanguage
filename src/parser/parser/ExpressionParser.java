@@ -1,13 +1,9 @@
 package parser.parser;
 
-import error.ErrorCollector;
-import error.syntax.UnexpectedTokenError;
-import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
 import lexer.token.family.literal.*;
 import lexer.token.type.LiteralToken;
 import lexer.token.type.OperatorToken;
-import lexer.token.type.TypeToken;
 import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.expression.*;
@@ -27,7 +23,6 @@ import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
-import lexer.token.family.Special;
 import java.util.ArrayList;
 
 /// Parser for expressions, handling operator precedence and associativity.
@@ -78,9 +73,7 @@ public class ExpressionParser extends ParserBase {
             var operator = previous();
             var value = assignment();
 
-            if (!(expr instanceof IdentifierLiteralExpression ||
-                expr instanceof ArrayAccessExpression ||
-                expr instanceof MemberAccessExpression)) throw new ParseException("Invalid assignment target", operator);
+            if (!isAssignableTarget(expr)) throw new ParseException("Invalid assignment target", operator);
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
@@ -231,7 +224,6 @@ public class ExpressionParser extends ParserBase {
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
             } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
 
-                // Bug fix: postfix ++ / -- use a dedicated node to distinguish from prefix
                 var op = (OperatorToken) previous();
                 expr = new PostfixUnaryExpression(op.getLine(), op.getColumn(), expr, op);
             } else break;
@@ -249,7 +241,6 @@ public class ExpressionParser extends ParserBase {
         var arguments = new ArrayList<ExpressionNode>();
         if (!check(Delimiter.RPAREN)) do {
 
-            //if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", getCurrentToken());
             arguments.add(parseExpression());
         } while (match(Delimiter.COMMA));
 
@@ -295,11 +286,13 @@ public class ExpressionParser extends ParserBase {
         if (match(Keyword.NEW)) {
 
             var newToken = previous();
-            if (peek() instanceof TypeToken) { // Require an identifier (class name); reject primitive types with a clear error
+            if (isTypeToken(peek())) {
 
-                // It's a type-token (primitive keyword like "int")
                 var badToken = peek();
-                ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
+                throw new ParseException(
+                    "Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.",
+                    badToken
+                );
             }
 
             var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
@@ -323,12 +316,7 @@ public class ExpressionParser extends ParserBase {
             return expr;
         }
 
-        if (token.getType() == Special.UNKNOWN)
-            ErrorCollector.add(new UnrecognizedTokenError(token.toString(), token.getLine(), token.getColumn()));
-        else
-            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
         throw new ParseException("Expect expression", token);
-        //throw new ParseException("Expect expression", getCurrentToken());
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -360,6 +348,13 @@ public class ExpressionParser extends ParserBase {
         );
     }
 
+    private static boolean isAssignableTarget(ExpressionNode expr) {
+
+        return expr instanceof IdentifierLiteralExpression ||
+               expr instanceof ArrayAccessExpression ||
+               expr instanceof MemberAccessExpression;
+    }
+
     /// Parses a numeric literal into the appropriate {@link NumberLiteralExpression} subtype.
     /// Supports suffixes for long (`L`), float (`F`), double (`D`), and byte (`B`) literals, as well as plain integers and doubles.
     /// @param token The literal token representing the numeric value, which may include a suffix to indicate the specific numeric type.
@@ -387,8 +382,6 @@ public class ExpressionParser extends ParserBase {
 
             return new IntegerLiteralExpression(line, col, Integer.parseInt(value));
         } catch (NumberFormatException e) {
-
-            ErrorCollector.add(new UnexpectedTokenError(token.getType(), token.getLine(), token.getColumn()));
             throw new ParseException("Invalid number format: " + value, token);
         }
     }
