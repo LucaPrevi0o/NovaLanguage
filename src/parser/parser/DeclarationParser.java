@@ -10,10 +10,12 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
 import parser.ast.nodes.statement.declaration.*;
+import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
+import lexer.token.family.AccessModifier;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
@@ -551,12 +553,53 @@ public class DeclarationParser extends ParserBase {
 
         var statements = new ArrayList<StatementNode>();
 
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) statements.add(parseDeclaration());
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+            statements.add(parseDeclaration());
+        } catch (ParseException e) {
+
+            state.report(e);
+            synchronizeBlockStatement();
+        }
+
         consume(Delimiter.RBRACE, "Expect '}' after block");
 
         this.symbolTable = exitScope(blockScope);
         this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         return statements;
+    }
+
+    /// Synchronizes after a block-level statement error without escaping the current block.
+    private void synchronizeBlockStatement() {
+
+        if (!isNotAtEnd() || check(Delimiter.RBRACE) || isBlockRecoveryBoundary(peek())) return;
+
+        advance();  // skip the offending token
+        while (isNotAtEnd() && !check(Delimiter.RBRACE)) {
+
+            if (previous().getType() == Delimiter.SEMICOLON) return;
+            if (isBlockRecoveryBoundary(peek())) return;
+            advance();
+        }
+    }
+
+    private boolean isBlockRecoveryBoundary(Token token) {
+
+        if (token == null) return false;
+        if (token instanceof TypeToken || isTypeName(token)) return true;
+
+        var type = token.getType();
+        return type == Delimiter.LBRACE ||
+               type == Keyword.CLASS ||
+               type == Keyword.IF ||
+               type == Keyword.WHILE ||
+               type == Keyword.FOR ||
+               type == Keyword.SWITCH ||
+               type == Keyword.RETURN ||
+               type == Keyword.BREAK ||
+               type == Keyword.CONTINUE ||
+               type == AccessModifier.PUBLIC ||
+               type == AccessModifier.PRIVATE ||
+               type == AccessModifier.PROTECTED;
     }
 
     /// Parses an expression statement.

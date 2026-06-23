@@ -4,6 +4,7 @@ import lexer.token.family.Delimiter;
 import lexer.token.family.PrimitiveType;
 import lexer.token.family.literal.IdentifierLiteral;
 import parser.Parser;
+import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
@@ -180,6 +181,23 @@ public class ParserTest {
 
         var ex = assertThrows(ParseErrorsException.class, parser::parse);
         assertEquals(1, ex.getErrors().size(), "Only the first (invalid) statement should produce an error");
+    }
+
+    @Test
+    void testBlockRecoveryKeepsValidStatementsAfterError() {
+
+        var source = "void f() { bad + ; int y; } int z;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the invalid block statement should produce an error");
+
+        var fn = assertInstanceOf(FunctionDeclarationStatement.class, parser.getSymbolTable().lookup("f"));
+        var body = assertInstanceOf(BlockStatement.class, fn.getBody());
+        assertEquals(1, body.getStatements().length, "The valid declaration after the error should remain in the function body");
+        assertNotNull(parser.getSymbolTable().lookup("z"), "Top-level parsing should continue after the recovered function body");
     }
 
     @Test

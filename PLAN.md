@@ -108,11 +108,12 @@ Completed:
 - [x] Pass diagnostics through lexer runs instead of relying only on token recovery.
 - [x] Remove the unused static `ErrorCollector` implementation.
 - [x] Centralize parser error reporting in `ParserState` to prepare nested recovery.
+- [x] Add block-level statement recovery for declaration lists inside braces.
 
 Next:
 
 - [x] Store line, column, optional span, message, expected token, and actual token in the diagnostic model.
-- [ ] Start with top-level recovery, then add block/statement recovery.
+- [x] Start with top-level recovery, then add block/statement recovery.
 
 Exit criteria:
 
@@ -259,6 +260,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Add block/statement-level parser recovery after top-level diagnostics remain stable.
-2. Revisit parser-owned semantic checks before moving into Phase 4.
-3. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters.
+1. Revisit parser-owned semantic checks before moving into Phase 4.
+2. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters.
+3. Confirm Phase 3 exit criteria and move remaining parser/semantic separation work into Phase 4.
