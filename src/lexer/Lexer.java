@@ -178,39 +178,45 @@ public class Lexer {
     /// Read a string literal, which starts and ends with double quotes.
     ///
     /// Handles escape sequences for double quotes (e.g., {@code \\"} becomes a double quote in the string).
-    /// @return A LiteralToken representing the string literal.
+    /// Returns an {@code UNKNOWN} token when end-of-file is reached before the closing double quote.
+    /// @return A LiteralToken representing the string literal, or an UNKNOWN token on error.
     private Token readString() {
 
         var startLine = line;
         var startColumn = column;
         var string = new StringBuilder();
+        var raw = new StringBuilder("\"");
         advance(); // skip opening quote
 
         while (currentChar != '\0' && currentChar != '"') if (currentChar == '\\') {
 
+            raw.append(currentChar);
             advance(); // skip backslash
-            if (currentChar != '\0') {
+            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
 
-                // Handle escape sequences
-                var escapedChar = switch (currentChar) {
-                    case 'n' -> '\n';
-                    case 't' -> '\t';
-                    case 'r' -> '\r';
-                    case '"' -> '"';
-                    case '\'' -> '\'';
-                    case '\\' -> '\\';
-                    default -> currentChar;  // Unrecognized escape: pass through verbatim
-                };
-                string.append(escapedChar);
-                advance();
-            }
+            raw.append(currentChar);
+            // Handle escape sequences
+            var escapedChar = switch (currentChar) {
+                case 'n' -> '\n';
+                case 't' -> '\t';
+                case 'r' -> '\r';
+                case '"' -> '"';
+                case '\'' -> '\'';
+                case '\\' -> '\\';
+                default -> currentChar;  // Unrecognized escape: pass through verbatim
+            };
+            string.append(escapedChar);
+            advance();
         } else {
 
+            raw.append(currentChar);
             string.append(currentChar);
             advance();
         }
-        
-        if (currentChar == '"') advance(); // skip closing quote
+
+        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
+
+        advance(); // skip closing quote
         return new LiteralToken(new StringLiteral(string.toString()), startLine, startColumn);
     }
 

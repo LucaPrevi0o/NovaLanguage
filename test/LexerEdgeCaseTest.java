@@ -183,6 +183,36 @@ public class LexerEdgeCaseTest {
         assertEquals("", ((LiteralToken) tokens.getFirst()).getValue());
     }
 
+    @Test
+    void testBareOpenDoubleQuoteProducesUnknown() {
+
+        var tokens = new Lexer("\"").tokenize();
+        assertTrue(tokens.size() >= 2);
+        assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
+                "Bare opening double quote should produce an UNKNOWN token");
+        assertEquals("\"", tokens.getFirst().getLexeme());
+    }
+
+    @Test
+    void testUnterminatedStringLiteralProducesUnknown() {
+
+        var tokens = new Lexer("\"hello").tokenize();
+        assertTrue(tokens.size() >= 2);
+        assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
+                "Unterminated string literal should produce an UNKNOWN token");
+        assertEquals("\"hello", tokens.getFirst().getLexeme());
+    }
+
+    @Test
+    void testUnterminatedStringEscapeProducesUnknown() {
+
+        var tokens = new Lexer("\"hello\\").tokenize();
+        assertTrue(tokens.size() >= 2);
+        assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
+                "Unterminated string escape should produce an UNKNOWN token");
+        assertEquals("\"hello\\", tokens.getFirst().getLexeme());
+    }
+
     // ─── Identifiers ──────────────────────────────────────────────────────────
 
     @Test
