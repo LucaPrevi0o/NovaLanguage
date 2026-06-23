@@ -1,13 +1,12 @@
 package parser.parser.util;
 
-import error.ErrorCollector;
-import error.syntax.SyntaxError;
+import error.Error;
 import lexer.Token;
 import lexer.token.TokenClass;
+import lexer.token.type.TypeToken;
 import lexer.token.type.LiteralToken;
 import lexer.token.family.Literal;
 import lexer.token.family.Special;
-import error.Error;
 
 import java.util.List;
 
@@ -28,9 +27,17 @@ public class ParserState {
     /// @return The current token.
     public Token getCurrentToken() { return tokens.get(current); }
 
+    /// Returns the current token without advancing the position.
+    /// @return The current token.
+    public Token peek() { return getCurrentToken(); }
+
     /// Returns the getPreviousToken token that was consumed.
     /// @return The getPreviousToken token.
     public Token getPreviousToken() { return tokens.get(current - 1); }
+
+    /// Returns the token most recently consumed by {@link #advance()}.
+    /// @return The previous token.
+    public Token previous() { return getPreviousToken(); }
 
     /// Checks if the parser has reached the end of the token list.
     /// @return True if the current token is the end-of-file token, false otherwise.
@@ -43,6 +50,10 @@ public class ParserState {
         if (!isAtEnd()) current++;
         return getPreviousToken();
     }
+
+    /// Advances the parser by one token and returns the consumed token.
+    /// @return The consumed token.
+    public Token advance() { return getNextToken(); }
     
     // ========== Token Checking ==========
 
@@ -72,6 +83,11 @@ public class ParserState {
         return currentType == type;
     }
 
+    /// Checks whether the current token matches the given token class without consuming it.
+    /// @param type The expected token class.
+    /// @return True when the current token matches.
+    public boolean check(TokenClass type) { return checkCurrentTokenType(type); }
+
     /// Checks if the current token matches any of the specified token families.
     /// @param types The token families to checkCurrentTokenType against the current token.
     /// @return True if the current token matches any of the specified token families, false otherwise.
@@ -82,16 +98,43 @@ public class ParserState {
         return false;
     }
 
+    /// Checks whether the current token matches any of the given token classes without consuming it.
+    /// @param types The expected token classes.
+    /// @return True when the current token matches any expected token class.
+    public boolean check(TokenClass... types) { return checkCurrentTokenType(types); }
+
+    /// Consumes the current token if it matches one of the given token classes.
+    /// @param types The token classes to match.
+    /// @return True when a token was consumed.
+    public boolean match(TokenClass... types) {
+
+        for (var type : types) if (check(type)) {
+
+            advance();
+            return true;
+        }
+        return false;
+    }
+
     /// Consumes the current token if it matches the specified token family, advancing the position.
     /// If the current token does not match, records a syntax error and returns null.
     /// @param expectedType The token family to checkCurrentTokenType against the current token.
     /// @param errorType The type of syntax error to record if the current token does not match the specified token family.
     /// @return The token that was consumed if it matches the specified token family, or null if it does not match (with a syntax error recorded).
-    public Token getNextToken(TokenClass expectedType, @SyntaxError Error errorType) {
+    public Token consume(TokenClass expectedType, String message) {
 
-        if (checkCurrentTokenType(expectedType)) return getNextToken();
-        ErrorCollector.add(errorType);
-        return null;
+        if (check(expectedType)) return advance();
+        throw new ParseException(message, peek());
+    }
+
+    /// Compatibility alias for older parser code.
+    public Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
+
+    /// Compatibility alias for parser code that constructs structured error objects.
+    public Token getNextToken(TokenClass expectedType, Error error) {
+
+        if (check(expectedType)) return advance();
+        throw new ParseException(error.getMessage(), peek());
     }
     
     // ========== Helper Methods ==========
@@ -100,9 +143,16 @@ public class ParserState {
     /// @param token The token to checkCurrentTokenType.
     /// @return The literal value of the token if it is an instance of LiteralToken.
     /// @throws ParseException If the token is not an instance of LiteralToken.
-    public String getLiteralValue(LiteralToken token) {
-        return token.getType().token();
+    public String getLiteralValue(Token token) {
+
+        if (token instanceof LiteralToken lit) return lit.getValue();
+        throw new ParseException("Expected literal token", token);
     }
+
+    /// Checks whether a token represents a primitive type token.
+    /// @param token The token to inspect.
+    /// @return True when the token is a type token.
+    public boolean isTypeToken(Token token) { return token instanceof TypeToken; }
 
     /// Returns the current token stream position.
     /// Used to save and restore the position for backtracking during ambiguous parses (e.g. for vs for-each).

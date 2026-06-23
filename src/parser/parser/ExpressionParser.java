@@ -73,10 +73,14 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode assignment() {
 
         var expr = ternary();
-        if (checkCurrentTokenType(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
+        if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
 
-            var operator = getPreviousToken();
+            var operator = previous();
             var value = assignment();
+
+            if (!(expr instanceof IdentifierLiteralExpression ||
+                expr instanceof ArrayAccessExpression ||
+                expr instanceof MemberAccessExpression)) throw new ParseException("Invalid assignment target", operator);
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
@@ -91,11 +95,11 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode ternary() {
 
         var expr = logicOr();
-        if (this.checkCurrentTokenType(Operator.QUESTION)) {
+        if (match(Operator.QUESTION)) {
 
-            var questionToken = getPreviousToken();
+            var questionToken = previous();
             var thenExpr = parseExpression();
-            getNextToken(Delimiter.COLON, "Expect ':' in ternary expression");
+            consume(Delimiter.COLON, "Expect ':' in ternary expression");
             var elseExpr = parseExpression();
             return new TernaryExpression(questionToken.getLine(), questionToken.getColumn(), expr, thenExpr, elseExpr);
         }
@@ -108,9 +112,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode logicOr() {
 
         var expr = logicAnd();
-        while (this.checkCurrentTokenType(Operator.LOGICAL_OR)) {
+        while (match(Operator.LOGICAL_OR)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = logicAnd();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -123,9 +127,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode logicAnd() {
 
         var expr = equality();
-        while (this.checkCurrentTokenType(Operator.LOGICAL_AND)) {
+        while (match(Operator.LOGICAL_AND)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = equality();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -138,9 +142,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode equality() {
 
         var expr = comparison();
-        while (checkCurrentTokenType(Operator.EQUAL, Operator.NOT_EQUAL)) {
+        while (match(Operator.EQUAL, Operator.NOT_EQUAL)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = comparison();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -153,9 +157,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode comparison() {
 
         var expr = term();
-        while (checkCurrentTokenType(Operator.LESS_THAN, Operator.GREATER_THAN, Operator.LESS_EQUAL, Operator.GREATER_EQUAL)) {
+        while (match(Operator.LESS_THAN, Operator.GREATER_THAN, Operator.LESS_EQUAL, Operator.GREATER_EQUAL)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = term();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -168,9 +172,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode term() {
 
         var expr = factor();
-        while (checkCurrentTokenType(Operator.PLUS, Operator.MINUS)) {
+        while (match(Operator.PLUS, Operator.MINUS)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = factor();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -183,9 +187,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode factor() {
 
         var expr = unary();
-        while (checkCurrentTokenType(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
+        while (match(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = unary();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -197,9 +201,9 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the unary expression if a unary operator is present, or the result of `call()` if not.
     private ExpressionNode unary() {
 
-        if (checkCurrentTokenType(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
+        if (match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
 
-            var op = (OperatorToken) getPreviousToken();
+            var op = (OperatorToken) previous();
             var right = unary();
             return new UnaryExpression(op.getLine(), op.getColumn(), op, right);
         }
@@ -215,20 +219,20 @@ public class ExpressionParser extends ParserBase {
         var expr = primary();
         while (true) {
 
-            if (this.checkCurrentTokenType(Delimiter.LPAREN)) expr = finishCall(expr);
-            else if (this.checkCurrentTokenType(Delimiter.DOT)) {
+            if (match(Delimiter.LPAREN)) expr = finishCall(expr);
+            else if (match(Delimiter.DOT)) {
 
-                var nameToken = getNextToken(new IdentifierLiteral(), "Expect property name after '.'");
-                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue((LiteralToken) nameToken));
-            } else if (this.checkCurrentTokenType(Delimiter.LSQUARE)) {
+                var nameToken = consume(new IdentifierLiteral(), "Expect property name after '.'");
+                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue(nameToken));
+            } else if (match(Delimiter.LSQUARE)) {
 
                 var index = parseExpression();
-                var bracket = getNextToken(Delimiter.RSQUARE, "Expect ']' after array index");
+                var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
-            } else if (checkCurrentTokenType(Operator.INCREMENT, Operator.DECREMENT)) {
+            } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
 
                 // Bug fix: postfix ++ / -- use a dedicated node to distinguish from prefix
-                var op = (OperatorToken) getPreviousToken();
+                var op = (OperatorToken) previous();
                 expr = new PostfixUnaryExpression(op.getLine(), op.getColumn(), expr, op);
             } else break;
         }
@@ -243,13 +247,13 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode finishCall(ExpressionNode callee) {
 
         var arguments = new ArrayList<ExpressionNode>();
-        if (!checkCurrentTokenType(Delimiter.RPAREN)) do {
+        if (!check(Delimiter.RPAREN)) do {
 
             //if (arguments.size() >= 255) throw new ParseException("Cannot have more than 255 arguments", getCurrentToken());
             arguments.add(parseExpression());
-        } while (this.checkCurrentTokenType(Delimiter.COMMA));
+        } while (match(Delimiter.COMMA));
 
-        var paren = getNextToken(Delimiter.RPAREN, "Expect ')' after arguments");
+        var paren = consume(Delimiter.RPAREN, "Expect ')' after arguments");
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
 
@@ -258,61 +262,64 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the primary expression, which may be a literal, an identifier, an object creation expression, or a parenthesized expression.
     private ExpressionNode primary() {
 
-        var token = getCurrentToken();
+        var token = peek();
 
-        if (this.checkCurrentTokenType(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
-        if (this.checkCurrentTokenType(BoolLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
-        if (this.checkCurrentTokenType(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
+        if (match(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
+        if (match(BoolLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
+        if (match(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
 
-        if (this.checkCurrentTokenType(new NumberLiteral())) return parseNumber((LiteralToken) getPreviousToken());
+        if (match(new NumberLiteral())) return parseNumber((LiteralToken) previous());
 
-        if (this.checkCurrentTokenType(new StringLiteral())) {
+        if (match(new StringLiteral())) {
 
-            var lit = (LiteralToken) getPreviousToken();
+            var lit = (LiteralToken) previous();
             return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getType().token());
         }
 
-        if (this.checkCurrentTokenType(new CharLiteral())) {
+        if (match(new CharLiteral())) {
 
-            var lit = (LiteralToken) getPreviousToken();
+            var lit = (LiteralToken) previous();
             var value = lit.getType().token();
             var ch = (value != null && !value.isEmpty()) ? value.charAt(0) : '\0';
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
 
-        if (this.checkCurrentTokenType(new IdentifierLiteral())) {
+        if (match(new IdentifierLiteral())) {
 
-            var lit = (LiteralToken) getPreviousToken();
+            var lit = (LiteralToken) previous();
             var name = lit.getType().token();
+            if (symbolTable.lookup(name) == null) throw new ParseException("Undefined variable '" + name + "'", lit);
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
-        if (this.checkCurrentTokenType(Keyword.NEW)) {
+        if (match(Keyword.NEW)) {
 
-            var newToken = getPreviousToken();
-            if (getCurrentToken() instanceof TypeToken) { // Require an identifier (class name); reject primitive types with a clear error
+            var newToken = previous();
+            if (peek() instanceof TypeToken) { // Require an identifier (class name); reject primitive types with a clear error
 
                 // It's a type-token (primitive keyword like "int")
-                var badToken = getCurrentToken();
+                var badToken = peek();
                 ErrorCollector.add(new UnexpectedTokenError(badToken.getType(), badToken.getLine(), badToken.getColumn()));
             }
 
-            var classNameToken = getNextToken(new IdentifierLiteral(), "Expect class name after 'new'");
-            var className = getLiteralValue((LiteralToken) classNameToken);
+            var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
+            var className = getLiteralValue(classNameToken);
+            if (!typeRegistry.isCustomType(className))
+                throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
 
-            getNextToken(Delimiter.LPAREN, "Expect '(' after class name");
+            consume(Delimiter.LPAREN, "Expect '(' after class name");
             var arguments = new ArrayList<ExpressionNode>();
-            if (!checkCurrentTokenType(Delimiter.RPAREN)) do {
+            if (!check(Delimiter.RPAREN)) do {
                 arguments.add(parseExpression());
-            } while (this.checkCurrentTokenType(Delimiter.COMMA));
-            getNextToken(Delimiter.RPAREN, "Expect ')' after arguments");
+            } while (match(Delimiter.COMMA));
+            consume(Delimiter.RPAREN, "Expect ')' after arguments");
             return new ObjectCreationExpression(newToken.getLine(), newToken.getColumn(), className, arguments.toArray(new ExpressionNode[0]));
         }
 
-        if (this.checkCurrentTokenType(Delimiter.LPAREN)) {
+        if (match(Delimiter.LPAREN)) {
 
             var expr = parseExpression();
-            getNextToken(Delimiter.RPAREN, "Expect ')' after expression");
+            consume(Delimiter.RPAREN, "Expect ')' after expression");
             return expr;
         }
 

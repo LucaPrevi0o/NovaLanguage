@@ -1,8 +1,5 @@
 package parser.parser.util;
 
-import error.ErrorCollector;
-import error.syntax.MissingTokenError;
-import error.syntax.SyntaxError;
 import error.Error;
 import lexer.Token;
 import lexer.token.type.LiteralToken;
@@ -90,39 +87,74 @@ public abstract class ParserBase {
     /// @return The token that was consumed by advancing the parser.
     protected Token getNextToken() { return state.getNextToken(); }
 
+    /// Returns the current token without consuming it.
+    /// @return The current token.
+    protected Token peek() { return state.peek(); }
+
+    /// Returns the previously consumed token.
+    /// @return The previous token.
+    protected Token previous() { return state.previous(); }
+
+    /// Advances by one token and returns the consumed token.
+    /// @return The consumed token.
+    protected Token advance() { return state.advance(); }
+
     /// Checks if the current token matches the specified type.
     /// @param type The token family to checkCurrentTokenType against the current token.
     /// @return True if the current token matches the specified type; otherwise, false.
     protected boolean checkCurrentTokenType(TokenClass type) { return state.checkCurrentTokenType(type); }
+
+    /// Checks if the current token matches the specified type without consuming it.
+    /// @param type The token family to check against the current token.
+    /// @return True if the current token matches the specified type.
+    protected boolean check(TokenClass type) { return state.check(type); }
 
     /// Checks if the current token matches any of the specified types.
     /// @param types The token families to checkCurrentTokenType against the current token.
     /// @return True if the current token matches any of the specified types; otherwise, false.
     protected boolean checkCurrentTokenType(TokenClass... types) { return state.checkCurrentTokenType(types); }
 
-    /// Consumes the current token if it matches the expected type; otherwise, records a syntax error and returns the current token.
+    /// Checks if the current token matches any of the specified types without consuming it.
+    /// @param types The token families to check against the current token.
+    /// @return True if the current token matches any of the specified types.
+    protected boolean check(TokenClass... types) { return state.check(types); }
+
+    /// Consumes the current token if it matches any of the specified types.
+    /// @param types The token families to match.
+    /// @return True when a token was consumed.
+    protected boolean match(TokenClass... types) { return state.match(types); }
+
+    /// Consumes the current token if it matches the expected type; otherwise throws a parse exception.
     /// @param expectedType The token family that the current token is expected to match.
-    /// @param errorType The syntax error to record if the current token does not match the expected type.
-    /// @return The consumed token if it matches the expected type; otherwise, the current token (without consuming) if it does not match the expected type.
-    protected Token getNextToken(TokenClass expectedType, @SyntaxError Error errorType) {
-        return state.getNextToken(expectedType, errorType);
-    }
+    /// @param message The error message to report when the token is missing.
+    /// @return The consumed token.
+    protected Token consume(TokenClass expectedType, String message) { return state.consume(expectedType, message); }
+
+    /// Compatibility alias for parser code still being migrated to {@link #consume(TokenClass, String)}.
+    protected Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
+
+    /// Compatibility alias for parser code that constructs structured error objects.
+    protected Token getNextToken(TokenClass expectedType, Error error) { return state.getNextToken(expectedType, error); }
 
     /// Retrieves the literal value associated with the specified token, if applicable.
     /// @param token The token for which to retrieve the literal value.
     /// @return The literal value associated with the specified token, or null if the token does not have a literal value.
-    protected String getLiteralValue(LiteralToken token) { return state.getLiteralValue(token); }
+    protected String getLiteralValue(Token token) { return state.getLiteralValue(token); }
+
+    /// Checks if the provided token is a primitive type token.
+    /// @param token The token to inspect.
+    /// @return True when the token is a type token.
+    protected boolean isTypeToken(Token token) { return state.isTypeToken(token); }
 
     /// Parses an access modifier, which can be "public", "private", or "protected".
-    /// If no access modifier is present, an error is recorded in the ErrorCollector, and null is returned.
+    /// If no access modifier is present, null is returned.
     ///
     /// Grammar rule:
     /// `accessModifier → "public" | "private" | "protected"`
     /// @return An AccessModifier enum value representing the parsed access modifier, or null if no access modifier is present.
     protected AccessModifier parseAccessModifier() {
 
-        for (var modifier : AccessModifier.values()) if (this.checkCurrentTokenType(modifier)) return modifier;
-        ErrorCollector.add(new MissingTokenError(getCurrentToken().getLine(), getCurrentToken().getColumn(), AccessModifier.PUBLIC));  // Expecting an access modifier but found none; report as syntax error
-        return null;  // No access modifier found
+        for (var modifier : AccessModifier.values()) if (match(modifier)) return modifier;
+        return null;
     }
 }
