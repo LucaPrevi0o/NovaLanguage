@@ -1,5 +1,7 @@
 package parser.parser.util;
 
+import error.diagnostic.Diagnostic;
+
 import java.util.List;
 
 /// Thrown by {@link parser.Parser} when one or more parse errors are collected during a parse run.
@@ -22,6 +24,10 @@ public class ParseErrorsException extends RuntimeException {
     /// Returns the individual errors that were collected during parsing.
     /// @return An unmodifiable list of {@link ParseException}s.
     public List<ParseException> getErrors() { return errors; }
+
+    /// Returns the structured diagnostics represented by the collected parse errors.
+    /// @return An unmodifiable list of diagnostics.
+    public List<Diagnostic> getDiagnostics() { return errors.stream().map(ParseException::getDiagnostic).toList(); }
 
     private static String buildMessage(List<ParseException> errors) {
 
