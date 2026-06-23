@@ -15,7 +15,7 @@ Current focus: Phase 4 - semantic analysis split.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
-| 4. Semantic analysis split    | In progress | Semantic declaration collection and scope construction are available for later validation passes.                              |
+| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, and expression name resolution are available.                              |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -135,7 +135,7 @@ Tasks:
 - [x] Stop resolving undefined classes directly in expression parsing.
 - [x] Add declaration collection.
 - [x] Add scope construction.
-- [ ] Add name resolution.
+- [x] Add name resolution.
 - [ ] Add duplicate declaration validation.
 - [ ] Add type checking.
 - [ ] Add return checking.
@@ -150,6 +150,7 @@ Parser-owned semantic checks inventory:
 - [x] Type/name resolution: `ExpressionParser` no longer rejects `new UndefinedClass()` through `typeRegistry.isCustomType(...)`.
 - [x] Declaration inventory: semantic declaration collection records classes, functions, methods, fields, parameters, variables, constructors, and for-each variables.
 - [x] Scope model: semantic scope construction creates global, class, function, constructor, block, switch, and loop scopes from the AST.
+- [x] Name resolution pass: unresolved expression identifiers and constructed class names produce semantic diagnostics.
 - [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
 - [ ] L-value validation: `ExpressionParser` rejects invalid assignment targets during parsing.
@@ -158,7 +159,7 @@ Parser-owned semantic checks inventory:
 
 Exit criteria:
 
-- [x] `unknownVar + 1;` parses syntactically; semantic name-resolution diagnostics still need to be added.
+- [x] `unknownVar + 1;` parses syntactically, then fails semantic name resolution.
 - [ ] `1 = 2;` parses syntactically, then fails l-value analysis.
 - [ ] Duplicate declarations become semantic diagnostics, not parser crashes.
 
