@@ -16,7 +16,6 @@ import parser.ast.nodes.expression.literal.NullLiteralExpression;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.ast.nodes.expression.literal.number.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.TypeRegistry;
@@ -73,7 +72,7 @@ public class ExpressionParser extends ParserBase {
             var operator = previous();
             var value = assignment();
 
-            if (!isAssignableTarget(expr)) throw new ParseException("Invalid assignment target", operator);
+            if (!isAssignableTarget(expr)) throw parseError("Invalid assignment target", operator);
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
@@ -279,7 +278,7 @@ public class ExpressionParser extends ParserBase {
 
             var lit = (LiteralToken) previous();
             var name = lit.getType().token();
-            if (symbolTable.lookup(name) == null) throw new ParseException("Undefined variable '" + name + "'", lit);
+            if (symbolTable.lookup(name) == null) throw parseError("Undefined variable '" + name + "'", lit);
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
@@ -289,7 +288,7 @@ public class ExpressionParser extends ParserBase {
             if (isTypeToken(peek())) {
 
                 var badToken = peek();
-                throw new ParseException(
+                throw parseError(
                     "Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.",
                     badToken
                 );
@@ -298,7 +297,7 @@ public class ExpressionParser extends ParserBase {
             var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
             var className = getLiteralValue(classNameToken);
             if (!typeRegistry.isCustomType(className))
-                throw new ParseException("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
+                throw parseError("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
 
             consume(Delimiter.LPAREN, "Expect '(' after class name");
             var arguments = new ArrayList<ExpressionNode>();
@@ -316,7 +315,7 @@ public class ExpressionParser extends ParserBase {
             return expr;
         }
 
-        throw new ParseException("Expect expression", token);
+        throw parseError("Expect expression", token);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -327,7 +326,7 @@ public class ExpressionParser extends ParserBase {
     /// @param operator The compound assignment operator token (e.g., `+=`, `-=`, `*=`, `/=`, `%=`).
     /// @param value The right-hand side expression of the assignment (the value being assigned).
     /// @return An ExpressionNode representing the expanded compound assignment, which is a binary expression combining the target and value with the appropriate operator.
-    private static ExpressionNode expandCompound(ExpressionNode target, Token operator, ExpressionNode value) {
+    private ExpressionNode expandCompound(ExpressionNode target, Token operator, ExpressionNode value) {
 
         if (!(operator.getType() instanceof Operator op) || op == Operator.ASSIGN) return value;
 
@@ -337,7 +336,7 @@ public class ExpressionParser extends ParserBase {
             case MULTIPLY_ASSIGN -> Operator.MULTIPLY;
             case DIVIDE_ASSIGN   -> Operator.DIVIDE;
             case MODULO_ASSIGN   -> Operator.MODULO;
-            default -> throw new ParseException("Unknown compound assignment operator", operator);
+            default -> throw parseError("Unknown compound assignment operator", operator);
         };
 
         return new BinaryExpression(
@@ -382,7 +381,7 @@ public class ExpressionParser extends ParserBase {
 
             return new IntegerLiteralExpression(line, col, Integer.parseInt(value));
         } catch (NumberFormatException e) {
-            throw new ParseException("Invalid number format: " + value, token);
+            throw parseError("Invalid number format: " + value, token);
         }
     }
 }

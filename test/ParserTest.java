@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import lexer.token.family.Delimiter;
 import lexer.token.family.PrimitiveType;
+import lexer.token.family.literal.IdentifierLiteral;
 import parser.Parser;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
@@ -149,6 +150,21 @@ public class ParserTest {
         // The error message should contain line/column info
         var msg = ex.getErrors().getFirst().getMessage();
         assertTrue(msg.contains("line"), "Error message should contain 'line'");
+    }
+
+    @Test
+    void testUndefinedVariableDiagnosticStoresOffendingIdentifier() {
+
+        var source = "badVar;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        var diagnostic = ex.getDiagnostics().getFirst();
+
+        assertInstanceOf(IdentifierLiteral.class, diagnostic.getActualToken());
+        assertEquals("badVar", diagnostic.getLexeme());
     }
 
     @Test

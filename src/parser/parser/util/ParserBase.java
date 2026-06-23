@@ -1,6 +1,8 @@
 package parser.parser.util;
 
 import error.Error;
+import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticPhase;
 import lexer.Token;
 import lexer.token.type.LiteralToken;
 import parser.ast.SymbolTable;
@@ -140,6 +142,21 @@ public abstract class ParserBase {
     /// @param token The token for which to retrieve the literal value.
     /// @return The literal value associated with the specified token, or null if the token does not have a literal value.
     protected String getLiteralValue(Token token) { return state.getLiteralValue(token); }
+
+    /// Builds a parse exception backed by a structured parser diagnostic.
+    /// @param message The parser diagnostic message.
+    /// @param token The token where the error occurred.
+    /// @return A parse exception carrying the diagnostic.
+    protected ParseException parseError(String message, Token token) {
+
+        var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, message, token);
+        return new ParseException(diagnostic, token);
+    }
+
+    /// Builds a parse exception for the current token.
+    /// @param message The parser diagnostic message.
+    /// @return A parse exception carrying the diagnostic.
+    protected ParseException parseError(String message) { return parseError(message, peek()); }
 
     /// Checks if the provided token is a primitive type token.
     /// @param token The token to inspect.
