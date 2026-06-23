@@ -103,10 +103,11 @@ Completed:
 - [x] Report parser diagnostics from the CLI without reading the static `ErrorCollector`.
 - [x] Build structured expected/actual diagnostics for required-token parser failures.
 - [x] Add a shared parser helper for structured parse errors and migrate `ExpressionParser`.
+- [x] Migrate `DeclarationParser` direct parse errors to structured diagnostics.
 
 Next:
 
-- [ ] Continue replacing direct `ParseException` construction in declaration and class parsing.
+- [ ] Continue replacing direct `ParseException` construction in class parsing.
 - [ ] Pass diagnostics through lexer runs instead of relying on token-only error recovery.
 - [x] Store line, column, optional span, message, expected token, and actual token in the diagnostic model.
 - [ ] Start with top-level recovery, then add block/statement recovery.
@@ -256,6 +257,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Continue replacing direct `ParseException` construction in declaration and class parsing.
+1. Continue replacing direct `ParseException` construction in class parsing.
 2. Extend diagnostic-bag support to lexer runs instead of relying only on `UNKNOWN` tokens.
 3. Replace remaining static/global diagnostics gradually, after compatibility tests are in place.

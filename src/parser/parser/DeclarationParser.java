@@ -10,7 +10,6 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
 import parser.ast.nodes.statement.declaration.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import parser.parser.util.ParserState;
 import lexer.token.ReturnType;
@@ -137,7 +136,7 @@ public class DeclarationParser extends ParserBase {
             return new ReturnType(classType.getTokenClass(), arrayDims, superTypes, genericParamType);
         }
 
-        throw new ParseException("Expect type (primitive or class name)", token);
+        throw parseError("Expect type (primitive or class name)", token);
     }
 
     /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
@@ -169,7 +168,7 @@ public class DeclarationParser extends ParserBase {
         var parameters = new ArrayList<FunctionParameter>();
         if (!check(Delimiter.RPAREN)) do {
 
-            //if (parameters.size() >= 255) throw new ParseException("Cannot have more than 255 parameters", getCurrentToken());
+            //if (parameters.size() >= 255) throw parseError("Cannot have more than 255 parameters", getCurrentToken());
             var paramType = parseType();
             var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue(paramName), paramType));
@@ -188,7 +187,7 @@ public class DeclarationParser extends ParserBase {
         var accessModifier = parseAccessModifier();
         if (match(Keyword.CLASS)) {
 
-            if (accessModifier == null) throw new ParseException("Class declaration requires an access modifier", previous());
+            if (accessModifier == null) throw parseError("Class declaration requires an access modifier", previous());
             return classParser.parseClassDeclaration(accessModifier);
         }
 
@@ -505,7 +504,7 @@ public class DeclarationParser extends ParserBase {
         } else {
 
             var badToken = peek();
-            throw new ParseException("Expect 'case' or 'default' in switch body", badToken);
+            throw parseError("Expect 'case' or 'default' in switch body", badToken);
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after switch body");
