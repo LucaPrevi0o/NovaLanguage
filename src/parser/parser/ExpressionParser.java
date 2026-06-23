@@ -295,8 +295,6 @@ public class ExpressionParser extends ParserBase {
 
             var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
             var className = getLiteralValue(classNameToken);
-            if (!typeRegistry.isCustomType(className))
-                throw parseError("Class '" + className + "' is not a defined class. 'new' requires a class type.", classNameToken);
 
             consume(Delimiter.LPAREN, "Expect '(' after class name");
             var arguments = new ArrayList<ExpressionNode>();

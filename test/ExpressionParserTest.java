@@ -368,7 +368,7 @@ public class ExpressionParserTest {
         });
     }
 
-    // ─── new keyword errors ───────────────────────────────────────────────────
+    // ─── new keyword ──────────────────────────────────────────────────────────
 
     @Test
     void testNewWithPrimitiveTypeGivesClearError() {
@@ -380,9 +380,12 @@ public class ExpressionParserTest {
     }
 
     @Test
-    void testNewWithUndefinedClassThrows() {
+    void testNewWithUndefinedClassParsesSyntactically() {
 
-        var tokens = new Lexer("new UndefinedClass();").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        var stmt = expressionStatement("new UndefinedClass();", 0);
+        var expr = assertInstanceOf(ObjectCreationExpression.class, stmt.getExpression());
+
+        assertEquals("UndefinedClass", expr.getClassName());
+        assertEquals(0, expr.getArguments().length);
     }
 }
