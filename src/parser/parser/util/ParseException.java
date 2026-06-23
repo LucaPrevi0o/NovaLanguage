@@ -13,33 +13,39 @@ public class ParseException extends RuntimeException {
     /// Constructs a new ParseException with the specified error message and the token where the error occurred.
     /// @param message The error message describing the parsing error.
     /// @param token The Token object representing the location in the source code where the parsing error was detected.
-    public ParseException(String message, Token token) {
-
-        super(formatMessage(message, token));
-        this.token = token;
-        this.diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, message, token);
-    }
+    public ParseException(String message, Token token) { this(Diagnostic.error(DiagnosticPhase.PARSER, message, token), token); }
 
     /// Constructs a new ParseException with a specific source location but no Token object.
     /// Useful for errors detected outside the parser where only a line and column are available.
     /// @param message The error message describing the error.
     /// @param line    The source line where the error occurred.
     /// @param column  The source column where the error occurred.
-    public ParseException(String message, int line, int column) {
+    public ParseException(String message, int line, int column) { this(Diagnostic.error(DiagnosticPhase.PARSER, message, line, column), null); }
 
-        super(String.format("Parse error at line %d, column %d: %s", line, column, message));
-        this.token = null;
-        this.diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, message, line, column);
+    /// Constructs a new ParseException from a prebuilt structured diagnostic.
+    /// @param diagnostic The diagnostic represented by this parse exception.
+    /// @param token The token where the error occurred, if available.
+    public ParseException(Diagnostic diagnostic, Token token) {
+
+        super(formatMessage(diagnostic, token));
+        this.token = token;
+        this.diagnostic = diagnostic;
     }
 
     /// Formats the error message to include the line and column information from the token, if available.
-    /// @param message The error message describing the parsing error.
+    /// @param diagnostic The diagnostic describing the parsing error.
     /// @param token The Token object representing the location in the source code where the parsing error was detected.
     /// @return A formatted error message that includes the line and column information from the token, if available; otherwise, returns the original message.
-    private static String formatMessage(String message, Token token) {
+    private static String formatMessage(Diagnostic diagnostic, Token token) {
+
+        var message = diagnostic != null ? diagnostic.getMessage() : "<unknown parse error>";
 
         if (token != null)
             return String.format("Parse error at line %d, column %d: %s (near '%s')", token.getLine(), token.getColumn(), message, token);
+
+        if (diagnostic != null && diagnostic.hasLocation())
+            return String.format("Parse error at line %d, column %d: %s", diagnostic.getLine(), diagnostic.getColumn(), message);
+
         return message;
     }
 

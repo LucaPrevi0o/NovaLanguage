@@ -73,4 +73,17 @@ public class DiagnosticTest {
         assertEquals(Special.UNKNOWN, diagnostic.getActualToken());
         assertEquals("@", diagnostic.getLexeme());
     }
+
+    @Test
+    void parseExceptionAcceptsPrebuiltDiagnostic() {
+
+        var token = new Token(Special.UNKNOWN, 6, 2, "@");
+        var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, "Bad token", token);
+        var exception = new ParseException(diagnostic, token);
+
+        assertSame(diagnostic, exception.getDiagnostic());
+        assertSame(token, exception.getToken());
+        assertTrue(exception.getMessage().contains("line 6"));
+        assertTrue(exception.getMessage().contains("Bad token"));
+    }
 }

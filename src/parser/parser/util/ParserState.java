@@ -1,6 +1,8 @@
 package parser.parser.util;
 
 import error.Error;
+import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticPhase;
 import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
 import lexer.token.TokenClass;
@@ -120,14 +122,17 @@ public class ParserState {
     }
 
     /// Consumes the current token if it matches the specified token family, advancing the position.
-    /// If the current token does not match, records a syntax error and returns null.
+    /// If the current token does not match, throws a parse exception with expected/actual token context.
     /// @param expectedType The token family to checkCurrentTokenType against the current token.
-    /// @param errorType The type of syntax error to record if the current token does not match the specified token family.
-    /// @return The token that was consumed if it matches the specified token family, or null if it does not match (with a syntax error recorded).
+    /// @param message The parse error message.
+    /// @return The token that was consumed if it matches the specified token family.
     public Token consume(TokenClass expectedType, String message) {
 
         if (check(expectedType)) return advance();
-        throw new ParseException(message, peek());
+
+        var actual = peek();
+        var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, message, actual, expectedType);
+        throw new ParseException(diagnostic, actual);
     }
 
     /// Compatibility alias for older parser code.
@@ -137,7 +142,10 @@ public class ParserState {
     public Token getNextToken(TokenClass expectedType, Error error) {
 
         if (check(expectedType)) return advance();
-        throw new ParseException(error.getMessage(), peek());
+
+        var actual = peek();
+        var diagnostic = Diagnostic.fromError(error, DiagnosticPhase.PARSER, actual);
+        throw new ParseException(diagnostic, actual);
     }
     
     // ========== Helper Methods ==========
@@ -171,7 +179,8 @@ public class ParserState {
         if (getCurrentToken().getType() == Special.UNKNOWN) {
 
             var error = new UnrecognizedTokenError(getCurrentToken());
-            throw new ParseException(error.getDescription(), getCurrentToken());
+            var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, error.getDescription(), getCurrentToken());
+            throw new ParseException(diagnostic, getCurrentToken());
         }
     }
 }

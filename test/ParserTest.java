@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
+import lexer.token.family.Delimiter;
+import lexer.token.family.PrimitiveType;
 import parser.Parser;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
@@ -182,6 +184,22 @@ public class ParserTest {
         assertEquals(1, ex.getDiagnostics().size(), "Aggregate exception should expose structured diagnostics");
         assertEquals(1, parser.getDiagnostics().size(), "Parser should retain diagnostics from the run");
         assertEquals("@", parser.getDiagnostics().getFirst().getLexeme());
+    }
+
+    @Test
+    void testMissingRequiredTokenDiagnosticStoresExpectedAndActualTokens() {
+
+        var source = "int x int y;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getDiagnostics().size());
+
+        var diagnostic = ex.getDiagnostics().getFirst();
+        assertEquals(Delimiter.SEMICOLON, diagnostic.getExpectedToken());
+        assertEquals(PrimitiveType.INT, diagnostic.getActualToken());
     }
 
     // ─── Stdlib tests ─────────────────────────────────────────────────────────
