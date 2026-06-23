@@ -1,3 +1,5 @@
+import error.diagnostic.DiagnosticBag;
+import error.diagnostic.DiagnosticPhase;
 import lexer.token.family.literal.CharLiteral;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.family.literal.NumberLiteral;
@@ -196,11 +198,18 @@ public class LexerEdgeCaseTest {
     @Test
     void testUnterminatedStringLiteralProducesUnknown() {
 
-        var tokens = new Lexer("\"hello").tokenize();
+        var lexer = new Lexer("\"hello");
+        var tokens = lexer.tokenize();
+
         assertTrue(tokens.size() >= 2);
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType(),
                 "Unterminated string literal should produce an UNKNOWN token");
         assertEquals("\"hello", tokens.getFirst().getLexeme());
+
+        var diagnostics = lexer.getDiagnostics();
+        assertEquals(1, diagnostics.size());
+        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().getPhase());
+        assertEquals("\"hello", diagnostics.getFirst().getLexeme());
     }
 
     @Test
@@ -289,9 +298,29 @@ public class LexerEdgeCaseTest {
     @Test
     void testUnknownCharacterProducesUnknownToken() {
 
-        var tokens = new Lexer("@").tokenize();
+        var lexer = new Lexer("@");
+        var tokens = lexer.tokenize();
+
         assertEquals(2, tokens.size());
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType());
         assertEquals("@", tokens.getFirst().getLexeme());
+
+        var diagnostics = lexer.getDiagnostics();
+        assertEquals(1, diagnostics.size());
+        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().getPhase());
+        assertEquals(Special.UNKNOWN, diagnostics.getFirst().getActualToken());
+        assertEquals("@", diagnostics.getFirst().getLexeme());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Unrecognized token"));
+    }
+
+    @Test
+    void testUnknownCharacterReportsToProvidedDiagnosticBag() {
+
+        var diagnostics = new DiagnosticBag();
+        var tokens = new Lexer("@", diagnostics).tokenize();
+
+        assertEquals(Special.UNKNOWN, tokens.getFirst().getType());
+        assertEquals(1, diagnostics.size());
+        assertEquals("@", diagnostics.getDiagnostics().getFirst().getLexeme());
     }
 }

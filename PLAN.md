@@ -105,11 +105,12 @@ Completed:
 - [x] Add a shared parser helper for structured parse errors and migrate `ExpressionParser`.
 - [x] Migrate `DeclarationParser` direct parse errors to structured diagnostics.
 - [x] Migrate `ClassParser` direct parse errors to structured diagnostics.
+- [x] Pass diagnostics through lexer runs instead of relying only on token recovery.
 
 Next:
 
-- [ ] Pass diagnostics through lexer runs instead of relying on token-only error recovery.
 - [x] Store line, column, optional span, message, expected token, and actual token in the diagnostic model.
+- [ ] Replace remaining static/global diagnostics gradually, after compatibility tests are in place.
 - [ ] Start with top-level recovery, then add block/statement recovery.
 
 Exit criteria:
@@ -257,6 +258,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Extend diagnostic-bag support to lexer runs instead of relying only on `UNKNOWN` tokens.
-2. Replace remaining static/global diagnostics gradually, after compatibility tests are in place.
-3. Add block/statement-level parser recovery after top-level diagnostics remain stable.
+1. Replace remaining static/global diagnostics gradually, after compatibility tests are in place.
+2. Add block/statement-level parser recovery after top-level diagnostics remain stable.
+3. Revisit parser-owned semantic checks before moving into Phase 4.

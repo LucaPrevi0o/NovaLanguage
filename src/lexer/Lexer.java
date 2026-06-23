@@ -1,5 +1,9 @@
 package lexer;
 
+import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticBag;
+import error.diagnostic.DiagnosticPhase;
+import error.syntax.UnrecognizedTokenError;
 import lexer.token.TokenClass;
 import lexer.token.family.*;
 import lexer.token.family.literal.*;
@@ -19,6 +23,7 @@ public class Lexer {
     private int line;
     private int column;
     private char currentChar;
+    private final DiagnosticBag diagnostics;
 
     // Maps for quick lookup of pre-defined token types by their string representation
     private static final Map<String, TokenClass> TYPES = new HashMap<>();
@@ -45,13 +50,19 @@ public class Lexer {
     /// Constructs a Lexer with the given source code.
     /// Initializes the position, line, column, and current character.
     /// @param source The source code to be tokenized.
-    public Lexer(String source) {
+    public Lexer(String source) { this(source, new DiagnosticBag()); }
+
+    /// Constructs a Lexer with the given source code and diagnostic bag.
+    /// @param source The source code to be tokenized.
+    /// @param diagnostics The diagnostic bag used to collect lexer diagnostics.
+    public Lexer(String source, DiagnosticBag diagnostics) {
 
         this.source = source;
         this.position = 0;
         this.line = 1;
         this.column = 1;
         this.currentChar = !source.isEmpty() ? source.charAt(0) : '\0';
+        this.diagnostics = diagnostics != null ? diagnostics : new DiagnosticBag();
     }
 
     /// Advance the current position by one character, updating line and column numbers.
@@ -79,6 +90,18 @@ public class Lexer {
 
     /// Skip over any whitespace characters.
     private void skipWhitespace() { while (currentChar != '\0' && Character.isWhitespace(currentChar)) advance(); }
+
+    /// Returns the diagnostics collected during tokenization.
+    /// @return An immutable list of lexer diagnostics.
+    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
+
+    private Token unknownToken(int tokenLine, int tokenColumn, String lexeme) {
+
+        var token = new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
+        var error = new UnrecognizedTokenError(token);
+        diagnostics.report(Diagnostic.error(DiagnosticPhase.LEXER, error.getDescription(), token));
+        return token;
+    }
 
     /// Skip over comments (single-line and multi-line).
     ///
@@ -192,7 +215,7 @@ public class Lexer {
 
             raw.append(currentChar);
             advance(); // skip backslash
-            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
+            if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
 
             raw.append(currentChar);
             // Handle escape sequences
@@ -214,7 +237,7 @@ public class Lexer {
             advance();
         }
 
-        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
+        if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
 
         advance(); // skip closing quote
         return new LiteralToken(new StringLiteral(string.toString()), startLine, startColumn);
@@ -235,11 +258,11 @@ public class Lexer {
         if (currentChar == '\'') {
 
             advance(); // skip closing quote
-            return new Token(Special.UNKNOWN, startLine, startColumn, "''");
+            return unknownToken(startLine, startColumn, "''");
         }
 
         // Unterminated char literal: reached EOF before closing quote
-        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, "'");
+        if (currentChar == '\0') return unknownToken(startLine, startColumn, "'");
 
         var ch = '\0';
         var raw = new StringBuilder("'");
@@ -247,7 +270,7 @@ public class Lexer {
 
             raw.append('\\');
             advance(); // skip backslash
-            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
+            if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
 
             // Handle escape sequences
             raw.append(currentChar);
@@ -268,7 +291,7 @@ public class Lexer {
         }
 
         // Expect closing quote; if missing, return UNKNOWN
-        if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn, raw.toString());
+        if (currentChar != '\'') return unknownToken(startLine, startColumn, raw.toString());
         advance(); // skip closing quote
         return new LiteralToken(new CharLiteral(ch), startLine, startColumn);
     }
@@ -372,7 +395,7 @@ public class Lexer {
             var tokenColumn = column;
             var lexeme = Character.toString(currentChar);
             advance();
-            return new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
+            return unknownToken(tokenLine, tokenColumn, lexeme);
         }
         
         return new Token(Special.EOF, line, column);
