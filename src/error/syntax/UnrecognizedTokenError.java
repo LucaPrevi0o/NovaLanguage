@@ -44,9 +44,13 @@ public class UnrecognizedTokenError implements Error {
     @Override
     public String getMessage() {
 
-        if (line >= 0) return String.format("[line %d, col %d] Unrecognized token: '%s'", line, column, describe(value));
-        return "Unrecognized token: '" + describe(value) + "'";
+        if (line >= 0) return String.format("[line %d, col %d] %s", line, column, getDescription());
+        return getDescription();
     }
+
+    /// Returns the diagnostic text without source-location decoration.
+    /// @return The unrecognized-token description.
+    public String getDescription() { return "Unrecognized token: '" + describe(value) + "'"; }
 
     private static String describe(String value) {
         return value != null ? value : "<unknown>";

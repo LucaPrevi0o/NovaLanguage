@@ -1,6 +1,7 @@
 package parser.parser.util;
 
 import error.Error;
+import error.syntax.UnrecognizedTokenError;
 import lexer.Token;
 import lexer.token.TokenClass;
 import lexer.token.type.TypeToken;
@@ -72,6 +73,8 @@ public class ParserState {
     public boolean checkCurrentTokenType(TokenClass type) {
 
         if (isAtEnd()) return false;
+        rejectUnknownToken();
+
         var currentType = getCurrentToken().getType();
 
         if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
@@ -162,4 +165,13 @@ public class ParserState {
     /// Restores a previously saved token stream position for backtracking.
     /// @param position The position to restore to.
     public void setCurrentPosition(int position) { current = position; }
+
+    private void rejectUnknownToken() {
+
+        if (getCurrentToken().getType() == Special.UNKNOWN) {
+
+            var error = new UnrecognizedTokenError(getCurrentToken());
+            throw new ParseException(error.getDescription(), getCurrentToken());
+        }
+    }
 }
