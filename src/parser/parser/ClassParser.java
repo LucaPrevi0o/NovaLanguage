@@ -7,7 +7,6 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
-import parser.parser.util.ParseException;
 import parser.parser.util.ParserBase;
 import lexer.token.ReturnType;
 
@@ -93,7 +92,7 @@ public class ClassParser extends ParserBase {
             var superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
             var superClassName = getLiteralValue(superClassToken);
             var superClass = typeRegistry.getReturnType(superClassName);
-            if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+            if (superClass == null) throw parseError("Superclass '" + superClassName + "' not found.", superClassToken);
             superClasses.add(superClass);
 
             while (match(Delimiter.COMMA)) {
@@ -101,7 +100,7 @@ public class ClassParser extends ParserBase {
                 superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after ','");
                 superClassName = getLiteralValue(superClassToken);
                 superClass = typeRegistry.getReturnType(superClassName);
-                if (superClass == null) throw new ParseException("Superclass '" + superClassName + "' not found.", superClassToken);
+                if (superClass == null) throw parseError("Superclass '" + superClassName + "' not found.", superClassToken);
                 superClasses.add(superClass);
             }
         }
@@ -157,7 +156,7 @@ public class ClassParser extends ParserBase {
                 }
 
                 if (!declarationParser.isValidType(peek()))
-                    throw new ParseException("Expect type, constructor, inner class, or closing '}' in class body", peek());
+                    throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
 
                 var type = declarationParser.parseType();
                 var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
