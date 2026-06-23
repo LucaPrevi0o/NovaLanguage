@@ -143,6 +143,16 @@ Tasks:
 - [ ] Move symbol-table validation out of parser code where possible.
 - [ ] Keep parser-generated AST simple and complete.
 
+Parser-owned semantic checks inventory:
+
+- [ ] Name resolution: `ExpressionParser` rejects unresolved identifiers through `symbolTable.lookup(...)`.
+- [ ] Type/name resolution: `ExpressionParser` rejects `new UndefinedClass()` through `typeRegistry.isCustomType(...)`.
+- [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
+- [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
+- [ ] L-value validation: `ExpressionParser` rejects invalid assignment targets during parsing.
+- [ ] Type syntax/resolution coupling: `DeclarationParser.parseType()` requires class names to already be registered.
+- [ ] Scope construction coupling: declaration and class parsers build scopes and register symbols while parsing syntax.
+
 Exit criteria:
 
 - [ ] `unknownVar + 1;` parses syntactically, then fails name resolution.
@@ -261,6 +271,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Inventory parser-owned semantic checks and map each one to the future semantic pass that should own it.
-2. Start moving name-resolution checks out of `ExpressionParser`.
-3. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters once semantic diagnostics exist.
+1. Start moving name-resolution checks out of `ExpressionParser`.
+2. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters once semantic diagnostics exist.
+3. Move duplicate declaration validation out of `SymbolTable.register(...)` after declaration collection exists.
