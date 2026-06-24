@@ -15,7 +15,7 @@ Current focus: Phase 4 - semantic analysis split.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
 | 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
-| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, and return checks exist.      |
+| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return checks, and l-value checks exist. |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
 | 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
@@ -140,7 +140,7 @@ Tasks:
 - [x] Add initial assignment and initializer type checking.
 - [ ] Expand type checking across calls, member access, arrays, inheritance, and overload rules.
 - [x] Add return checking.
-- [ ] Add l-value checking.
+- [x] Add l-value checking.
 - [ ] Add `break`/`continue` context checking.
 - [ ] Move symbol-table validation out of parser code where possible.
 - [ ] Keep parser-generated AST simple and complete.
@@ -157,14 +157,14 @@ Parser-owned semantic checks inventory:
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
-- [ ] L-value validation: `ExpressionParser` rejects invalid assignment targets during parsing.
+- [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
 - [ ] Type syntax/resolution coupling: `DeclarationParser.parseType()` requires class names to already be registered.
 - [ ] Scope construction coupling: declaration and class parsers build scopes and register symbols while parsing syntax.
 
 Exit criteria:
 
 - [x] `unknownVar + 1;` parses syntactically, then fails semantic name resolution.
-- [ ] `1 = 2;` parses syntactically, then fails l-value analysis.
+- [x] `1 = 2;` parses syntactically, then fails l-value analysis.
 - [ ] Duplicate declarations become semantic diagnostics, not parser crashes.
 
 ## Phase 5 - Introduce A Real Type Model

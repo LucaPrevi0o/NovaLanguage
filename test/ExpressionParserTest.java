@@ -262,10 +262,11 @@ public class ExpressionParserTest {
     }
 
     @Test
-    void testAssignmentToLiteral_throws() {
+    void testAssignmentToLiteralParsesSyntactically() {
 
-        var tokens = new Lexer("1 = 2;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        var stmt = expressionStatement("1 = 2;", 0);
+
+        assertInstanceOf(AssignmentExpression.class, stmt.getExpression());
     }
 
     // ─── Literals ─────────────────────────────────────────────────────────────

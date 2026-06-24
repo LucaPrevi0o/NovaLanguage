@@ -61,8 +61,7 @@ public class ExpressionParser extends ParserBase {
     // ─── Precedence levels ────────────────────────────────────────────────────
 
     /// Parses an assignment expression, which can be a simple assignment or a compound assignment.
-    /// Grammar rule: {@code assignment → (lValue) ("=" | "+=" | "-=" | "*=" | "/=") assignment | ternary}
-    /// > Note: The left-hand side of an assignment must be a valid l-value (identifier, array access, or member access).
+    /// Grammar rule: {@code assignment → ternary (("=" | "+=" | "-=" | "*=" | "/=") assignment)?}
     /// @return An ExpressionNode representing the assignment expression, which may be a simple assignment or a compound assignment.
     private ExpressionNode assignment() {
 
@@ -71,8 +70,6 @@ public class ExpressionParser extends ParserBase {
 
             var operator = previous();
             var value = assignment();
-
-            if (!isAssignableTarget(expr)) throw parseError("Invalid assignment target", operator);
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
             var assignmentValue = expandCompound(expr, operator, value);
@@ -342,13 +339,6 @@ public class ExpressionParser extends ParserBase {
             new OperatorToken(binaryOp, operator.getLine(), operator.getColumn()),
             value
         );
-    }
-
-    private static boolean isAssignableTarget(ExpressionNode expr) {
-
-        return expr instanceof IdentifierLiteralExpression ||
-               expr instanceof ArrayAccessExpression ||
-               expr instanceof MemberAccessExpression;
     }
 
     /// Parses a numeric literal into the appropriate {@link NumberLiteralExpression} subtype.
