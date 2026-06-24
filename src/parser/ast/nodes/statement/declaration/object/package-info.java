@@ -1,12 +1,22 @@
-/**
- * AST nodes for class-owned Nova declarations.
- *
- * <p>This package contains declaration nodes for class fields, methods, and constructors.
- * These nodes describe members as they appear in source code, including their declared
- * types, parameters, access modifiers, and bodies where applicable.</p>
- *
- * <p>Member lookup, access control, overload resolution, inheritance validation, and method
- * compatibility are semantic responsibilities and should not be encoded as parser-time
- * assumptions in these node classes.</p>
- */
+/// # Class-owned declaration AST nodes
+///
+/// AST nodes for declarations that belong to Nova classes.
+///
+/// This package represents class members as source syntax: fields, methods, constructors, and
+/// the member information needed by later semantic passes.
+///
+/// ## Responsibilities
+///
+/// - Preserve member names and declared types.
+/// - Preserve access modifiers required by the class grammar.
+/// - Preserve method and constructor parameters.
+/// - Preserve member bodies where applicable.
+///
+/// ## Semantic checks performed later
+///
+/// - Member duplication and overload compatibility.
+/// - Constructor validity.
+/// - Access-control rules.
+/// - Inheritance and override rules.
+/// - Field and method lookup from member-access expressions.
 package parser.ast.nodes.statement.declaration.object;
