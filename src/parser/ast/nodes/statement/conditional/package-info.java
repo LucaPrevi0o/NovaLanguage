@@ -1,11 +1,23 @@
-/**
- * AST nodes for Nova control-flow statements.
- *
- * <p>This package contains statement nodes for conditional and looping constructs such as
- * {@code if}, {@code while}, {@code for}, {@code for-each}, and {@code switch}. These nodes
- * preserve source-level control-flow shape for semantic checks and future lowering.</p>
- *
- * <p>Contextual rules, such as whether {@code break} or {@code continue} appears in a valid
- * location, are handled by semantic analysis rather than by these AST classes.</p>
- */
+/// # Conditional and control-flow statement AST nodes
+///
+/// AST nodes for Nova control-flow statements.
+///
+/// This package preserves the source-level shape of branching, looping, and switch-like
+/// constructs for later semantic checks and eventual lowering.
+///
+/// ## Covered constructs
+///
+/// - `if` statements
+/// - `while` loops
+/// - `for` loops
+/// - `for-each` loops
+/// - `switch` statements
+///
+/// ## Semantic checks performed later
+///
+/// - Condition expression validity.
+/// - Loop variable declaration and visibility.
+/// - `break` and `continue` placement.
+/// - Switch case validation.
+/// - Control-flow-sensitive return behavior, once implemented.
 package parser.ast.nodes.statement.conditional;
