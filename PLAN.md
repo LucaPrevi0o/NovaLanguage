@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -13,8 +13,8 @@ Current focus: Phase 4 - semantic analysis split.
 | Phase                         | Status      | Summary                                                                                                                         |
 |-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------|
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
-| 2. Parser semantics           | In progress | Parser cursor contract and expression parsing have been tightened, but recovery and parser/semantic separation still need work. |
-| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state.                                           |
+| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser/semantic separation still needs work. |
+| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                  |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
@@ -29,6 +29,17 @@ Current focus: Phase 4 - semantic analysis split.
 - Add or update tests before changing behavior when the expected behavior is not already covered.
 - Keep parsing syntactic. Name resolution, type checks, l-value checks, duplicate checks, and context checks should move toward semantic passes.
 - Do not start advanced language features until diagnostics, parsing stability, and semantic separation are reliable.
+- Keep source and test packages grouped by compiler layer so ownership boundaries stay visible.
+
+## Repository Organization
+
+Status: Current.
+
+- [x] Parser grammar implementation lives in `parser.grammar`.
+- [x] Parser cursor and shared parser helpers live in `parser.support`.
+- [x] Structured diagnostics and parse exceptions live in `error.diagnostic`.
+- [x] Legacy `error.Error`, `error.syntax`, and `error.parsing` wrappers have been removed.
+- [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
 
 ## Phase 1 - Restore Build Health
 
@@ -65,6 +76,7 @@ Completed:
 - [x] Remove direct `ErrorCollector` writes from `ExpressionParser`.
 - [x] Tighten assignment target parsing with explicit assignable-target checks.
 - [x] Add expression AST-shape tests for the updated parsing behavior.
+- [x] Split parser implementation packages into grammar parsers and shared parser support.
 
 Remaining:
 
@@ -109,6 +121,8 @@ Completed:
 - [x] Remove the unused static `ErrorCollector` implementation.
 - [x] Centralize parser error reporting in `ParserState` to prepare nested recovery.
 - [x] Add block-level statement recovery for declaration lists inside braces.
+- [x] Move parse exceptions into the diagnostic package.
+- [x] Remove the old error wrapper hierarchy in favor of direct structured diagnostics.
 
 Next:
 

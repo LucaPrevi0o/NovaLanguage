@@ -1,11 +1,9 @@
+package semantic;
+
 import lexer.Lexer;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
-import semantic.DeclarationKind;
-import semantic.SemanticDeclaration;
-import semantic.SemanticScope;
-import semantic.SemanticScopeBuilder;
 
 import java.util.List;
 

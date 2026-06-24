@@ -1,10 +1,11 @@
+package semantic;
+
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticPhase;
 import lexer.Lexer;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
-import semantic.TypeChecker;
 
 import java.util.List;
 

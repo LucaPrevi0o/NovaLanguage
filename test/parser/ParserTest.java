@@ -1,8 +1,9 @@
+package parser;
+
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import lexer.token.family.Delimiter;
 import lexer.token.family.PrimitiveType;
-import parser.Parser;
 import parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
 import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;

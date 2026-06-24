@@ -1,6 +1,7 @@
+package parser;
+
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
-import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.expression.*;
 import parser.ast.nodes.statement.ExpressionStatement;

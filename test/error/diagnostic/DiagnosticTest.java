@@ -1,8 +1,5 @@
-import error.diagnostic.Diagnostic;
-import error.diagnostic.DiagnosticBag;
-import error.diagnostic.DiagnosticPhase;
-import error.diagnostic.DiagnosticSeverity;
-import error.diagnostic.ParseException;
+package error.diagnostic;
+
 import lexer.Token;
 import lexer.token.family.Special;
 import org.junit.jupiter.api.Test;

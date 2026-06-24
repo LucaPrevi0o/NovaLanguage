@@ -1,3 +1,5 @@
+package lexer;
+
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import lexer.token.family.literal.CharLiteral;
@@ -5,7 +7,6 @@ import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.family.literal.NumberLiteral;
 import lexer.token.family.literal.StringLiteral;
 import org.junit.jupiter.api.Test;
-import lexer.Lexer;
 import lexer.token.type.LiteralToken;
 import lexer.token.family.Special;
 

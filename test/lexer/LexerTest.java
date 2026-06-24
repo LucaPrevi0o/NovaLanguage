@@ -1,7 +1,8 @@
+package lexer;
+
 import lexer.token.family.literal.NumberLiteral;
 import lexer.token.family.literal.StringLiteral;
 import org.junit.jupiter.api.Test;
-import lexer.Lexer;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
 import lexer.token.family.Special;

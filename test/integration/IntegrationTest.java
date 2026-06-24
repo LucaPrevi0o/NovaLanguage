@@ -1,3 +1,5 @@
+package integration;
+
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import parser.Parser;

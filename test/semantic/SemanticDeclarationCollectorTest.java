@@ -1,3 +1,5 @@
+package semantic;
+
 import lexer.Lexer;
 import lexer.token.ReturnType;
 import lexer.token.family.PrimitiveType;
@@ -5,10 +7,6 @@ import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import semantic.DeclarationCollection;
-import semantic.DeclarationCollector;
-import semantic.DeclarationKind;
-import semantic.SemanticDeclaration;
 
 import java.util.List;
 
