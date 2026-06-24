@@ -171,6 +171,7 @@ Parser-owned semantic checks inventory:
 - [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for primitive and constructed class types.
 - [x] Type checking pass: identifier-based function calls validate argument count and argument types, and expose their declared return type to surrounding expressions.
 - [x] Type checking pass: array access validates integer indexes, rejects non-array targets, and exposes element types to surrounding expressions.
+- [x] Type checking pass: direct class field access and direct class method calls validate member existence, target type, argument count, and argument types.
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.

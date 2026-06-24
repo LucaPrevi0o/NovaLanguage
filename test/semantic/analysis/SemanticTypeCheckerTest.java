@@ -177,4 +177,80 @@ public class SemanticTypeCheckerTest {
         assertEquals(1, diagnostics.size());
         assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
     }
+
+    @Test
+    void testAcceptsClassFieldAccessWithMatchingType() {
+
+        var diagnostics = check("""
+            public class Box { public int value; }
+            Box box;
+            int value = box.value;
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testUsesClassFieldTypeInInitializerChecking() {
+
+        var diagnostics = check("""
+            public class Box { public int value; }
+            Box box;
+            bool value = box.value;
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+    }
+
+    @Test
+    void testReportsUndefinedClassMemberAccess() {
+
+        var diagnostics = check("""
+            public class Box { public int value; }
+            Box box;
+            int value = box.missing;
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined member 'missing' on type 'Box'"));
+    }
+
+    @Test
+    void testReportsMemberAccessOnNonClassValue() {
+
+        var diagnostics = check("""
+            int value;
+            int member = value.member;
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Cannot access member 'member' on non-class type int"));
+    }
+
+    @Test
+    void testAcceptsClassMethodCallArguments() {
+
+        var diagnostics = check("""
+            public class Box { public int get(bool ok) { return 1; } }
+            Box box;
+            int value = box.get(true);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsClassMethodCallArgumentMismatch() {
+
+        var diagnostics = check("""
+            public class Box { public int get(bool ok) { return 1; } }
+            Box box;
+            int value = box.get(1);
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Argument 1"));
+        assertTrue(diagnostics.getFirst().getMessage().contains("expects bool but got int"));
+    }
 }

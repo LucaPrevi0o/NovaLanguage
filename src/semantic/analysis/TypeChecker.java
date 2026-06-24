@@ -271,8 +271,8 @@ public final class TypeChecker {
 
         if (expression instanceof MemberAccessExpression memberAccess) {
 
-            inferExpression(memberAccess.getObject(), scope);
-            return null;
+            var member = resolveMemberAccess(memberAccess, scope);
+            return member != null ? member.getDeclaredType() : null;
         }
 
         if (expression instanceof ArrayAccessExpression arrayAccess) {
@@ -315,6 +315,61 @@ public final class TypeChecker {
         );
     }
 
+    private SemanticDeclaration resolveMemberAccess(MemberAccessExpression memberAccess, SemanticScope scope) {
+
+        var objectType = inferExpression(memberAccess.getObject(), scope);
+        if (objectType == null) return null;
+
+        var tokenClass = objectType.getTokenClass();
+        if (!(tokenClass instanceof NonPrimitiveType nonPrimitiveType)) {
+
+            diagnostics.report(Diagnostic.error(
+                DiagnosticPhase.SEMANTIC,
+                "Cannot access member '" + memberAccess.getMemberName() + "' on non-class type " + typeName(objectType),
+                memberAccess.getLine(),
+                memberAccess.getColumn()
+            ));
+            return null;
+        }
+
+        var classDeclaration = visibleClass(scope, nonPrimitiveType.typeName());
+        if (classDeclaration == null) return null;
+
+        var member = classMember(classDeclaration, memberAccess.getMemberName());
+        if (member != null) return member;
+
+        diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "Undefined member '" + memberAccess.getMemberName() + "' on type '" + classDeclaration.getName() + "'",
+            memberAccess.getLine(),
+            memberAccess.getColumn()
+        ));
+        return null;
+    }
+
+    private SemanticDeclaration classMember(ClassDeclarationStatement classDeclaration, String memberName) {
+
+        for (var field : classDeclaration.getFields())
+            if (field.getName().equals(memberName))
+                return declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field);
+
+        for (var method : classDeclaration.getMethods())
+            if (method.getName().equals(memberName))
+                return declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method);
+
+        return null;
+    }
+
+    private SemanticDeclaration declaration(
+        DeclarationKind kind,
+        String name,
+        ReturnType declaredType,
+        AstNode node
+    ) {
+
+        return new SemanticDeclaration(kind, name, declaredType, node, null);
+    }
+
     private ReturnType inferCall(CallExpression call, SemanticScope scope) {
 
         var argumentTypes = inferArguments(call.getArguments(), scope);
@@ -337,9 +392,30 @@ public final class TypeChecker {
             }
 
             if (callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
-                checkCallArguments(call, functionDeclaration, argumentTypes);
+                checkCallArguments(call, functionDeclaration, argumentTypes, callableKind(callable));
 
             return callable.getDeclaredType();
+        }
+
+        if (call.getCallee() instanceof MemberAccessExpression memberAccess) {
+
+            var member = resolveMemberAccess(memberAccess, scope);
+            if (member == null) return null;
+
+            if (member.getKind() != DeclarationKind.METHOD) {
+
+                diagnostics.report(Diagnostic.error(
+                    DiagnosticPhase.SEMANTIC,
+                    "Cannot call non-function member '" + member.getName() + "'",
+                    call.getLine(),
+                    call.getColumn()
+                ));
+                return null;
+            }
+
+            if (member.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
+                checkCallArguments(call, functionDeclaration, argumentTypes, callableKind(member));
+            return member.getDeclaredType();
         }
 
         return inferExpression(call.getCallee(), scope);
@@ -356,13 +432,14 @@ public final class TypeChecker {
     private void checkCallArguments(
         CallExpression call,
         FunctionDeclarationStatement functionDeclaration,
-        ReturnType[] argumentTypes
+        ReturnType[] argumentTypes,
+        String callableKind
     ) {
 
         var parameters = functionDeclaration.getParameters();
         if (parameters.length != argumentTypes.length) diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
-            "Function '" + functionDeclaration.getName() + "' expects " + parameters.length +
+            callableKind + " '" + functionDeclaration.getName() + "' expects " + parameters.length +
                 " arguments but got " + argumentTypes.length,
             call.getLine(),
             call.getColumn()
@@ -370,7 +447,7 @@ public final class TypeChecker {
 
         var checkedCount = Math.min(parameters.length, argumentTypes.length);
         for (var i = 0; i < checkedCount; i++)
-            checkArgument(functionDeclaration, parameters[i], argumentTypes[i], call.getArguments()[i], i + 1);
+            checkArgument(functionDeclaration, parameters[i], argumentTypes[i], call.getArguments()[i], i + 1, callableKind);
     }
 
     private void checkArgument(
@@ -378,13 +455,14 @@ public final class TypeChecker {
         FunctionParameter parameter,
         ReturnType argumentType,
         ExpressionNode argument,
-        int argumentNumber
+        int argumentNumber,
+        String callableKind
     ) {
 
         if (isAssignable(parameter.getType(), argumentType)) return;
         diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
-            "Argument " + argumentNumber + " for function '" + functionDeclaration.getName() +
+            "Argument " + argumentNumber + " for " + callableKind.toLowerCase() + " '" + functionDeclaration.getName() +
                 "' expects " + typeName(parameter.getType()) + " but got " + typeName(argumentType),
             argument.getLine(),
             argument.getColumn()
@@ -426,6 +504,25 @@ public final class TypeChecker {
         for (var declaration : declarations)
             if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD)
                 return declaration;
+        return null;
+    }
+
+    private String callableKind(SemanticDeclaration declaration) {
+
+        return declaration.getKind() == DeclarationKind.METHOD ? "Method" : "Function";
+    }
+
+    private ClassDeclarationStatement visibleClass(SemanticScope scope, String name) {
+
+        var current = scope;
+        while (current != null) {
+
+            for (var declaration : current.findLocal(name))
+                if (declaration.getKind() == DeclarationKind.CLASS &&
+                    declaration.getNode() instanceof ClassDeclarationStatement classDeclaration)
+                    return classDeclaration;
+            current = current.getParent();
+        }
         return null;
     }
 
