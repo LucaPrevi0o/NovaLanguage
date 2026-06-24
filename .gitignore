@@ -2,6 +2,12 @@
 .idea
 target
 
+# Local documentation build folders
+_site
+wiki-repo
+.wiki
+wiki
+
 # Files
 *.txt
 *.iml
