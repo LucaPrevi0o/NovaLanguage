@@ -130,4 +130,51 @@ public class SemanticTypeCheckerTest {
         assertEquals(1, diagnostics.size());
         assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
     }
+
+    @Test
+    void testAcceptsArrayElementAssignmentToMatchingType() {
+
+        var diagnostics = check("""
+            int[3] values;
+            int value = values[0];
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsArrayIndexTypeMismatch() {
+
+        var diagnostics = check("""
+            int[3] values;
+            int value = values[true];
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Array index must be int"));
+    }
+
+    @Test
+    void testReportsIndexingNonArrayValue() {
+
+        var diagnostics = check("""
+            int value;
+            int first = value[0];
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Cannot index non-array type int"));
+    }
+
+    @Test
+    void testUsesArrayElementTypeInInitializerChecking() {
+
+        var diagnostics = check("""
+            int[3] values;
+            bool value = values[0];
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+    }
 }

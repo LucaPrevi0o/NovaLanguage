@@ -45,11 +45,13 @@ import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
 
 import java.util.List;
+import java.util.Arrays;
 
 /// Performs an initial semantic type check for declarations, assignments, and simple expressions.
 public final class TypeChecker {
 
     private static final ReturnType BOOL_TYPE = new ReturnType(PrimitiveType.BOOL);
+    private static final ReturnType INT_TYPE = new ReturnType(PrimitiveType.INT);
 
     private final DiagnosticBag diagnostics = new DiagnosticBag();
     private SemanticScope rootScope;
@@ -275,12 +277,42 @@ public final class TypeChecker {
 
         if (expression instanceof ArrayAccessExpression arrayAccess) {
 
-            inferExpression(arrayAccess.getArray(), scope);
-            inferExpression(arrayAccess.getIndex(), scope);
-            return null;
+            return inferArrayAccess(arrayAccess, scope);
         }
 
         return null;
+    }
+
+    private ReturnType inferArrayAccess(ArrayAccessExpression arrayAccess, SemanticScope scope) {
+
+        var arrayType = inferExpression(arrayAccess.getArray(), scope);
+        var indexType = inferExpression(arrayAccess.getIndex(), scope);
+
+        if (indexType != null && !sameType(INT_TYPE, indexType)) diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "Array index must be int, got " + typeName(indexType),
+            arrayAccess.getIndex().getLine(),
+            arrayAccess.getIndex().getColumn()
+        ));
+
+        if (arrayType == null) return null;
+        if (!arrayType.isArray()) {
+
+            diagnostics.report(Diagnostic.error(
+                DiagnosticPhase.SEMANTIC,
+                "Cannot index non-array type " + typeName(arrayType),
+                arrayAccess.getLine(),
+                arrayAccess.getColumn()
+            ));
+            return null;
+        }
+
+        return new ReturnType(
+            arrayType.getTokenClass(),
+            Arrays.copyOfRange(arrayType.getSizes(), 1, arrayType.getSizes().length),
+            arrayType.getSuperTypes(),
+            arrayType.getGenericParameterType()
+        );
     }
 
     private ReturnType inferCall(CallExpression call, SemanticScope scope) {
