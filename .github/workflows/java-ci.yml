@@ -1,0 +1,72 @@
+name: Java CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+
+concurrency:
+  group: java-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: maven
+          cache-dependency-path: pom.xml
+
+      - name: Show Java and Maven versions
+        run: |
+          java -version
+          mvn -version
+
+      - name: Run JUnit tests
+        id: test
+        run: mvn -B -ntp test
+        continue-on-error: true
+
+      - name: Upload Surefire test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish test report
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: JUnit test report
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: true
+          fail-on-empty: false
+          list-suites: all
+          list-tests: failed
+          max-annotations: 20
+
+      - name: Fail workflow if Maven tests failed
+        if: ${{ steps.test.outcome == 'failure' }}
+        run: exit 1
