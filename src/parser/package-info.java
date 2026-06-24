@@ -1,12 +1,29 @@
-/**
- * Parser orchestration for the Nova compiler front end.
- *
- * <p>This package exposes the parser entry point that coordinates grammar-specific parser
- * helpers, consumes the lexer token stream, and produces source-level AST nodes together
- * with structured parser diagnostics.</p>
- *
- * <p>The parser is intended to remain syntactic. It should recognize valid Nova source
- * shapes and recover from malformed syntax where possible, while leaving name resolution,
- * type checking, duplicate validation, and contextual checks to semantic-analysis passes.</p>
- */
+/// # Parser
+///
+/// Parser orchestration for the Nova compiler front end.
+///
+/// This package exposes the parser entry point that coordinates grammar-specific parser
+/// helpers, consumes lexer tokens, and produces source-level AST nodes together with parser
+/// diagnostics.
+///
+/// ## Pipeline role
+///
+/// ```text
+/// token stream -> AST + parser diagnostics
+/// ```
+///
+/// ## Responsibilities
+///
+/// - Drive the recursive-descent parsing process.
+/// - Coordinate declaration, class, and expression grammar parsers.
+/// - Preserve parser diagnostics emitted during recovery.
+/// - Return a source-level AST suitable for semantic declaration collection.
+///
+/// ## Boundary
+///
+/// The parser answers: **is this valid Nova syntax?**
+///
+/// It should not reject code only because a referenced name is undefined, a declaration is
+/// duplicated, or an assignment target is semantically invalid. Those checks belong to
+/// semantic analysis.
 package parser;
