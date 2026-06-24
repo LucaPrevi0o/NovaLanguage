@@ -72,8 +72,8 @@ public class ParserState {
     /// @return The current token.
     public Token peek() { return getCurrentToken(); }
 
-    /// Returns the getPreviousToken token that was consumed.
-    /// @return The getPreviousToken token.
+    /// Returns the previous token that was consumed.
+    /// @return The previous token.
     public Token getPreviousToken() { return tokens.get(current - 1); }
 
     /// Returns the token most recently consumed by {@link #advance()}.
@@ -81,7 +81,7 @@ public class ParserState {
     public Token previous() { return getPreviousToken(); }
 
     /// Checks if the parser has reached the end of the token list.
-    /// @return True if the current token is the end-of-file token, false otherwise.
+    /// @return `true` if the current token is the end-of-file token, `false` otherwise.
     public boolean isAtEnd() { return getCurrentToken().getType() == Special.EOF; }
 
     /// Advances the current position and returns the token that was just consumed.
@@ -128,12 +128,12 @@ public class ParserState {
 
     /// Checks whether the current token matches the given token class without consuming it.
     /// @param type The expected token class.
-    /// @return True when the current token matches.
+    /// @return `true` when the current token matches.
     public boolean check(TokenClass type) { return checkCurrentTokenType(type); }
 
     /// Checks if the current token matches any of the specified token families.
     /// @param types The token families to checkCurrentTokenType against the current token.
-    /// @return True if the current token matches any of the specified token families, false otherwise.
+    /// @return `true` if the current token matches any of the specified token families, `false` otherwise.
     public boolean checkCurrentTokenType(TokenClass... types) {
 
         for (var type : types)
@@ -143,12 +143,12 @@ public class ParserState {
 
     /// Checks whether the current token matches any of the given token classes without consuming it.
     /// @param types The expected token classes.
-    /// @return True when the current token matches any expected token class.
+    /// @return `true` when the current token matches any expected token class.
     public boolean check(TokenClass... types) { return checkCurrentTokenType(types); }
 
     /// Consumes the current token if it matches one of the given token classes.
     /// @param types The token classes to match.
-    /// @return True when a token was consumed.
+    /// @return `true` when a token was consumed.
     public boolean match(TokenClass... types) {
 
         for (var type : types) if (check(type)) {
@@ -190,7 +190,7 @@ public class ParserState {
 
     /// Checks whether a token represents a primitive type token.
     /// @param token The token to inspect.
-    /// @return True when the token is a type token.
+    /// @return `true` when the token is a type token.
     public boolean isTypeToken(Token token) { return token instanceof TypeToken; }
 
     /// Returns the current token stream position.
@@ -202,6 +202,7 @@ public class ParserState {
     /// @param position The position to restore to.
     public void setCurrentPosition(int position) { current = position; }
 
+    /// Rejects the current token if it is an unknown token, throwing a parse exception with a diagnostic message.
     private void rejectUnknownToken() {
 
         if (getCurrentToken().getType() == Special.UNKNOWN) {
@@ -216,6 +217,9 @@ public class ParserState {
         }
     }
 
+    /// Returns a string representation of the token's lexeme for error reporting.
+    /// @param token The token to get the lexeme for.
+    /// @return The lexeme of the token, or `<unknown>` if the lexeme is not available.
     private String tokenLexeme(Token token) {
 
         if (token == null) return "<unknown>";

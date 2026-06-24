@@ -46,8 +46,10 @@ public class ClassParser extends ParserBase {
 
     private final DeclarationParser declarationParser;
 
+    /// Represents the header of a class declaration, including its name, generic parameter, and superclasses.
     private record ClassHeader(Token classToken, String className, ReturnType genericParameter, ReturnType[] superClasses) { }
 
+    /// Represents the members of a class, including fields, constructors, methods, and inner classes.
     private record ClassMembers(
         ArrayList<ClassFieldDeclaration> fields,
         ArrayList<ClassConstructorDeclaration> constructors,
@@ -55,8 +57,8 @@ public class ClassParser extends ParserBase {
         ArrayList<ClassDeclarationStatement> innerClasses
     ) {
 
+        /// Constructs a new ClassMembers instance.
         private ClassMembers() {
-
             this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         }
     }
@@ -90,6 +92,13 @@ public class ClassParser extends ParserBase {
         return classDecl;
     }
 
+    /// Parses the header of a class declaration, including its name, optional generic parameter, and optional superclasses.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classHeader → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*]
+    /// ```
+    /// @return A ClassHeader containing the parsed class name, generic parameter, and superclasses.
     private ClassHeader parseClassHeader() {
 
         var classToken = previous(); // 'class' token was consumed by caller.
@@ -101,6 +110,13 @@ public class ClassParser extends ParserBase {
         return new ClassHeader(classToken, className, genericParameter, superClasses);
     }
 
+    /// Parses an optional generic parameter for a class declaration, which is specified inside square brackets.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// genericParameter → "[" IDENTIFIER "]"
+    /// ```
+    /// @return A ReturnType representing the generic parameter, or `null` if no generic parameter is present.
     private ReturnType parseGenericParameter() {
 
         if (!match(Delimiter.LSQUARE)) return null;
@@ -114,6 +130,13 @@ public class ClassParser extends ParserBase {
         return genericParameter;
     }
 
+    /// Parses an optional list of superclasses for a class declaration, which is specified after a double colon `::` and can include multiple comma-separated class names.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// superClasses → "::" IDENTIFIER ("," IDENTIFIER)*
+    /// ```
+    /// @return An array of ReturnType representing the superclasses, or an empty array if no superclasses are specified.
     private ReturnType[] parseSuperClasses() {
 
         var superClasses = new ArrayList<ReturnType>();
@@ -124,6 +147,10 @@ public class ClassParser extends ParserBase {
         return superClasses.toArray(new ReturnType[0]);
     }
 
+    /// Parses a single superclass name for a class declaration, which is expected to be an identifier.
+    ///
+    /// @param message The error message to display if the superclass name is not found.
+    /// @return A ReturnType representing the parsed superclass.
     private ReturnType parseSuperClass(String message) {
 
         var superClassToken = consume(new IdentifierLiteral(), message);
@@ -131,6 +158,10 @@ public class ClassParser extends ParserBase {
         return new ReturnType(new NonPrimitiveType(superClassName));
     }
 
+    /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.
+    /// @param header The ClassHeader containing the class name, generic parameter, and superclasses.
+    /// @param classAccessModifier The access modifier of the class (e.g., public, private).
+    /// @return A ClassDeclarationStatement representing the class declaration with empty members.
     private ClassDeclarationStatement createClassDeclaration(ClassHeader header, AccessModifier classAccessModifier) {
 
         return new ClassDeclarationStatement(
@@ -147,12 +178,19 @@ public class ClassParser extends ParserBase {
         );
     }
 
+    /// Parses the body of a class declaration, which includes its fields, methods, constructors, and inner classes.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classMembers → (classField | classMethod | constructor | innerClass)*
+    /// ```
+    /// @param header The ClassHeader containing the class name, generic parameter, and superclasses.
+    /// @return A ClassMembers object containing the parsed fields, methods, constructors, and inner classes of the class.
     private ClassMembers parseClassBody(ClassHeader header) {
 
         consume(Delimiter.LBRACE, "Expect '{' before class body");
 
         var members = new ClassMembers();
-
         while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
 
             parseClassMember(
@@ -171,6 +209,9 @@ public class ClassParser extends ParserBase {
         return members;
     }
 
+    /// Populates the given ClassDeclarationStatement with the parsed members (fields, methods, constructors, and inner classes).
+    /// @param classDecl The ClassDeclarationStatement to populate.
+    /// @param members The ClassMembers containing the parsed fields, methods, constructors, and inner classes to add to the class declaration.
     private void populateClassDeclaration(ClassDeclarationStatement classDecl, ClassMembers members) {
 
         classDecl.setMethods(members.methods().toArray(new ClassMethodDeclaration[0]));
@@ -179,12 +220,17 @@ public class ClassParser extends ParserBase {
         classDecl.setInnerClasses(members.innerClasses().toArray(new ClassDeclarationStatement[0]));
     }
 
-    private void parseClassMember(
-        String className,
-        int classLine,
-        int classColumn,
-        ClassMembers members
-    ) {
+    /// Parses a single class member, which can be a field, method, constructor, or inner class, and adds it to the provided ClassMembers object.
+    ///
+    /// Grammar rule:
+    /// ```
+    /// classMember → accessModifier (classField | classMethod | constructor | innerClass)
+    /// ```
+    /// @param className The name of the class being parsed, used to identify constructors.
+    /// @param classLine The line number where the class declaration starts, used for error reporting.
+    /// @param classColumn The column number where the class declaration starts, used for error reporting.
+    /// @param members The ClassMembers object to which the parsed member will be added.
+    private void parseClassMember(String className, int classLine, int classColumn, ClassMembers members) {
 
         var memberAccessModifier = parseAccessModifier();
         if (memberAccessModifier == null) throw parseError("Class member declaration requires an access modifier", peek());
@@ -222,8 +268,8 @@ public class ClassParser extends ParserBase {
             advance();
             return;
         }
-        if (isClassMemberRecoveryBoundary(peek())) return;
 
+        if (isClassMemberRecoveryBoundary(peek())) return;
         var braceDepth = 0;
         while (isNotAtEnd()) {
 
@@ -237,14 +283,14 @@ public class ClassParser extends ParserBase {
         }
     }
 
+    /// Determines if the given token is a boundary for recovering from a class member parsing error.
+    /// @param token The token to check.
+    /// @return `true` if the token is an access modifier (public, private, or protected), indicating a boundary for class member recovery; otherwise, `false`.
     private boolean isClassMemberRecoveryBoundary(Token token) {
 
         if (token == null) return false;
-
         var type = token.getType();
-        return type == AccessModifier.PUBLIC ||
-               type == AccessModifier.PRIVATE ||
-               type == AccessModifier.PROTECTED;
+        return type instanceof AccessModifier;
     }
 
     /// Parses a class field declaration, which may optionally include an initializer.

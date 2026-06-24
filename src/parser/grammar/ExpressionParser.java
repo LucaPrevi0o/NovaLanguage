@@ -57,6 +57,7 @@ public class ExpressionParser extends ParserBase {
     // ─── Precedence levels ────────────────────────────────────────────────────
 
     /// Parses an assignment expression, which can be a simple assignment or a compound assignment.
+    ///
     /// Grammar rule: {@code assignment → ternary (("=" | "+=" | "-=" | "*=" | "/=") assignment)?}
     /// @return An ExpressionNode representing the assignment expression, which may be a simple assignment or a compound assignment.
     private ExpressionNode assignment() {
@@ -75,6 +76,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses a ternary expression: {@code condition ? thenExpr : elseExpr}.
+    ///
     /// Grammar rule: {@code ternary → logicOr ("?" expression ":" expression)?}
     /// @return An ExpressionNode representing the ternary expression if the `?` operator is present, or the result of `logicOr()` if not.
     private ExpressionNode ternary() {
@@ -92,6 +94,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses logical OR expressions, which have the lowest precedence among binary operators.
+    ///
     /// Grammar rule: {@code logicOr → logicAnd ("||" logicAnd)*}
     /// @return An ExpressionNode representing the logical OR expression, which may consist of multiple `||` operations.
     private ExpressionNode logicOr() {
@@ -107,6 +110,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses logical AND expressions, which have higher precedence than logical OR.
+    ///
     /// Grammar rule: {@code logicAnd → equality ("&&" equality)*}
     /// @return An ExpressionNode representing the logical AND expression, which may consist of multiple `&&` operations.
     private ExpressionNode logicAnd() {
@@ -122,6 +126,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses equality expressions, which have higher precedence than logical AND.
+    ///
     /// Grammar rule: {@code equality → comparison (("==" | "!=") comparison)*}
     /// @return An ExpressionNode representing the equality expression, which may consist of multiple `==` or `!=` operations.
     private ExpressionNode equality() {
@@ -137,6 +142,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses comparison expressions, which have higher precedence than equality.
+    ///
     /// Grammar rule: {@code comparison → term (("<" | ">" | "<=" | ">=") term)*}
     /// @return An ExpressionNode representing the comparison expression, which may consist of multiple `<`, `>`, `<=`, or `>=` operations.
     private ExpressionNode comparison() {
@@ -152,6 +158,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses addition and subtraction expressions, which have higher precedence than comparison.
+    ///
     /// Grammar rule: {@code term → factor (("+" | "-") factor)*}
     /// @return An ExpressionNode representing the addition/subtraction expression, which may consist of multiple `+` or `-` operations.
     private ExpressionNode term() {
@@ -167,6 +174,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses multiplication, division, and modulo expressions, which have higher precedence than addition and subtraction.
+    ///
     /// Grammar rule: {@code factor → unary (("*" | "/" | "%") unary)*}
     /// @return An ExpressionNode representing the multiplication/division/modulo expression, which may consist of multiple `*`, `/`, or `%` operations.
     private ExpressionNode factor() {
@@ -182,6 +190,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses unary expressions, which have higher precedence than multiplication/division/modulo.
+    ///
     /// Grammar rule: {@code unary → ("!" | "-" | "++" | "--") unary | call}
     /// @return An ExpressionNode representing the unary expression if a unary operator is present, or the result of `call()` if not.
     private ExpressionNode unary() {
@@ -196,6 +205,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses call expressions, which include function calls, member access, array access, and postfix increment/decrement.
+    ///
     /// Grammar rule: {@code call → primary (postfixOp)*}
     /// > Note: This method handles the chaining of member access, array access, and function calls, as well as postfix increment/decrement operators.
     /// @return An ExpressionNode representing the call expression, which may include nested member access, array access, function calls, and postfix operators.
@@ -225,6 +235,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Finishes parsing a function call after the initial `(` has been consumed.
+    ///
     /// Grammar rule: {@code call → primary "(" arguments? ")"}
     /// @param callee The expression representing the function being called (e.g., an identifier or a member access).
     /// @return A CallExpression node representing the function call, including the callee and the list of argument expressions.
@@ -241,6 +252,7 @@ public class ExpressionParser extends ParserBase {
     }
 
     /// Parses primary expressions, which are the most basic building blocks of expressions.
+    ///
     /// Grammar rule: {@code primary → NUMBER | STRING | CHAR | "true" | "false" | "null" | IDENTIFIER | "new" CLASSNAME "(" arguments? ")" | "(" expression ")"}
     /// @return An ExpressionNode representing the primary expression, which may be a literal, an identifier, an object creation expression, or a parenthesized expression.
     private ExpressionNode primary() {

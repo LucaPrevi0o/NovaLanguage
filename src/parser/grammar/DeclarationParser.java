@@ -70,7 +70,7 @@ import java.util.ArrayList;
 /// @see ExpressionParser
 public class DeclarationParser extends ParserBase {
 
-    private ExpressionParser expressionParser;
+    private final ExpressionParser expressionParser;
     private final ClassParser classParser;
 
     /// Constructs a new DeclarationParser with the given parser state and type registry.
@@ -87,7 +87,7 @@ public class DeclarationParser extends ParserBase {
     ///
     /// Grammar rule:
     /// `arrayDimensions → "[" expression? "]" (arrayDimensions)?`
-    /// @return An array of ExpressionNode representing the sizes of each array dimension, or null for unspecified dimensions.
+    /// @return An array of ExpressionNode representing the sizes of each array dimension, or `null` for unspecified dimensions.
     private ExpressionNode[] parseArrayDimensions() {
 
         var arraySizes = new ArrayList<ExpressionNode>();
@@ -105,7 +105,7 @@ public class DeclarationParser extends ParserBase {
 
     /// Checks if a token is syntactically a valid type token (either a primitive type or an identifier type name).
     /// @param token The token to checkCurrentTokenType.
-    /// @return True if the token is a syntactic type token, false otherwise.
+    /// @return `true` if the token is a syntactic type token, `false` otherwise.
     public boolean isValidType(Token token) { return (token instanceof TypeToken) || isTypeName(token); }
 
     /// Parses a type, which can be either a primitive type or a class name, along with any array dimensions.
@@ -139,7 +139,7 @@ public class DeclarationParser extends ParserBase {
 
     /// Checks if a token is syntactically a type name.
     /// @param token The token to checkCurrentTokenType.
-    /// @return True if the token is an identifier literal, false otherwise.
+    /// @return `true` if the token is an identifier literal, `false` otherwise.
     private boolean isTypeName(Token token) {
 
         if (!(token instanceof LiteralToken)) return false;
@@ -202,22 +202,19 @@ public class DeclarationParser extends ParserBase {
         return parseStatement();
     }
 
+    /// Checks if the current token sequence starts a typed declaration (function or variable).
+    /// This is used to disambiguate between a statement and a declaration that starts with a type.
+    /// @return `true` if the current token sequence starts a typed declaration, `false` otherwise.
     private boolean startsTypedDeclaration() {
 
         if (!isValidType(peek())) return false;
-
         var savedCurrent = state.getCurrentPosition();
         try {
 
             parseType();
             return check(new IdentifierLiteral());
-        } catch (ParseException e) {
-
-            return false;
-        } finally {
-
-            state.setCurrentPosition(savedCurrent);
-        }
+        } catch (ParseException e) { return false; }
+        finally { state.setCurrentPosition(savedCurrent); }
     }
 
     /// Parses a function declaration, which consists of a return type, a name, a parameter list, and a body enclosed in braces.
@@ -399,7 +396,7 @@ public class DeclarationParser extends ParserBase {
     ///
     /// Grammar rule:
     /// `forStmt → "for" "(" (varDecl | exprStmt | ";") expression? ";" expression? ")" statement`
-    /// @param forToken The "for" keyword token, used for line/column in the resulting node.
+    /// @param forToken The `for` keyword token, used for line/column in the resulting node.
     /// @return A ForStatement.
     private ForStatement parseForStatement(Token forToken) {
 
@@ -443,7 +440,7 @@ public class DeclarationParser extends ParserBase {
     /// Grammar rule:
     /// ```
     /// switchStmt → "switch" "(" expression ")" "{" switchCase* "}"
-    /// switchCase → "case" expression "->" statement | "default" "->" statement
+    /// switchCase → "case" expression ":" statement | "default" ":" statement
     /// ```
     private SwitchStatement parseSwitchStatement() {
 
@@ -501,7 +498,6 @@ public class DeclarationParser extends ParserBase {
     public BlockStatement parseBlock() {
 
         var lbrace = previous();
-
         var statements = parseBlockStatements();
         return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
     }
@@ -538,6 +534,10 @@ public class DeclarationParser extends ParserBase {
         }
     }
 
+    /// Checks if a token is a boundary for block-level statement recovery.
+    /// This includes tokens that can start a new statement or declaration, such as keywords and delimiters.
+    /// @param token The token to check.
+    /// @return `true` if the token is a block recovery boundary, `false` otherwise.
     private boolean isBlockRecoveryBoundary(Token token) {
 
         if (token == null) return false;
