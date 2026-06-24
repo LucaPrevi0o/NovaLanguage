@@ -23,6 +23,9 @@ import java.util.List;
 /// Builds semantic lexical scopes from a parsed AST without performing validation.
 public final class SemanticScopeBuilder {
 
+    /// Builds a semantic scope tree from the given list of statements.
+    /// @param statements The list of statements to build the scope tree from.
+    /// @return The root semantic scope representing the global scope.
     public SemanticScope build(List<StatementNode> statements) {
 
         var root = new SemanticScope("global", null, null);
@@ -31,89 +34,57 @@ public final class SemanticScopeBuilder {
         return root;
     }
 
+    /// Collects declarations from the given statement and its children, adding them to the provided scope.
+    /// @param statement The statement to collect declarations from.
+    /// @param scope The semantic scope to add declarations to.
     private void collectStatement(StatementNode statement, SemanticScope scope) {
 
-        if (statement == null) return;
+        switch (statement) {
 
-        if (statement instanceof ClassDeclarationStatement classDeclaration) {
+            case ClassDeclarationStatement classDeclaration -> collectClass(classDeclaration, scope);
+            case ClassMethodDeclaration methodDeclaration -> collectFunction(methodDeclaration, scope, DeclarationKind.METHOD, "method " + methodDeclaration.getName());
+            case FunctionDeclarationStatement functionDeclaration -> collectFunction(functionDeclaration, scope, DeclarationKind.FUNCTION, "function " + functionDeclaration.getName());
+            case ClassFieldDeclaration fieldDeclaration -> declare(scope, DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration);
+            case VariableDeclarationStatement variableDeclaration -> declare(scope, DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration);
+            case BlockStatement block -> collectBlock(block, scope);
+            case IfStatement ifStatement -> {
 
-            collectClass(classDeclaration, scope);
-            return;
+                collectBranch(ifStatement.getThenBlock(), scope, "if-then", ifStatement);
+                collectBranch(ifStatement.getElseBlock(), scope, "if-else", ifStatement);
+            }
+            case WhileStatement whileStatement -> collectBranch(whileStatement.getBody(), scope, "while", whileStatement);
+            case ForStatement forStatement -> {
+
+                var forScope = scope.createChild("for", forStatement);
+                collectStatement(forStatement.getInitialization(), forScope);
+                collectBranch(forStatement.getBody(), forScope, "for-body", forStatement);
+            }
+            case ForEachStatement forEachStatement -> {
+
+                var forEachScope = scope.createChild("for-each", forEachStatement);
+                declare(
+                        forEachScope,
+                        DeclarationKind.FOREACH_VARIABLE,
+                        forEachStatement.getElementName(),
+                        forEachStatement.getElementType(),
+                        forEachStatement
+                );
+                collectBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
+            }
+            case SwitchStatement switchStatement -> {
+
+                var switchScope = scope.createChild("switch", switchStatement);
+                for (var switchCase : switchStatement.getCases())
+                    collectBranch(switchCase.getBody(), switchScope, "switch-case", switchCase);
+            }
+            case null, default -> {}
         }
 
-        if (statement instanceof ClassMethodDeclaration methodDeclaration) {
-
-            collectFunction(methodDeclaration, scope, DeclarationKind.METHOD, "method " + methodDeclaration.getName());
-            return;
-        }
-
-        if (statement instanceof FunctionDeclarationStatement functionDeclaration) {
-
-            collectFunction(functionDeclaration, scope, DeclarationKind.FUNCTION, "function " + functionDeclaration.getName());
-            return;
-        }
-
-        if (statement instanceof ClassFieldDeclaration fieldDeclaration) {
-
-            declare(scope, DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration);
-            return;
-        }
-
-        if (statement instanceof VariableDeclarationStatement variableDeclaration) {
-
-            declare(scope, DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration);
-            return;
-        }
-
-        if (statement instanceof BlockStatement block) {
-
-            collectBlock(block, scope);
-            return;
-        }
-
-        if (statement instanceof IfStatement ifStatement) {
-
-            collectBranch(ifStatement.getThenBlock(), scope, "if-then", ifStatement);
-            collectBranch(ifStatement.getElseBlock(), scope, "if-else", ifStatement);
-            return;
-        }
-
-        if (statement instanceof WhileStatement whileStatement) {
-
-            collectBranch(whileStatement.getBody(), scope, "while", whileStatement);
-            return;
-        }
-
-        if (statement instanceof ForStatement forStatement) {
-
-            var forScope = scope.createChild("for", forStatement);
-            collectStatement(forStatement.getInitialization(), forScope);
-            collectBranch(forStatement.getBody(), forScope, "for-body", forStatement);
-            return;
-        }
-
-        if (statement instanceof ForEachStatement forEachStatement) {
-
-            var forEachScope = scope.createChild("for-each", forEachStatement);
-            declare(
-                forEachScope,
-                DeclarationKind.FOREACH_VARIABLE,
-                forEachStatement.getElementName(),
-                forEachStatement.getElementType(),
-                forEachStatement
-            );
-            collectBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
-            return;
-        }
-
-        if (statement instanceof SwitchStatement switchStatement) {
-
-            var switchScope = scope.createChild("switch", switchStatement);
-            for (var switchCase : switchStatement.getCases())
-                collectBranch(switchCase.getBody(), switchScope, "switch-case", switchCase);
-        }
     }
 
+    /// Collects declarations from the given class declaration and its members, adding them to the provided scope.
+    /// @param classDeclaration The class declaration to collect declarations from.
+    /// @param scope The semantic scope to add declarations to.
     private void collectClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
         declare(scope, DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getReturnType(), classDeclaration);
@@ -125,12 +96,12 @@ public final class SemanticScopeBuilder {
         for (var innerClass : classDeclaration.getInnerClasses()) collectClass(innerClass, classScope);
     }
 
-    private void collectFunction(
-        FunctionDeclarationStatement functionDeclaration,
-        SemanticScope scope,
-        DeclarationKind kind,
-        String scopeName
-    ) {
+    /// Collects declarations from the given function declaration and its body, adding them to the provided scope.
+    /// @param functionDeclaration The function declaration to collect declarations from.
+    /// @param scope The semantic scope to add declarations to.
+    /// @param kind The kind of the function declaration (e.g., `METHOD` or `FUNCTION`).
+    /// @param scopeName The name of the scope to create for the function body.
+    private void collectFunction(FunctionDeclarationStatement functionDeclaration, SemanticScope scope, DeclarationKind kind, String scopeName) {
 
         declare(scope, kind, functionDeclaration.getName(), functionDeclaration.getDeclaredType(), functionDeclaration);
         var functionScope = scope.createChild(scopeName, functionDeclaration);
@@ -139,11 +110,11 @@ public final class SemanticScopeBuilder {
         collectFunctionBody(functionDeclaration.getBody(), functionScope);
     }
 
-    private void collectConstructor(
-        ClassConstructorDeclaration constructorDeclaration,
-        ClassDeclarationStatement classDeclaration,
-        SemanticScope classScope
-    ) {
+    /// Collects declarations from the given constructor declaration and its body, adding them to the provided scope.
+    /// @param constructorDeclaration The constructor declaration to collect declarations from.
+    /// @param classDeclaration The class declaration that owns the constructor.
+    /// @param classScope The semantic scope of the class that owns the constructor.
+    private void collectConstructor(ClassConstructorDeclaration constructorDeclaration, ClassDeclarationStatement classDeclaration, SemanticScope classScope) {
 
         declare(classScope, DeclarationKind.CONSTRUCTOR, classDeclaration.getName(), null, constructorDeclaration);
         var constructorScope = classScope.createChild("constructor " + classDeclaration.getName(), constructorDeclaration);
@@ -152,6 +123,9 @@ public final class SemanticScopeBuilder {
         collectFunctionBody(constructorDeclaration.getBody(), constructorScope);
     }
 
+    /// Collects declarations from the body of a function or constructor, adding them to the provided scope.
+    /// @param body The body of the function or constructor to collect declarations from.
+    /// @param functionScope The semantic scope of the function or constructor body.
     private void collectFunctionBody(StatementNode body, SemanticScope functionScope) {
 
         if (body instanceof BlockStatement block)
@@ -159,12 +133,20 @@ public final class SemanticScopeBuilder {
         else collectStatement(body, functionScope);
     }
 
+    /// Collects declarations from the given block statement and its statements, adding them to the provided scope.
+    /// @param block The block statement to collect declarations from.
+    /// @param scope The semantic scope to add declarations to.
     private void collectBlock(BlockStatement block, SemanticScope scope) {
 
         var blockScope = scope.createChild("block", block);
         for (var statement : block.getStatements()) collectStatement(statement, blockScope);
     }
 
+    /// Collects declarations from the given statement and its children, adding them to a new child scope of the provided scope.
+    /// @param statement The statement to collect declarations from.
+    /// @param scope The semantic scope to add declarations to.
+    /// @param scopeName The name of the new child scope to create for the statement.
+    /// @param owner The AST node that owns the statement, or `null` if the statement has no owner.
     private void collectBranch(StatementNode statement, SemanticScope scope, String scopeName, AstNode owner) {
 
         if (statement == null) return;
@@ -172,16 +154,15 @@ public final class SemanticScopeBuilder {
         else collectStatement(statement, scope.createChild(scopeName, owner));
     }
 
-    private SemanticDeclaration declare(
-        SemanticScope scope,
-        DeclarationKind kind,
-        String name,
-        ReturnType declaredType,
-        AstNode node
-    ) {
+    /// Declares a new semantic declaration and adds it to the provided scope.
+    /// @param scope The semantic scope to add the declaration to.
+    /// @param kind The kind of the declaration (e.g., `FUNCTION`, `VARIABLE`, `CLASS`, etc.).
+    /// @param name The name of the declaration.
+    /// @param declaredType The return type of the declaration, or `null` if the declaration does not have a return type.
+    /// @param node The AST node that represents the declaration.
+    private void declare(SemanticScope scope, DeclarationKind kind, String name, ReturnType declaredType, AstNode node) {
 
         var declaration = new SemanticDeclaration(kind, name, declaredType, node, scope.getOwner());
         scope.declare(declaration);
-        return declaration;
     }
 }
