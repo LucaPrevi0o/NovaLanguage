@@ -33,7 +33,7 @@ import java.util.ArrayList;
 ///
 /// Declarations:
 /// ```
-/// declaration     → accessModifier? classDecl | functionDecl | varDecl | statement
+/// declaration     → accessModifier classDecl | functionDecl | varDecl | statement
 ///
 /// functionDecl    → type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
 /// parameters      → type IDENTIFIER ("," type IDENTIFIER)*
@@ -176,7 +176,7 @@ public class DeclarationParser extends ParserBase {
     /// a variable declaration, or a statement.
     ///
     /// Grammar rule:
-    /// `declaration → accessModifier? classDecl | functionDecl | varDecl | statement`
+    /// `declaration → accessModifier classDecl | functionDecl | varDecl | statement`
     /// @return A StatementNode representing the parsed declaration or statement.
     public StatementNode parseDeclaration() {
 

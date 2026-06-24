@@ -107,6 +107,55 @@ public class ClassParserTest {
                   "}"));
     }
 
+    @Test
+    void testClassFieldRequiresAccessModifier() {
+
+        var tokens = new Lexer(
+            "public class MissingAccess { " +
+            "  int hidden; " +
+            "  public int visible; " +
+            "} " +
+            "int top;"
+        ).tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the field without an access modifier should produce an error");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered class body");
+
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, parsed.getFirst());
+        assertEquals(1, cls.getFields().length, "The valid field after the malformed member should be retained");
+        assertEquals("visible", cls.getFields()[0].getName());
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
+    }
+
+    @Test
+    void testClassMethodWithoutAccessModifierRecoverySkipsMethodBody() {
+
+        var tokens = new Lexer(
+            "public class MissingAccess { " +
+            "  int hidden() { return 0; } " +
+            "  public int visible; " +
+            "} " +
+            "int top;"
+        ).tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the method without an access modifier should produce an error");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered class body");
+
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, parsed.getFirst());
+        assertEquals(0, cls.getMethods().length, "The malformed method should not be retained");
+        assertEquals(1, cls.getFields().length, "The valid field after the malformed method should be retained");
+        assertEquals("visible", cls.getFields()[0].getName());
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
+    }
+
     // ─── Class AST consistency ────────────────────────────────────────────────
 
     @Test

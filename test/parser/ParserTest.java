@@ -46,7 +46,7 @@ public class ParserTest {
     @Test
     void testClassDeclarationWithMembers() {
 
-        var source = "public class MyClass { int field; int method() { return 0; } }";
+        var source = "public class MyClass { public int field; public int method() { return 0; } }";
         var lexer = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);

@@ -85,10 +85,12 @@ Completed:
 - [x] Add regression tests for class-member token advancement and recovery.
 - [x] Review recovery loops that inspected tokens with `check(...)` before local recovery catches.
 - [x] Add block-level unknown-token recovery that preserves valid statements before and after the error.
+- [x] Review class parsing against the current language design and parser tests.
+- [x] Require explicit access modifiers on class fields, methods, constructors, and inner classes.
+- [x] Add class-member recovery coverage for missing access modifiers.
 
 Remaining:
 
-- [ ] Review class parsing against the previous working shape and current README grammar.
 - [ ] Keep grammar methods small enough that cursor movement is obvious from local code.
 
 Exit criteria:
@@ -304,6 +306,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Review class parsing against the previous working shape and current README grammar.
+1. Keep grammar methods small enough that cursor movement is obvious from local code.
 2. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
 3. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.

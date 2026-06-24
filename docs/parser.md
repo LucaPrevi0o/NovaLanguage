@@ -105,6 +105,7 @@ Class parsing currently supports Nova class syntax that includes fields, methods
 
 Important boundary:
 
+- every class member must declare `public`, `private`, or `protected`;
 - the parser may recognize superclass syntax;
 - semantic analysis should decide whether a superclass actually exists;
 - the parser may recognize generic type syntax;

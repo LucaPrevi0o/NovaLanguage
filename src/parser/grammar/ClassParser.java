@@ -4,7 +4,6 @@ import error.diagnostic.ParseException;
 import lexer.Token;
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
-import lexer.token.type.LiteralToken;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
@@ -25,10 +24,10 @@ import java.util.ArrayList;
 /// classDecl      → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*] "{" classMembers "}"
 /// classMembers   → (classField | classMethod | constructor | innerClass)*
 ///
-/// classField     → accessModifier? type IDENTIFIER ("=" expression)? ";"
-/// classMethod    → accessModifier? type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
-/// constructor    → accessModifier? CLASSNAME "(" parameters? ")" "{" declaration* "}"
-/// innerClass     → accessModifier? classDecl
+/// classField     → accessModifier type IDENTIFIER ("=" expression)? ";"
+/// classMethod    → accessModifier type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
+/// constructor    → accessModifier CLASSNAME "(" parameters? ")" "{" declaration* "}"
+/// innerClass     → accessModifier classDecl
 ///
 /// accessModifier → "public" | "private" | "protected"
 /// parameters     → type IDENTIFIER ("," type IDENTIFIER)*
@@ -39,7 +38,7 @@ import java.util.ArrayList;
 /// - **Superclasses**: Multiple inheritance supported using double colon `::` followed by comma-separated class names
 /// - **Inner Classes**: Nested class declarations within the class body
 /// - **Members**: Mix of fields (with optional initializers), methods, and constructors
-/// - **Access Control**: Public, private, and protected modifiers for all class members
+/// - **Access Control**: Public, private, and protected modifiers are required for all class members
 ///
 /// @see DeclarationParser
 /// @see ExpressionParser
@@ -138,7 +137,7 @@ public class ClassParser extends ParserBase {
         } catch (ParseException e) {
 
             state.report(e);
-            synchronizeClassMember(className);
+            synchronizeClassMember();
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after class body");
@@ -162,6 +161,7 @@ public class ClassParser extends ParserBase {
     ) {
 
         var memberAccessModifier = parseAccessModifier();
+        if (memberAccessModifier == null) throw parseError("Class member declaration requires an access modifier", peek());
 
         if (match(Keyword.CLASS)) {
 
@@ -188,7 +188,7 @@ public class ClassParser extends ParserBase {
     }
 
     /// Synchronizes after a class-body member error without escaping the current class body.
-    private void synchronizeClassMember(String className) {
+    private void synchronizeClassMember() {
 
         if (!isNotAtEnd() || currentTokenIs(Delimiter.RBRACE)) return;
         if (currentTokenIs(Delimiter.SEMICOLON)) {
@@ -196,42 +196,36 @@ public class ClassParser extends ParserBase {
             advance();
             return;
         }
-        if (isClassMemberRecoveryBoundary(peek(), className)) return;
+        if (isClassMemberRecoveryBoundary(peek())) return;
 
-        advance();  // skip the offending token
-        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) {
+        var braceDepth = 0;
+        while (isNotAtEnd()) {
 
-            if (previous().getType() == Delimiter.SEMICOLON) return;
-            if (isClassMemberRecoveryBoundary(peek(), className)) return;
-            advance();
+            if (braceDepth == 0 && currentTokenIs(Delimiter.RBRACE)) return;
+            if (braceDepth == 0 && isClassMemberRecoveryBoundary(peek())) return;
+
+            var consumedType = advance().getType();
+            if (consumedType == Delimiter.LBRACE) braceDepth++;
+            else if (consumedType == Delimiter.RBRACE && braceDepth > 0) braceDepth--;
+            else if (consumedType == Delimiter.SEMICOLON && braceDepth == 0) return;
         }
     }
 
-    private boolean isClassMemberRecoveryBoundary(Token token, String className) {
+    private boolean isClassMemberRecoveryBoundary(Token token) {
 
         if (token == null) return false;
 
         var type = token.getType();
-        return type == Keyword.CLASS ||
-               type == AccessModifier.PUBLIC ||
+        return type == AccessModifier.PUBLIC ||
                type == AccessModifier.PRIVATE ||
-               type == AccessModifier.PROTECTED ||
-               declarationParser.isValidType(token) ||
-               isConstructorName(token, className);
-    }
-
-    private boolean isConstructorName(Token token, String className) {
-
-        return token instanceof LiteralToken &&
-               token.getType() instanceof IdentifierLiteral &&
-               className.equals(getLiteralValue(token));
+               type == AccessModifier.PROTECTED;
     }
 
     /// Parses a class field declaration, which may optionally include an initializer.
     ///
     /// Grammar rule:
     /// ```
-    /// classField → accessModifier? type IDENTIFIER ("=" expression)? ";"
+    /// classField → accessModifier type IDENTIFIER ("=" expression)? ";"
     /// ```
     /// @param type The return type of the field.
     /// @param name The name of the field.
@@ -252,7 +246,7 @@ public class ClassParser extends ParserBase {
     ///
     /// Grammar rule:
     /// ```
-    /// classMethod → accessModifier? type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
+    /// classMethod → accessModifier type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
     /// ```
     /// @param returnType The return type of the method.
     /// @param name The name of the method.
@@ -278,7 +272,7 @@ public class ClassParser extends ParserBase {
     ///
     /// Grammar rule:
     /// ```
-    /// constructor → accessModifier? CLASSNAME "(" parameters? ")" "{" declaration* "}"
+    /// constructor → accessModifier CLASSNAME "(" parameters? ")" "{" declaration* "}"
     /// ```
     /// @param line The line number where the constructor declaration appears.
     /// @param column The column number where the constructor declaration starts.
