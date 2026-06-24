@@ -1,13 +1,23 @@
-/**
- * Lexical-analysis entry points for the Nova compiler front end.
- *
- * <p>This package contains the scanner components that transform raw Nova source text into
- * a stream of {@link lexer.Token} instances. The lexer is responsible for recognizing
- * language-level tokens, preserving source-position information, and reporting lexical
- * diagnostics for malformed input where recovery is possible.</p>
- *
- * <p>The lexer should remain independent from parser, AST, and semantic-analysis details.
- * Its output is consumed by the parser, but it should not decide whether names, types,
- * declarations, or expressions are semantically valid.</p>
- */
+/// # Lexer
+///
+/// Lexical-analysis entry points for the Nova compiler front end.
+///
+/// This package owns the first transformation in the compiler pipeline:
+///
+/// ```text
+/// source text -> tokens + lexer diagnostics
+/// ```
+///
+/// ## Responsibilities
+///
+/// - Scan Nova source text character by character.
+/// - Recognize keywords, identifiers, literals, operators, delimiters, and special tokens.
+/// - Preserve source-position information for later diagnostics.
+/// - Recover from malformed input when a useful token stream can still be produced.
+/// - Report lexical diagnostics without depending on parser or semantic state.
+///
+/// ## Layer boundary
+///
+/// The lexer should not decide whether a name exists, whether a type is valid, or whether an
+/// expression makes sense. Those are parser and semantic-analysis responsibilities.
 package lexer;
