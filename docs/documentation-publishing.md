@@ -102,13 +102,53 @@ The `target/` directory is already ignored.
 
 ## GitHub Pages prerequisite
 
-In the repository settings, configure GitHub Pages to deploy from GitHub Actions.
+The repository must have GitHub Pages enabled and configured to deploy from GitHub Actions.
+
+There are two supported setup paths.
+
+### Option 1 - Enable Pages manually
+
+Use the repository settings:
+
+1. Open the repository on GitHub.
+2. Go to Settings.
+3. Go to Pages.
+4. Set the publishing source to GitHub Actions.
+5. Re-run the `Publish documentation` workflow.
+
+This is the simplest setup. The workflow can then use the default `GITHUB_TOKEN` with `pages: write` and `id-token: write` permissions.
+
+### Option 2 - Let the workflow enable Pages
+
+Create a repository secret named:
+
+```text
+PAGES_DEPLOY_TOKEN
+```
+
+Use a token that is allowed to enable/configure GitHub Pages for the repository.
+
+When this secret exists, the workflow runs `actions/configure-pages` with:
+
+```yaml
+enablement: true
+```
+
+Automatic enablement requires a token other than `GITHUB_TOKEN`. Without that extra token, GitHub returns a `Not Found` error if the Pages site has not been created yet.
+
+## Pages actions used
 
 The workflow uses:
 
 - `actions/configure-pages`
 - `actions/upload-pages-artifact`
 - `actions/deploy-pages`
+
+The deploy job requires:
+
+- `pages: write`
+- `id-token: write`
+- an environment named `github-pages`
 
 ## Trigger behavior
 
