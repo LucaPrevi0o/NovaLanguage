@@ -7,6 +7,7 @@ import lexer.token.family.GenericParameterType;
 import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.PrimitiveType;
 import parser.ast.AstNode;
+import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.type.ArrayTypeSyntax;
 import parser.ast.nodes.type.GenericTypeSyntax;
 import parser.ast.nodes.type.NamedTypeSyntax;
@@ -18,6 +19,9 @@ import semantic.scope.SemanticScope;
 import java.util.List;
 
 /// Resolves parsed type syntax and temporary ReturnType adapters into semantic type symbols.
+///
+/// Parser-created ReturnType adapters are source-syntax-first: when a ReturnType carries
+/// TypeSyntax, the syntax is resolved before legacy token-class metadata is considered.
 public final class TypeResolver {
 
     /// Resolves a ReturnType adapter as a normal declared type.
@@ -39,6 +43,7 @@ public final class TypeResolver {
     public TypeResolution resolve(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
 
         if (type == null) return new TypeResolution(null, List.of());
+        if (type.getSyntax() != null) return resolve(type.getSyntax(), owner, scope, unresolvedLabel);
 
         var baseResolution = resolveReturnTypeBase(type, owner, scope, unresolvedLabel);
         var symbol = baseResolution.type();
@@ -77,7 +82,7 @@ public final class TypeResolver {
             }
             case GenericTypeSyntax genericType -> resolved(new GenericParameterSymbol(genericType.getName()));
             case NamedTypeSyntax namedType when namedType.isPrimitive() -> resolved(new PrimitiveTypeSymbol(namedType.getName()));
-            case NamedTypeSyntax namedType -> resolveClassName(namedType.getName(), owner, scope, unresolvedLabel);
+            case NamedTypeSyntax namedType -> resolveNamedType(namedType, owner, scope, unresolvedLabel);
             case null -> new TypeResolution(null, List.of());
             default -> throw new IllegalArgumentException("Unsupported type syntax: " + syntax.getClass().getName());
         };
@@ -112,8 +117,40 @@ public final class TypeResolver {
         if (tokenClass instanceof GenericParameterType genericParameter) return resolved(new GenericParameterSymbol(genericParameter.typeName()));
         if (tokenClass instanceof NonPrimitiveType(String typeName)) return resolveClassName(typeName, owner, scope, unresolvedLabel);
 
-        if (type.getSyntax() != null) return resolve(type.getSyntax(), owner, scope, unresolvedLabel);
         return resolved(new UnknownTypeSymbol("<unknown>"));
+    }
+
+    private TypeResolution resolveNamedType(NamedTypeSyntax namedType, AstNode owner, SemanticScope scope, String unresolvedLabel) {
+
+        var typeName = namedType.getName();
+        if (isVisibleGenericParameter(scope, typeName))
+            return resolved(new GenericParameterSymbol(typeName));
+        return resolveClassName(typeName, owner, scope, unresolvedLabel);
+    }
+
+    private boolean isVisibleGenericParameter(SemanticScope scope, String name) {
+
+        var current = scope;
+        while (current != null) {
+
+            if (current.getOwner() instanceof ClassDeclarationStatement classDeclaration &&
+                genericParameterName(classDeclaration).equals(name))
+                return true;
+            current = current.getParent();
+        }
+        return false;
+    }
+
+    private String genericParameterName(ClassDeclarationStatement classDeclaration) {
+
+        var genericParameter = classDeclaration.getGenericClassParameter();
+        if (genericParameter == null) return "";
+        if (genericParameter.getSyntax() != null) return genericParameter.getSyntax().getName();
+
+        var tokenClass = genericParameter.getTokenClass();
+        if (tokenClass instanceof GenericParameterType genericParameterType)
+            return genericParameterType.typeName();
+        return tokenClass != null ? tokenClass.token() : "";
     }
 
     private SemanticDeclaration visibleClass(SemanticScope scope, String name) {

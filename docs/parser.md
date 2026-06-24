@@ -111,7 +111,7 @@ Important boundary:
 - the parser may recognize generic type syntax;
 - a future type model should decide whether generic parameters are valid and visible.
 
-Declaration and class parsing now build source-level type syntax nodes before adapting them to the existing `ReturnType` representation. The parser still has a temporary parse-session `TypeRegistry` in this adapter path so declared classes and generic parameters can preserve metadata for current AST and semantic code. Expression parsing does not depend on the registry, and the registry must not be used for semantic validation.
+Declaration and class parsing now build source-level type syntax nodes before adapting them to the existing `ReturnType` representation. Semantic type resolution reads that preserved `TypeSyntax` before consulting legacy adapter metadata. The parser still has a temporary parse-session `TypeRegistry` in this adapter path for existing AST callers, but expression parsing does not depend on the registry, and the registry must not be used for semantic validation.
 
 ## Error recovery
 

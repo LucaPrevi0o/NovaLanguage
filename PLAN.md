@@ -16,7 +16,7 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; `ReturnType` and parser `TypeRegistry` remain compatibility adapters.                         |
+| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; `ReturnType` is source-syntax-first, while parser `TypeRegistry` remains an adapter.           |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
@@ -210,7 +210,7 @@ Tasks:
 - [x] Resolve declared type names through semantic type symbols during name resolution.
 - [x] Let parser-created `ReturnType` objects carry source `TypeSyntax` while downstream code still uses the temporary adapter.
 - [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
-- [ ] Keep `ReturnType` only as a temporary adapter, or replace it fully.
+- [x] Keep `ReturnType` as a source-syntax-first compatibility adapter while existing AST APIs still expose it.
 - [ ] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [ ] Model Nova classes and Nova types separately, matching the README design.
 
@@ -314,6 +314,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Move `ReturnType` closer to a compatibility adapter rather than the semantic type representation.
-2. Remove the remaining parser `TypeRegistry` adapter once class/generic metadata is represented semantically.
-3. Model Nova classes and Nova value/math types separately in the semantic type layer.
+1. Remove the remaining parser `TypeRegistry` adapter now that semantic resolution reads `TypeSyntax` before legacy token metadata.
+2. Model Nova classes and Nova value/math types separately in the semantic type layer.
+3. Expand type checking across inheritance, overload rules, and richer call/member behavior.

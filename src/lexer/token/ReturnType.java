@@ -3,7 +3,11 @@ package lexer.token;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.type.TypeSyntax;
 
-/// Represents the return type of a declaration, which can be a primitive type, a non-primitive type, an array type, or a generic type.
+/// Temporary compatibility adapter for declaration type syntax.
+///
+/// Parser-created instances should carry the source {@link TypeSyntax} that produced them.
+/// Legacy token-class metadata remains only for older AST/printer callers and syntaxless
+/// adapters; semantic type resolution treats the parsed syntax as authoritative when present.
 public class ReturnType {
     
     private final TokenClass tokenClass;

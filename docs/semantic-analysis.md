@@ -192,7 +192,7 @@ The current semantic architecture is still transitional.
 Known limitations include:
 
 - the type model still depends too heavily on lexer token classes;
-- parser-created `ReturnType` objects can carry parsed type syntax, and semantic passes can produce semantic type symbols;
+- parser-created `ReturnType` objects carry parsed type syntax, and semantic passes resolve that syntax into semantic type symbols before using legacy token metadata as a fallback;
 - type checking uses semantic type symbols internally, but declarations still expose `ReturnType` adapters;
 - declaration/class type parsing still uses a temporary parse-session `TypeRegistry` as a `ReturnType` metadata adapter;
 - the compiler is still single-file oriented;

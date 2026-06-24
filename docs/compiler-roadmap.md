@@ -113,11 +113,11 @@ Completed work:
 - parser-created `ReturnType` objects can carry their source `TypeSyntax`;
 - semantic type symbols for primitive, class, array, generic-parameter, and unknown types;
 - name resolution resolves declared types through the semantic type resolver;
-- type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons.
+- type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
+- `ReturnType` is now a source-syntax-first compatibility adapter for existing AST APIs.
 
 Planned work:
 
-- reduce `ReturnType` to a compatibility adapter, then remove it where practical;
 - separate primitive, class, array, and generic types at the semantic level;
 - remove the parser `TypeRegistry` once type syntax nodes can preserve class and generic metadata directly;
 - model Nova classes and Nova mathematical/value types separately.

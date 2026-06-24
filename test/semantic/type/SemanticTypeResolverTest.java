@@ -1,11 +1,15 @@
 package semantic.type;
 
 import lexer.Lexer;
+import lexer.token.ReturnType;
+import lexer.token.family.NonPrimitiveType;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
+import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import parser.ast.nodes.type.NamedTypeSyntax;
 import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
 
@@ -85,5 +89,43 @@ public class SemanticTypeResolverTest {
         assertTrue(resolution.diagnostics().isEmpty());
         var genericType = assertInstanceOf(GenericParameterSymbol.class, resolution.type());
         assertEquals("T", genericType.getName());
+    }
+
+    @Test
+    void testResolvesGenericArrayElementFromClassScopeTypeSyntax() {
+
+        var ast = parse("public class Box[T] { public T[] values; }");
+        var rootScope = scope(ast);
+        var classDeclaration = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+        var classScope = rootScope.childOwnedBy(classDeclaration).orElseThrow();
+        var field = classDeclaration.getFields()[0];
+
+        var resolution = new TypeResolver().resolve(field.getDeclaredType(), field, classScope);
+
+        assertTrue(resolution.diagnostics().isEmpty());
+        var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
+        var elementType = assertInstanceOf(GenericParameterSymbol.class, arrayType.getElementType());
+        assertEquals("T", elementType.getName());
+    }
+
+    @Test
+    void testReturnTypeAdapterResolvesSourceSyntaxBeforeLegacyTokenMetadata() {
+
+        var ast = parse("public class Actual { }");
+        var rootScope = scope(ast);
+        var syntax = new NamedTypeSyntax(1, 1, "Actual", false);
+        var adapter = new ReturnType(
+            new NonPrimitiveType("Stale"),
+            new ExpressionNode[0],
+            null,
+            null,
+            syntax
+        );
+
+        var resolution = new TypeResolver().resolve(adapter, ast.getFirst(), rootScope);
+
+        assertTrue(resolution.diagnostics().isEmpty());
+        var classType = assertInstanceOf(ClassTypeSymbol.class, resolution.type());
+        assertEquals("Actual", classType.getName());
     }
 }
