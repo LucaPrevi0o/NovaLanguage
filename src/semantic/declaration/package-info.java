@@ -1,12 +1,30 @@
-/**
- * Semantic declaration models and collection utilities.
- *
- * <p>This package records named Nova program entities after parsing, independently from
- * parser helper state. Declarations describe what a name introduces, where it is owned, and
- * which source node produced it.</p>
- *
- * <p>Declaration collection is one of the first semantic steps after parsing. Later passes
- * use these declarations to build scopes, resolve names, validate duplicates, and prepare
- * for type checking.</p>
- */
+/// # Semantic declarations
+///
+/// Semantic declaration models and collection utilities.
+///
+/// This package records named Nova program entities after parsing. It is the semantic layer's
+/// declaration inventory, independent from parser helper state.
+///
+/// ## Declaration examples
+///
+/// - Classes
+/// - Fields
+/// - Methods
+/// - Constructors
+/// - Functions
+/// - Parameters
+/// - Local variables
+/// - For-each variables
+///
+/// ## Pipeline role
+///
+/// ```text
+/// AST -> semantic declarations -> semantic scopes -> analysis passes
+/// ```
+///
+/// ## Design note
+///
+/// Declaration collection should preserve enough information for later validation without
+/// deciding every language rule immediately. Duplicate validation, type resolution, and access
+/// checks are separate semantic responsibilities.
 package semantic.declaration;
