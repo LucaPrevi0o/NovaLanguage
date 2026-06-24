@@ -36,13 +36,13 @@ public class ParseException extends RuntimeException {
     /// @return A formatted error message that includes the line and column information from the token, if available; otherwise, returns the original message.
     private static String formatMessage(Diagnostic diagnostic, Token token) {
 
-        var message = diagnostic != null ? diagnostic.getMessage() : "<unknown parse error>";
+        var message = diagnostic != null ? diagnostic.message() : "<unknown parse error>";
 
         if (token != null)
             return String.format("Parse error at line %d, column %d: %s (near '%s')", token.getLine(), token.getColumn(), message, token);
 
         if (diagnostic != null && diagnostic.hasLocation())
-            return String.format("Parse error at line %d, column %d: %s", diagnostic.getLine(), diagnostic.getColumn(), message);
+            return String.format("Parse error at line %d, column %d: %s", diagnostic.line(), diagnostic.column(), message);
 
         return message;
     }

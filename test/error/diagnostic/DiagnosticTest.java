@@ -15,14 +15,14 @@ public class DiagnosticTest {
         var token = new Token(Special.UNKNOWN, 2, 5, "@");
         var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, "Bad token", token);
 
-        assertEquals(DiagnosticSeverity.ERROR, diagnostic.getSeverity());
-        assertEquals(DiagnosticPhase.PARSER, diagnostic.getPhase());
-        assertEquals("Bad token", diagnostic.getMessage());
-        assertEquals(2, diagnostic.getLine());
-        assertEquals(5, diagnostic.getColumn());
-        assertEquals(1, diagnostic.getSpanLength());
-        assertEquals(Special.UNKNOWN, diagnostic.getActualToken());
-        assertEquals("@", diagnostic.getLexeme());
+        assertEquals(DiagnosticSeverity.ERROR, diagnostic.severity());
+        assertEquals(DiagnosticPhase.PARSER, diagnostic.phase());
+        assertEquals("Bad token", diagnostic.message());
+        assertEquals(2, diagnostic.line());
+        assertEquals(5, diagnostic.column());
+        assertEquals(1, diagnostic.spanLength());
+        assertEquals(Special.UNKNOWN, diagnostic.actualToken());
+        assertEquals("@", diagnostic.lexeme());
         assertTrue(diagnostic.hasLocation());
         assertTrue(diagnostic.hasSpan());
     }
@@ -49,10 +49,10 @@ public class DiagnosticTest {
         var diagnostic = bag.reportError(DiagnosticPhase.PARSER, "Unrecognized token: '$'", token);
 
         assertEquals(1, bag.size());
-        assertTrue(diagnostic.getMessage().contains("Unrecognized token"));
-        assertEquals(4, diagnostic.getLine());
-        assertEquals(7, diagnostic.getColumn());
-        assertEquals("$", diagnostic.getLexeme());
+        assertTrue(diagnostic.message().contains("Unrecognized token"));
+        assertEquals(4, diagnostic.line());
+        assertEquals(7, diagnostic.column());
+        assertEquals("$", diagnostic.lexeme());
     }
 
     @Test
@@ -62,11 +62,11 @@ public class DiagnosticTest {
         var exception = new ParseException("Unrecognized token", token);
         var diagnostic = exception.getDiagnostic();
 
-        assertEquals(DiagnosticPhase.PARSER, diagnostic.getPhase());
-        assertEquals(DiagnosticSeverity.ERROR, diagnostic.getSeverity());
-        assertEquals("Unrecognized token", diagnostic.getMessage());
-        assertEquals(Special.UNKNOWN, diagnostic.getActualToken());
-        assertEquals("@", diagnostic.getLexeme());
+        assertEquals(DiagnosticPhase.PARSER, diagnostic.phase());
+        assertEquals(DiagnosticSeverity.ERROR, diagnostic.severity());
+        assertEquals("Unrecognized token", diagnostic.message());
+        assertEquals(Special.UNKNOWN, diagnostic.actualToken());
+        assertEquals("@", diagnostic.lexeme());
     }
 
     @Test

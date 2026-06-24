@@ -114,7 +114,7 @@ public class DeclarationParserTest {
         var diagnostics = new DuplicateDeclarationValidator().validate(ast);
 
         assertEquals(1, diagnostics.size());
-        assertEquals(2, diagnostics.getFirst().getLine());
+        assertEquals(2, diagnostics.getFirst().line());
     }
 
     @Test

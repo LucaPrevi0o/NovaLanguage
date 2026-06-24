@@ -27,6 +27,9 @@ public class ParseErrorsException extends RuntimeException {
     /// @return An unmodifiable list of diagnostics.
     public List<Diagnostic> getDiagnostics() { return errors.stream().map(ParseException::getDiagnostic).toList(); }
 
+    /// Builds a message string from the given list of parse errors.
+    /// @param errors The list of parse errors to build the message from.
+    /// @return A string message summarizing the parse errors.
     private static String buildMessage(List<ParseException> errors) {
 
         var sb = new StringBuilder();

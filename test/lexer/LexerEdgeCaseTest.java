@@ -209,8 +209,8 @@ public class LexerEdgeCaseTest {
 
         var diagnostics = lexer.getDiagnostics();
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().getPhase());
-        assertEquals("\"hello", diagnostics.getFirst().getLexeme());
+        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().phase());
+        assertEquals("\"hello", diagnostics.getFirst().lexeme());
     }
 
     @Test
@@ -308,10 +308,10 @@ public class LexerEdgeCaseTest {
 
         var diagnostics = lexer.getDiagnostics();
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().getPhase());
-        assertEquals(Special.UNKNOWN, diagnostics.getFirst().getActualToken());
-        assertEquals("@", diagnostics.getFirst().getLexeme());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Unrecognized token"));
+        assertEquals(DiagnosticPhase.LEXER, diagnostics.getFirst().phase());
+        assertEquals(Special.UNKNOWN, diagnostics.getFirst().actualToken());
+        assertEquals("@", diagnostics.getFirst().lexeme());
+        assertTrue(diagnostics.getFirst().message().contains("Unrecognized token"));
     }
 
     @Test
@@ -322,6 +322,6 @@ public class LexerEdgeCaseTest {
 
         assertEquals(Special.UNKNOWN, tokens.getFirst().getType());
         assertEquals(1, diagnostics.size());
-        assertEquals("@", diagnostics.getDiagnostics().getFirst().getLexeme());
+        assertEquals("@", diagnostics.getDiagnostics().getFirst().lexeme());
     }
 }

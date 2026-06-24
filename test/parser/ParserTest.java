@@ -122,7 +122,7 @@ public class ParserTest {
 
         var diagnostics = new NameResolver().resolve(ast2);
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'First'"));
+        assertTrue(diagnostics.getFirst().message().contains("Undefined type 'First'"));
     }
 
     // ─── Error recovery tests ──────────────────────────────────────────────────
@@ -250,7 +250,7 @@ public class ParserTest {
 
         assertEquals(1, ex.getDiagnostics().size(), "Aggregate exception should expose structured diagnostics");
         assertEquals(1, parser.getDiagnostics().size(), "Parser should retain diagnostics from the run");
-        assertEquals("@", parser.getDiagnostics().getFirst().getLexeme());
+        assertEquals("@", parser.getDiagnostics().getFirst().lexeme());
     }
 
     @Test
@@ -265,8 +265,8 @@ public class ParserTest {
         assertEquals(1, ex.getDiagnostics().size());
 
         var diagnostic = ex.getDiagnostics().getFirst();
-        assertEquals(Delimiter.SEMICOLON, diagnostic.getExpectedToken());
-        assertEquals(PrimitiveType.INT, diagnostic.getActualToken());
+        assertEquals(Delimiter.SEMICOLON, diagnostic.expectedToken());
+        assertEquals(PrimitiveType.INT, diagnostic.actualToken());
     }
 
     // ─── Builtin-like call syntax ─────────────────────────────────────────────

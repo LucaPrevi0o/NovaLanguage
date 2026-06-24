@@ -30,8 +30,8 @@ public class SemanticTypeCheckerTest {
         var diagnostics = check("int x = true;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign bool to int"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign bool to int"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SemanticTypeCheckerTest {
         var diagnostics = check("int x; x = true;");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign bool to int"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign bool to int"));
     }
 
     @Test
@@ -80,7 +80,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign Other to Box"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign Other to Box"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("expects 2 arguments but got 1"));
+        assertTrue(diagnostics.getFirst().message().contains("expects 2 arguments but got 1"));
     }
 
     @Test
@@ -115,8 +115,8 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Argument 1"));
-        assertTrue(diagnostics.getFirst().getMessage().contains("expects int but got bool"));
+        assertTrue(diagnostics.getFirst().message().contains("Argument 1"));
+        assertTrue(diagnostics.getFirst().message().contains("expects int but got bool"));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign int to bool"));
     }
 
     @Test
@@ -151,7 +151,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Array index must be int"));
+        assertTrue(diagnostics.getFirst().message().contains("Array index must be int"));
     }
 
     @Test
@@ -163,7 +163,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Cannot index non-array type int"));
+        assertTrue(diagnostics.getFirst().message().contains("Cannot index non-array type int"));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign int to bool"));
     }
 
     @Test
@@ -200,7 +200,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign int to bool"));
     }
 
     @Test
@@ -213,7 +213,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined member 'missing' on type 'Box'"));
+        assertTrue(diagnostics.getFirst().message().contains("Undefined member 'missing' on type 'Box'"));
     }
 
     @Test
@@ -225,7 +225,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Cannot access member 'member' on non-class type int"));
+        assertTrue(diagnostics.getFirst().message().contains("Cannot access member 'member' on non-class type int"));
     }
 
     @Test
@@ -250,7 +250,7 @@ public class SemanticTypeCheckerTest {
             """);
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Argument 1"));
-        assertTrue(diagnostics.getFirst().getMessage().contains("expects bool but got int"));
+        assertTrue(diagnostics.getFirst().message().contains("Argument 1"));
+        assertTrue(diagnostics.getFirst().message().contains("expects bool but got int"));
     }
 }

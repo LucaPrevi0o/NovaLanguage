@@ -30,8 +30,8 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("unknownVar + 1;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined name 'unknownVar'"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined name 'unknownVar'"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("{ int x; } x;");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined name 'x'"));
+        assertTrue(diagnostics.getFirst().message().contains("Undefined name 'x'"));
     }
 
     @Test
@@ -67,8 +67,8 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("new MissingClass();");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined class 'MissingClass'"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined class 'MissingClass'"));
     }
 
     @Test
@@ -77,8 +77,8 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("public class Orphan :: NoParent { }");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined superclass 'NoParent'"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined superclass 'NoParent'"));
     }
 
     @Test
@@ -87,8 +87,8 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("MissingType value;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'MissingType'"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined type 'MissingType'"));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class SemanticNameResolverTest {
         var diagnostics = resolve("void f(MissingType value) { }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'MissingType'"));
+        assertTrue(diagnostics.getFirst().message().contains("Undefined type 'MissingType'"));
     }
 
     @Test

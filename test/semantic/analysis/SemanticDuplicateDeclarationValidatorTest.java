@@ -30,9 +30,9 @@ public class SemanticDuplicateDeclarationValidatorTest {
         var diagnostics = validate(parse("int x;\nint x;"));
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertEquals(2, diagnostics.getFirst().getLine());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Duplicate declaration 'x'"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertEquals(2, diagnostics.getFirst().line());
+        assertTrue(diagnostics.getFirst().message().contains("Duplicate declaration 'x'"));
     }
 
     @Test
@@ -54,8 +54,8 @@ public class SemanticDuplicateDeclarationValidatorTest {
             """));
 
         assertEquals(1, diagnostics.size());
-        assertEquals(3, diagnostics.getFirst().getLine());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Duplicate declaration 'value'"));
+        assertEquals(3, diagnostics.getFirst().line());
+        assertTrue(diagnostics.getFirst().message().contains("Duplicate declaration 'value'"));
     }
 
     @Test

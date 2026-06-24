@@ -30,8 +30,8 @@ public class SemanticLValueCheckerTest {
         var diagnostics = check("1 = 2;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Invalid assignment target"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("Invalid assignment target"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SemanticLValueCheckerTest {
         var diagnostics = check("++1;");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Invalid assignment target"));
+        assertTrue(diagnostics.getFirst().message().contains("Invalid assignment target"));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class SemanticLValueCheckerTest {
         var diagnostics = check("readLine()++;");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Invalid assignment target"));
+        assertTrue(diagnostics.getFirst().message().contains("Invalid assignment target"));
     }
 
     @Test

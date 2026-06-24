@@ -30,8 +30,8 @@ public class SemanticLoopControlCheckerTest {
         var diagnostics = check("break;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("outside loop or switch"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("outside loop or switch"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SemanticLoopControlCheckerTest {
         var diagnostics = check("continue;");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("outside loop"));
+        assertTrue(diagnostics.getFirst().message().contains("outside loop"));
     }
 
     @Test
@@ -65,6 +65,6 @@ public class SemanticLoopControlCheckerTest {
         var diagnostics = check("int x; switch (x) { case 1 : { continue; } }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("outside loop"));
+        assertTrue(diagnostics.getFirst().message().contains("outside loop"));
     }
 }

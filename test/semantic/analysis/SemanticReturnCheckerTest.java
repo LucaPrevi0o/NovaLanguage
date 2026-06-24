@@ -30,8 +30,8 @@ public class SemanticReturnCheckerTest {
         var diagnostics = check("return 1;");
 
         assertEquals(1, diagnostics.size());
-        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
-        assertTrue(diagnostics.getFirst().getMessage().contains("outside function"));
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().phase());
+        assertTrue(diagnostics.getFirst().message().contains("outside function"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SemanticReturnCheckerTest {
         var diagnostics = check("void f() { return 1; }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("cannot return a value"));
+        assertTrue(diagnostics.getFirst().message().contains("cannot return a value"));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class SemanticReturnCheckerTest {
         var diagnostics = check("int f() { return; }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("must return a value"));
+        assertTrue(diagnostics.getFirst().message().contains("must return a value"));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class SemanticReturnCheckerTest {
         var diagnostics = check("int f() { int x; }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Missing return"));
+        assertTrue(diagnostics.getFirst().message().contains("Missing return"));
     }
 
     @Test
@@ -75,6 +75,6 @@ public class SemanticReturnCheckerTest {
         var diagnostics = check("public class Box { public Box() { return 1; } }");
 
         assertEquals(1, diagnostics.size());
-        assertTrue(diagnostics.getFirst().getMessage().contains("Constructor cannot return a value"));
+        assertTrue(diagnostics.getFirst().message().contains("Constructor cannot return a value"));
     }
 }
