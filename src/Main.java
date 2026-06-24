@@ -9,8 +9,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
+/// The main entry point for the compiler. It reads source code from a file, tokenizes it, parses it into an AST, and prints the results.
 public class Main {
 
+    /// The main method that serves as the entry point for the compiler.
+    /// @param args The command-line arguments. The first argument should be the path to the source code file to be compiled.
     public static void main(String[] args) {
 
         String sourceCode;

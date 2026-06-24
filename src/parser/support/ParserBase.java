@@ -11,7 +11,10 @@ import lexer.token.family.AccessModifier;
 /// Base class for all parsers, providing common token-state helpers.
 public abstract class ParserBase {
 
+    /// The parser state to use for token management.
     protected final ParserState state;
+
+    /// The per-session type registry to use, or {@code null} for parsers that do not parse type syntax.
     protected final TypeRegistry typeRegistry;
 
     /// Constructor for parser components that do not need parse-session type metadata.
@@ -103,7 +106,13 @@ public abstract class ParserBase {
     /// @return The consumed token.
     protected Token consume(TokenClass expectedType, String message) { return state.consume(expectedType, message); }
 
-    /// Compatibility alias for parser code still being migrated to {@link #consume(TokenClass, String)}.
+    /// Gets the next token if it matches the expected type; otherwise throws a parse exception.
+    /// > Compatibility alias for older parser code. This method is deprecated and will be removed in future versions.
+    /// @param expectedType The token family that the current token is expected to match.
+    /// @param message The error message to report when the token is missing.
+    /// @return The consumed token.
+    /// @deprecated Use {@link #consume(TokenClass, String)} instead.
+    @Deprecated
     protected Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
 
     /// Retrieves the literal value associated with the specified token, if applicable.

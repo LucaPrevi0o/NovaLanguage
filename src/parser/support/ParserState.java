@@ -173,7 +173,13 @@ public class ParserState {
         throw new ParseException(diagnostic, actual);
     }
 
-    /// Compatibility alias for older parser code.
+    /// Consumes the current token if it matches the specified token family, advancing the position.
+    /// > Compatibility alias for older parser code. This method is deprecated and will be removed in future versions.
+    /// @param expectedType The token family to checkCurrentTokenType against the current token.
+    /// @param message The parse error message.
+    /// @return The token that was consumed if it matches the specified token family.
+    /// @deprecated Use {@link #consume(TokenClass, String)} instead.
+    @Deprecated
     public Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
 
     // ========== Helper Methods ==========

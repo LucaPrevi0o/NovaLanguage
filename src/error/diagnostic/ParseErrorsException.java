@@ -9,6 +9,7 @@ import java.util.List;
 /// carried inside this exception and rendered together in the message.</p>
 public class ParseErrorsException extends RuntimeException {
 
+    /// The list of parse errors collected during parsing.
     private final List<ParseException> errors;
 
     /// Constructs a new ParseErrorsException from the given list of parse errors.

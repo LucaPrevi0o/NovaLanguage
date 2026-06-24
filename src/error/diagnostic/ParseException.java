@@ -4,8 +4,11 @@ import lexer.Token;
 
 /// Represents an exception that occurs during parsing when the input does not conform to the expected grammar.
 public class ParseException extends RuntimeException {
-    
+
+    /// The Token object representing the location in the source code where the parsing error was detected.
     private final Token token;
+
+    /// The structured diagnostic represented by this parse exception, which includes the error message and source location.
     private final Diagnostic diagnostic;
 
     /// Constructs a new ParseException with the specified error message and the token where the error occurred.

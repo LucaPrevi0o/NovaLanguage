@@ -26,12 +26,17 @@ public interface Printable {
     sealed interface PrintEntry permits PrintEntry.Info, PrintEntry.Child, PrintEntry.Children {
 
         /// A plain-text annotation line shown directly in the tree.
+        /// @param text The text to show; may be empty but not {@code null}.
         record Info(String text) implements PrintEntry {}
 
         /// A labeled reference to exactly one child node (may be {@code null}).
+        /// @param label The label to show for the child; may be empty but not {@code null}.
+        /// @param node The child node to show; may be {@code null}.
         record Child(String label, AstNode node) implements PrintEntry {}
 
         /// A labeled reference to an array of child nodes (shown with a count header).
+        /// @param label The label to show for the children; may be empty but not {@code null}.
+        /// @param nodes The child nodes to show; may be empty but not {@code null}.
         record Children(String label, AstNode[] nodes) implements PrintEntry {}
     }
 

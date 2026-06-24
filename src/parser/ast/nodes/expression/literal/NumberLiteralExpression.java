@@ -11,6 +11,8 @@ import java.util.List;
 public abstract class NumberLiteralExpression extends ExpressionNode implements Printable {
 
     private final TypeToken typeToken;
+
+    /// The numeric value of this literal expression, which can be of various numeric types (Integer, Long, Float, Double, Byte).
     protected final Number value;
 
     /// Constructs a new NumberLiteralExpression with the specified line, column, type token, and numeric value.
