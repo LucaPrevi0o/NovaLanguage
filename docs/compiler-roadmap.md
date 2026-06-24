@@ -92,13 +92,12 @@ Completed or partially completed work includes:
 - `break` / `continue` context checking;
 - moving undefined identifier and undefined class checks out of expression parsing;
 - removing parser-owned symbol-table scope construction and symbol registration;
-- narrowing parser `TypeRegistry` usage so expression parsing no longer depends on parser-side type metadata.
-- adding parsed type syntax nodes that can be carried by parser-created `ReturnType` adapters.
+- adding parsed type syntax nodes that can be carried by parser-created `ReturnType` adapters;
+- removing the parser-side `TypeRegistry` adapter.
 
 Remaining work includes:
 
 - expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- replacing the remaining declaration/class parser `TypeRegistry` adapter after semantic class/generic metadata is represented directly;
 - keeping parser-generated ASTs simple and complete.
 
 ## Phase 5 - Real type model
@@ -114,12 +113,12 @@ Completed work:
 - semantic type symbols for primitive, class, array, generic-parameter, and unknown types;
 - name resolution resolves declared types through the semantic type resolver;
 - type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
-- `ReturnType` is now a source-syntax-first compatibility adapter for existing AST APIs.
+- `ReturnType` is now a source-syntax-first compatibility adapter for existing AST APIs;
+- the parser-side `TypeRegistry` adapter has been removed.
 
 Planned work:
 
 - separate primitive, class, array, and generic types at the semantic level;
-- remove the parser `TypeRegistry` once type syntax nodes can preserve class and generic metadata directly;
 - model Nova classes and Nova mathematical/value types separately.
 
 This phase is important before implementing advanced language features.

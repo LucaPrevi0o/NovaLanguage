@@ -104,16 +104,14 @@ public class ParserTest {
     }
 
     @Test
-    void testTypeRegistryResetBetweenParses() {
+    void testParserRunsDoNotShareTypeVisibility() {
 
-        // First parse defines a class
         var source1 = "public class First { }";
         var lexer1 = new Lexer(source1);
         var tokens1 = lexer1.tokenize();
         var parser1 = new Parser(tokens1);
         parser1.parse();
 
-        // Second parse should start fresh: First parses as a type name, then semantic resolution rejects it.
         var source2 = "int x; First y;";
         var lexer2 = new Lexer(source2);
         var tokens2 = lexer2.tokenize();

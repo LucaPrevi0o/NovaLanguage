@@ -70,7 +70,7 @@ public class ClassParser extends ParserBase {
     /// @param declarationParser The DeclarationParser to use for parsing types and other declarations within the class.
     public ClassParser(DeclarationParser declarationParser) {
 
-        super(declarationParser.getState(), declarationParser.getTypeRegistry());
+        super(declarationParser.getState());
         this.declarationParser = declarationParser;
     }
 
@@ -87,8 +87,6 @@ public class ClassParser extends ParserBase {
 
         var header = parseClassHeader();
         var classDecl = createClassDeclaration(header, classAccessModifier);
-
-        typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
 
         var members = parseClassBody(header);
         populateClassDeclaration(classDecl, members);
@@ -133,9 +131,7 @@ public class ClassParser extends ParserBase {
             genToken.getColumn(),
             genericParameterName
         );
-        var genericParameter = TypeSyntaxAdapter.toReturnType(genericParameterSyntax, typeRegistry);
-        typeRegistry.registerType(genericParameter); // Register generic parameter as a type to allow it to be used in member declarations
-        return genericParameter;
+        return TypeSyntaxAdapter.toReturnType(genericParameterSyntax);
     }
 
     /// Parses an optional list of superclasses for a class declaration, which is specified after a double colon `::` and can include multiple comma-separated class names.
@@ -169,7 +165,7 @@ public class ClassParser extends ParserBase {
             superClassName,
             false
         );
-        return TypeSyntaxAdapter.toReturnType(superClassSyntax, typeRegistry);
+        return TypeSyntaxAdapter.toReturnType(superClassSyntax);
     }
 
     /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.

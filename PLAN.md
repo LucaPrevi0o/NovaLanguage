@@ -16,7 +16,7 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; `ReturnType` is source-syntax-first, while parser `TypeRegistry` remains an adapter.           |
+| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; `ReturnType` is a source-syntax-first compatibility adapter.                                  |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
@@ -189,7 +189,7 @@ Parser-owned semantic checks inventory:
 - [x] TypeRegistry boundary decision: expression parsing no longer depends on parser type metadata, and `TypeRegistry` is not used for semantic validation.
 - [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes before adapting them to `ReturnType`.
 - [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
-- [ ] TypeRegistry adapter removal: declaration/class parsing still uses `TypeRegistry` only as a temporary `ReturnType` metadata adapter until class/generic metadata is represented semantically.
+- [x] TypeRegistry adapter removal: declaration/class parsing no longer uses a parser-side type registry.
 
 Exit criteria:
 
@@ -211,7 +211,7 @@ Tasks:
 - [x] Let parser-created `ReturnType` objects carry source `TypeSyntax` while downstream code still uses the temporary adapter.
 - [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
 - [x] Keep `ReturnType` as a source-syntax-first compatibility adapter while existing AST APIs still expose it.
-- [ ] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
+- [x] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [ ] Model Nova classes and Nova types separately, matching the README design.
 
 Exit criteria:
@@ -314,6 +314,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Remove the remaining parser `TypeRegistry` adapter now that semantic resolution reads `TypeSyntax` before legacy token metadata.
-2. Model Nova classes and Nova value/math types separately in the semantic type layer.
-3. Expand type checking across inheritance, overload rules, and richer call/member behavior.
+1. Model Nova classes and Nova value/math types separately in the semantic type layer.
+2. Expand type checking across inheritance, overload rules, and richer call/member behavior.
+3. Decide whether AST declarations should expose `TypeSyntax` directly instead of the remaining `ReturnType` adapter.

@@ -14,7 +14,6 @@ import parser.support.ParserBase;
 import parser.support.ParserState;
 import parser.support.TypeSyntaxAdapter;
 import lexer.token.ReturnType;
-import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
@@ -76,12 +75,11 @@ public class DeclarationParser extends ParserBase {
     private final ExpressionParser expressionParser;
     private final ClassParser classParser;
 
-    /// Constructs a new DeclarationParser with the given parser state and type registry.
-    /// @param state        The parser state containing the tokens to parse.
-    /// @param typeRegistry The per-session type registry.
-    public DeclarationParser(ParserState state, TypeRegistry typeRegistry) {
+    /// Constructs a new DeclarationParser with the given parser state.
+    /// @param state The parser state containing the tokens to parse.
+    public DeclarationParser(ParserState state) {
 
-        super(state, typeRegistry);
+        super(state);
         this.expressionParser = new ExpressionParser(state);
         this.classParser = new ClassParser(this);
     }
@@ -116,7 +114,7 @@ public class DeclarationParser extends ParserBase {
     /// Grammar rule:
     /// `type → (primitiveType | CLASSNAME) arrayDimensions?`
     /// @return A ReturnType representing the parsed type, including base type, array dimensions, super types, and generic parameters as applicable.
-    protected ReturnType parseType() { return TypeSyntaxAdapter.toReturnType(parseTypeSyntax(), typeRegistry); }
+    protected ReturnType parseType() { return TypeSyntaxAdapter.toReturnType(parseTypeSyntax()); }
 
     /// Parses source-level type syntax without resolving its meaning.
     ///

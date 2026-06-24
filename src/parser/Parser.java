@@ -10,7 +10,6 @@ import parser.support.ParserBase;
 import parser.support.ParserState;
 import parser.grammar.ClassParser;
 import parser.grammar.ExpressionParser;
-import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 
@@ -50,13 +49,12 @@ public class Parser extends ParserBase {
     private List<StatementNode> parsedStatements = List.of();
 
     /// Constructs a new Parser with the given list of tokens.
-    /// Creates a fresh per-session {@link TypeRegistry} for declaration/class type metadata
-    /// and initializes the declaration parser.
+    /// Creates shared parser state and initializes the declaration parser.
     /// @param tokens The list of tokens to be parsed into an AST.
     public Parser(List<Token> tokens) {
 
-        super(new ParserState(tokens), new TypeRegistry());
-        this.declarationParser = new DeclarationParser(state, this.typeRegistry);
+        super(new ParserState(tokens));
+        this.declarationParser = new DeclarationParser(state);
     }
 
     /// Returns the diagnostics collected during this parser run.
