@@ -1,8 +1,25 @@
-/**
- * AST nodes for literal and identifier expressions.
- *
- * <p>Literal expression nodes represent source values such as strings, characters, booleans,
- * numbers, and identifiers after tokenization and parsing. Identifier literal expressions
- * preserve source names so semantic analysis can later resolve them to declarations.</p>
- */
+/// # Literal expression AST nodes
+///
+/// AST nodes for literal and identifier expressions.
+///
+/// Literal expressions are the parser-level representation of values and names that appear
+/// directly in source code.
+///
+/// ## Covered expression forms
+///
+/// - String literals
+/// - Character literals
+/// - Boolean literals
+/// - Numeric literals
+/// - Identifier expressions
+///
+/// ## Identifier note
+///
+/// Identifier expressions preserve source names. They do not know which declaration the name
+/// refers to until semantic name resolution runs.
+///
+/// ## Type note
+///
+/// Literal nodes may strongly suggest a type, but final type compatibility still belongs to
+/// semantic analysis and the semantic type model.
 package parser.ast.nodes.expression.literal;
