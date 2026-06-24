@@ -9,6 +9,7 @@ import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.ExpressionStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.parser.util.ParseErrorsException;
+import semantic.NameResolver;
 import static org.junit.jupiter.api.Assertions.*;
 
 /// Test suite for the Parser class
@@ -116,12 +117,16 @@ public class ParserTest {
         var parser1 = new Parser(tokens1);
         parser1.parse();
 
-        // Second parse should start fresh (should fail if class First is still registered)
-        var source2 = "int x; First y;"; // This should fail since First is not in scope of second parse
+        // Second parse should start fresh: First parses as a type name, then semantic resolution rejects it.
+        var source2 = "int x; First y;";
         var lexer2 = new Lexer(source2);
         var tokens2 = lexer2.tokenize();
         var parser2 = new Parser(tokens2);
-        assertThrows(Exception.class, parser2::parse, "Should throw ParseException - class from first parse is not available");
+        var ast2 = assertDoesNotThrow(parser2::parse);
+
+        var diagnostics = new NameResolver().resolve(ast2);
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'First'"));
     }
 
     // ─── Error recovery tests ──────────────────────────────────────────────────

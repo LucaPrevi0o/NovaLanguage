@@ -18,6 +18,7 @@ import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
+import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.Operator;
 import java.util.ArrayList;
 
@@ -104,9 +105,9 @@ public class DeclarationParser extends ParserBase {
         return arraySizes.toArray(new ExpressionNode[0]);
     }
 
-    /// Checks if a token is a valid type token (either a primitive type or a class name).
+    /// Checks if a token is syntactically a valid type token (either a primitive type or an identifier type name).
     /// @param token The token to checkCurrentTokenType.
-    /// @return True if the token is a valid type token (primitive or class name), false otherwise.
+    /// @return True if the token is a syntactic type token, false otherwise.
     public boolean isValidType(Token token) { return (token instanceof TypeToken) || isTypeName(token); }
 
     /// Parses a type, which can be either a primitive type or a class name, along with any array dimensions.
@@ -129,30 +130,25 @@ public class DeclarationParser extends ParserBase {
             var className = getLiteralValue(classToken);
 
             var classType = typeRegistry.getReturnType(className);
-
-            var superTypes = classType.getSuperTypes();
-            var genericParamType = classType.getGenericParameterType();
-
             var arrayDims = parseArrayDimensions();
+            if (classType == null) return new ReturnType(new NonPrimitiveType(className), arrayDims, null, null);
             if (arrayDims.length == 0) return classType;
-            return new ReturnType(classType.getTokenClass(), arrayDims, superTypes, genericParamType);
+            return new ReturnType(classType.getTokenClass(), arrayDims, classType.getSuperTypes(), classType.getGenericParameterType());
         }
 
         throw parseError("Expect type (primitive or class name)", token);
     }
 
-    /// Checks if a token is a valid class name, which is determined by being an identifier literal that corresponds to
-    /// a registered custom class in the TypeRegistry.
+    /// Checks if a token is syntactically a type name.
     /// @param token The token to checkCurrentTokenType.
-    /// @return True if the token is a valid class name, false otherwise.
+    /// @return True if the token is an identifier literal, false otherwise.
     private boolean isTypeName(Token token) {
 
         if (!(token instanceof LiteralToken)) return false;
         if (!(token.getType() instanceof IdentifierLiteral)) return false;
 
         var name = token.getType().token();
-        if (name == null) return false;
-        return typeRegistry.isCustomType(name);  // Allow generic types as valid types in declarations
+        return name != null;
     }
 
     /// Parses an expression using the ExpressionParser.
@@ -193,7 +189,7 @@ public class DeclarationParser extends ParserBase {
             return classParser.parseClassDeclaration(accessModifier);
         }
 
-        if (isValidType(peek())) {
+        if (startsTypedDeclaration()) {
 
             var returnType = parseType();
             if (check(new IdentifierLiteral())) {
@@ -206,6 +202,24 @@ public class DeclarationParser extends ParserBase {
         }
 
         return parseStatement();
+    }
+
+    private boolean startsTypedDeclaration() {
+
+        if (!isValidType(peek())) return false;
+
+        var savedCurrent = state.getCurrentPosition();
+        try {
+
+            parseType();
+            return check(new IdentifierLiteral());
+        } catch (ParseException e) {
+
+            return false;
+        } finally {
+
+            state.setCurrentPosition(savedCurrent);
+        }
     }
 
     /// Parses a function declaration, which consists of a return type, a name, a parameter list, and a body enclosed in braces.
@@ -435,7 +449,7 @@ public class DeclarationParser extends ParserBase {
 
             StatementNode initializer;
             if (match(Delimiter.SEMICOLON)) initializer = null;
-            else if (isValidType(peek())) {
+            else if (startsTypedDeclaration()) {
 
                 var type = parseType();
                 var nameToken = consume(new IdentifierLiteral(), "Expect variable name");

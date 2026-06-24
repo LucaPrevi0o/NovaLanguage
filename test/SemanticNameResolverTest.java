@@ -81,6 +81,33 @@ public class SemanticNameResolverTest {
     }
 
     @Test
+    void testReportsUndefinedDeclaredTypeAfterParsing() {
+
+        var diagnostics = resolve("MissingType value;");
+
+        assertEquals(1, diagnostics.size());
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'MissingType'"));
+    }
+
+    @Test
+    void testReportsUndefinedParameterTypeAfterParsing() {
+
+        var diagnostics = resolve("void f(MissingType value) { }");
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined type 'MissingType'"));
+    }
+
+    @Test
+    void testResolvesForwardDeclaredVariableTypeAfterDeclarationCollection() {
+
+        var diagnostics = resolve("Later value; public class Later { }");
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
     void testResolvesForwardSuperclassAfterDeclarationCollection() {
 
         var diagnostics = resolve("public class Child :: Base { } public class Base { }");

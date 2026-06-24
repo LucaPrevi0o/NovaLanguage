@@ -159,7 +159,7 @@ Parser-owned semantic checks inventory:
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
 - [x] Declaration validation: `SymbolTable.register(...)` no longer rejects duplicates; semantic duplicate validation reports them.
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
-- [ ] Type syntax/resolution coupling: `DeclarationParser.parseType()` requires class names to already be registered.
+- [x] Type syntax/resolution coupling: `DeclarationParser.parseType()` now accepts identifier type syntax; semantic name resolution reports unknown types.
 - [ ] Scope construction coupling: declaration and class parsers build scopes and register symbols while parsing syntax.
 
 Exit criteria:
@@ -280,6 +280,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Start moving name-resolution checks out of `ExpressionParser`.
+1. Reduce parser-owned scope construction and symbol registration now that semantic scopes exist.
 2. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters once semantic diagnostics exist.
-3. Move duplicate declaration validation out of `SymbolTable.register(...)` after declaration collection exists.
+3. Decide how far Phase 4 should go before Phase 5 introduces real type syntax nodes.

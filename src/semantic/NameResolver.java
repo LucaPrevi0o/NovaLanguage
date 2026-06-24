@@ -3,6 +3,10 @@ package semantic;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
+import lexer.token.ReturnType;
+import lexer.token.family.GenericParameterType;
+import lexer.token.family.NonPrimitiveType;
+import lexer.token.family.PrimitiveType;
 import parser.ast.AstNode;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
@@ -74,6 +78,7 @@ public final class NameResolver {
 
         if (statement instanceof VariableDeclarationStatement variableDeclaration) {
 
+            resolveType(variableDeclaration.getDeclaredType(), variableDeclaration, scope);
             resolveExpression(variableDeclaration.getInitialValue(), scope);
             return;
         }
@@ -123,6 +128,7 @@ public final class NameResolver {
 
         if (statement instanceof ForEachStatement forEachStatement) {
 
+            resolveType(forEachStatement.getElementType(), forEachStatement, scope);
             resolveExpression(forEachStatement.getIterable(), scope);
             var forEachScope = childScope(scope, "for-each", forEachStatement);
             resolveBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
@@ -159,7 +165,10 @@ public final class NameResolver {
 
     private void resolveFunction(FunctionDeclarationStatement functionDeclaration, SemanticScope scope, String scopeName) {
 
+        resolveType(functionDeclaration.getDeclaredType(), functionDeclaration, scope);
         var functionScope = childScope(scope, scopeName, functionDeclaration);
+        for (var parameter : functionDeclaration.getParameters())
+            resolveType(parameter.getType(), parameter, functionScope);
         resolveFunctionBody(functionDeclaration.getBody(), functionScope);
     }
 
@@ -170,6 +179,8 @@ public final class NameResolver {
     ) {
 
         var constructorScope = childScope(classScope, "constructor " + classDeclaration.getName(), constructorDeclaration);
+        for (var parameter : constructorDeclaration.getParameters())
+            resolveType(parameter.getType(), parameter, constructorScope);
         resolveFunctionBody(constructorDeclaration.getBody(), constructorScope);
     }
 
@@ -264,6 +275,19 @@ public final class NameResolver {
             resolveExpression(arrayAccess.getArray(), scope);
             resolveExpression(arrayAccess.getIndex(), scope);
         }
+    }
+
+    private void resolveType(ReturnType type, AstNode owner, SemanticScope scope) {
+
+        if (type == null) return;
+        for (var size : type.getSizes()) resolveExpression(size, scope);
+
+        var tokenClass = type.getTokenClass();
+        if (tokenClass instanceof PrimitiveType || tokenClass instanceof GenericParameterType) return;
+
+        if (tokenClass instanceof NonPrimitiveType nonPrimitiveType &&
+            !hasVisibleClass(scope, nonPrimitiveType.typeName()))
+            report("Undefined type '" + nonPrimitiveType.typeName() + "'", owner);
     }
 
     private List<SemanticDeclaration> findVisible(SemanticScope scope, String name) {
