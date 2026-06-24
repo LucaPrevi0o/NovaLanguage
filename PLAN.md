@@ -13,7 +13,7 @@ Current focus: Phase 4 - semantic analysis split.
 | Phase                         | Status      | Summary                                                                                                                                                 |
 |-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
-| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser failure cleanup still needs work.           |
+| 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                    |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                                          |
@@ -65,7 +65,7 @@ Exit criteria:
 
 ## Phase 2 - Stabilize Parser Semantics
 
-Status: In progress.
+Status: Complete.
 
 Goal: make parsing predictable, syntactic, and stable under invalid input.
 
@@ -88,17 +88,18 @@ Completed:
 - [x] Review class parsing against the current language design and parser tests.
 - [x] Require explicit access modifiers on class fields, methods, constructors, and inner classes.
 - [x] Add class-member recovery coverage for missing access modifiers.
+- [x] Split class parsing into smaller header, body, member, and AST-population helpers.
 
 Remaining:
 
-- [ ] Keep grammar methods small enough that cursor movement is obvious from local code.
+- [x] No planned parser-semantics cleanup remains before the TypeRegistry/type-model decision.
 
 Exit criteria:
 
-- [ ] Lexer/parser tests pass after parser-failure cleanup.
-- [ ] Bad syntax reports diagnostics without corrupting parser state.
-- [ ] Valid class, function, statement, and expression examples produce stable ASTs.
-- [ ] Parser behavior is syntactic; semantic validation is clearly deferred.
+- [x] Lexer/parser tests pass after parser-failure cleanup.
+- [x] Bad syntax reports diagnostics without corrupting parser state.
+- [x] Valid class, function, statement, and expression examples produce stable ASTs.
+- [x] Parser behavior is syntactic; semantic validation is clearly deferred.
 
 ## Phase 3 - Redesign Diagnostics
 
@@ -306,6 +307,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Keep grammar methods small enough that cursor movement is obvious from local code.
-2. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
-3. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.
+1. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
+2. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.
+3. Start the next Phase 4/5 boundary step once the TypeRegistry decision is documented.

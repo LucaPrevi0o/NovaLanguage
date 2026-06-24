@@ -33,9 +33,9 @@ Exit condition: `./mvnw test` works from a clean checkout.
 
 ## Phase 2 - Parser semantics
 
-Status: **in progress**.
+Status: **complete**.
 
-The parser is being kept syntactic, predictable, and recoverable under invalid input.
+The parser is now syntactic, predictable, and recoverable under the invalid-input cases covered so far.
 
 Completed work includes:
 
@@ -45,9 +45,10 @@ Completed work includes:
 - package split between parser grammar and parser support;
 - top-level, block-level, and class-body recovery improvements;
 - a current decision to use `ParseException` plus explicit recovery boundaries instead of AST error nodes;
-- class-member parsing aligned with the language rule that every member declares its own access modifier.
+- class-member parsing aligned with the language rule that every member declares its own access modifier;
+- smaller class-parser helpers for header parsing, body parsing, member parsing, and AST population.
 
-Remaining work includes:
+Future parser work should be driven by concrete bugs or grammar changes, especially:
 
 - adding more focused tests for parser recovery and token advancement when new recovery bugs are found;
 - keeping grammar methods small enough that cursor movement remains easy to audit.

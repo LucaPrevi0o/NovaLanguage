@@ -46,6 +46,21 @@ public class ClassParser extends ParserBase {
 
     private final DeclarationParser declarationParser;
 
+    private record ClassHeader(Token classToken, String className, ReturnType genericParameter, ReturnType[] superClasses) { }
+
+    private record ClassMembers(
+        ArrayList<ClassFieldDeclaration> fields,
+        ArrayList<ClassConstructorDeclaration> constructors,
+        ArrayList<ClassMethodDeclaration> methods,
+        ArrayList<ClassDeclarationStatement> innerClasses
+    ) {
+
+        private ClassMembers() {
+
+            this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        }
+    }
+
     /// Constructs a new ClassParser with the given DeclarationParser.
     /// @param declarationParser The DeclarationParser to use for parsing types and other declarations within the class.
     public ClassParser(DeclarationParser declarationParser) {
@@ -65,74 +80,86 @@ public class ClassParser extends ParserBase {
     /// @return A ClassDeclarationStatement representing the parsed class declaration.
     public ClassDeclarationStatement parseClassDeclaration(AccessModifier classAccessModifier) {
 
+        var header = parseClassHeader();
+        var classDecl = createClassDeclaration(header, classAccessModifier);
+
+        typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
+
+        var members = parseClassBody(header);
+        populateClassDeclaration(classDecl, members);
+        return classDecl;
+    }
+
+    private ClassHeader parseClassHeader() {
+
         var classToken = previous(); // 'class' token was consumed by caller.
         var nameToken = consume(new IdentifierLiteral(), "Expect class name after 'class'");
         var className = getLiteralValue(nameToken);
+        var genericParameter = parseGenericParameter();
+        var superClasses = parseSuperClasses();
+
+        return new ClassHeader(classToken, className, genericParameter, superClasses);
+    }
+
+    private ReturnType parseGenericParameter() {
+
+        if (!match(Delimiter.LSQUARE)) return null;
+
+        var genToken = consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+        var genericParameterName = getLiteralValue(genToken);
+        consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+
+        var genericParameter = new ReturnType(new GenericParameterType(genericParameterName));
+        typeRegistry.registerType(genericParameter); // Register generic parameter as a type to allow it to be used in member declarations
+        return genericParameter;
+    }
+
+    private ReturnType[] parseSuperClasses() {
 
         var superClasses = new ArrayList<ReturnType>();
-        ReturnType genericClassParameter = null;
+        if (!match(Delimiter.DOUBLE_COLON)) return superClasses.toArray(new ReturnType[0]);
 
-        // Parse optional generic parameter
-        if (match(Delimiter.LSQUARE)) {
+        superClasses.add(parseSuperClass("Expect superclass name after '::'"));
+        while (match(Delimiter.COMMA)) superClasses.add(parseSuperClass("Expect superclass name after ','"));
+        return superClasses.toArray(new ReturnType[0]);
+    }
 
-            // Only one generic parameter allowed for simplicity; can be extended to multiple if needed
-            var genToken = consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
-            var genericParameterName = getLiteralValue(genToken);
+    private ReturnType parseSuperClass(String message) {
 
-            // Expect closing square bracket after generic parameter
-            consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+        var superClassToken = consume(new IdentifierLiteral(), message);
+        var superClassName = getLiteralValue(superClassToken);
+        return new ReturnType(new NonPrimitiveType(superClassName));
+    }
 
-            genericClassParameter = new ReturnType(new GenericParameterType(genericParameterName));
-            typeRegistry.registerType(genericClassParameter); // Register generic parameter as a type to allow it to be used in member declarations
-        }
+    private ClassDeclarationStatement createClassDeclaration(ClassHeader header, AccessModifier classAccessModifier) {
 
-        if (match(Delimiter.DOUBLE_COLON)) {
-
-            var superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
-            var superClassName = getLiteralValue(superClassToken);
-            superClasses.add(new ReturnType(new NonPrimitiveType(superClassName)));
-
-            while (match(Delimiter.COMMA)) {
-
-                superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after ','");
-                superClassName = getLiteralValue(superClassToken);
-                superClasses.add(new ReturnType(new NonPrimitiveType(superClassName)));
-            }
-        }
-
-        // Register the class type before parsing members to allow recursive type references.
-        var classDecl = new ClassDeclarationStatement(
-            classToken.getLine(),
-            classToken.getColumn(),
-            className,
+        return new ClassDeclarationStatement(
+            header.classToken().getLine(),
+            header.classToken().getColumn(),
+            header.className(),
             new ClassMethodDeclaration[0],
             new ClassFieldDeclaration[0],
-            superClasses.toArray(new ReturnType[0]),
-            genericClassParameter,
+            header.superClasses(),
+            header.genericParameter(),
             new ClassDeclarationStatement[0],
             classAccessModifier,
             new ClassConstructorDeclaration[0]
         );
+    }
 
-        typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
+    private ClassMembers parseClassBody(ClassHeader header) {
 
         consume(Delimiter.LBRACE, "Expect '{' before class body");
 
-        var fields = new ArrayList<ClassFieldDeclaration>();
-        var constructors = new ArrayList<ClassConstructorDeclaration>();
-        var methods = new ArrayList<ClassMethodDeclaration>();
-        var innerClasses = new ArrayList<ClassDeclarationStatement>();
+        var members = new ClassMembers();
 
         while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
 
             parseClassMember(
-                className,
-                classToken.getLine(),
-                classToken.getColumn(),
-                fields,
-                constructors,
-                methods,
-                innerClasses
+                header.className(),
+                header.classToken().getLine(),
+                header.classToken().getColumn(),
+                members
             );
         } catch (ParseException e) {
 
@@ -141,23 +168,22 @@ public class ClassParser extends ParserBase {
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after class body");
+        return members;
+    }
 
-        // Populate the already-registered type placeholder with the fully parsed members.
-        classDecl.setMethods(methods.toArray(new ClassMethodDeclaration[0]));
-        classDecl.setFields(fields.toArray(new ClassFieldDeclaration[0]));
-        classDecl.setConstructors(constructors.toArray(new ClassConstructorDeclaration[0]));
-        classDecl.setInnerClasses(innerClasses.toArray(new ClassDeclarationStatement[0]));
-        return classDecl;
+    private void populateClassDeclaration(ClassDeclarationStatement classDecl, ClassMembers members) {
+
+        classDecl.setMethods(members.methods().toArray(new ClassMethodDeclaration[0]));
+        classDecl.setFields(members.fields().toArray(new ClassFieldDeclaration[0]));
+        classDecl.setConstructors(members.constructors().toArray(new ClassConstructorDeclaration[0]));
+        classDecl.setInnerClasses(members.innerClasses().toArray(new ClassDeclarationStatement[0]));
     }
 
     private void parseClassMember(
         String className,
         int classLine,
         int classColumn,
-        ArrayList<ClassFieldDeclaration> fields,
-        ArrayList<ClassConstructorDeclaration> constructors,
-        ArrayList<ClassMethodDeclaration> methods,
-        ArrayList<ClassDeclarationStatement> innerClasses
+        ClassMembers members
     ) {
 
         var memberAccessModifier = parseAccessModifier();
@@ -165,14 +191,14 @@ public class ClassParser extends ParserBase {
 
         if (match(Keyword.CLASS)) {
 
-            innerClasses.add(parseClassDeclaration(memberAccessModifier));
+            members.innerClasses().add(parseClassDeclaration(memberAccessModifier));
             return;
         }
 
         if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
 
             advance();  // consume constructor name
-            constructors.add(parseConstructor(classLine, classColumn, memberAccessModifier));
+            members.constructors().add(parseConstructor(classLine, classColumn, memberAccessModifier));
             return;
         }
 
@@ -183,8 +209,8 @@ public class ClassParser extends ParserBase {
         var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
         var memberName = getLiteralValue(memberNameToken);
 
-        if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
-        else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+        if (check(Delimiter.LPAREN)) members.methods().add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+        else members.fields().add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
     }
 
     /// Synchronizes after a class-body member error without escaping the current class body.
