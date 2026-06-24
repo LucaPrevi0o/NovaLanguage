@@ -9,7 +9,10 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
+import parser.ast.nodes.type.GenericTypeSyntax;
+import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.support.ParserBase;
+import parser.support.TypeSyntaxAdapter;
 import lexer.token.ReturnType;
 
 import java.util.ArrayList;
@@ -125,7 +128,12 @@ public class ClassParser extends ParserBase {
         var genericParameterName = getLiteralValue(genToken);
         consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
 
-        var genericParameter = new ReturnType(new GenericParameterType(genericParameterName));
+        var genericParameterSyntax = new GenericTypeSyntax(
+            genToken.getLine(),
+            genToken.getColumn(),
+            genericParameterName
+        );
+        var genericParameter = TypeSyntaxAdapter.toReturnType(genericParameterSyntax, typeRegistry);
         typeRegistry.registerType(genericParameter); // Register generic parameter as a type to allow it to be used in member declarations
         return genericParameter;
     }
@@ -155,7 +163,13 @@ public class ClassParser extends ParserBase {
 
         var superClassToken = consume(new IdentifierLiteral(), message);
         var superClassName = getLiteralValue(superClassToken);
-        return new ReturnType(new NonPrimitiveType(superClassName));
+        var superClassSyntax = new NamedTypeSyntax(
+            superClassToken.getLine(),
+            superClassToken.getColumn(),
+            superClassName,
+            false
+        );
+        return TypeSyntaxAdapter.toReturnType(superClassSyntax, typeRegistry);
     }
 
     /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.

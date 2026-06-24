@@ -1,6 +1,7 @@
 package lexer.token;
 
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.type.TypeSyntax;
 
 /// Represents the return type of a declaration, which can be a primitive type, a non-primitive type, an array type, or a generic type.
 public class ReturnType {
@@ -9,6 +10,7 @@ public class ReturnType {
     private final ExpressionNode[] arraySizes;
     private final ReturnType[] superTypes;
     private final ReturnType genericParameterType;
+    private final TypeSyntax syntax;
 
     /// Create a return type with all details specified.
     /// @param tokenClass The base type (primitive or custom class).
@@ -17,10 +19,22 @@ public class ReturnType {
     /// @param genericParameterType The generic parameter type if this is a generic type (null if not generic).
     public ReturnType(TokenClass tokenClass, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType) {
 
+        this(tokenClass, arraySizes, superTypes, genericParameterType, null);
+    }
+
+    /// Create a return type with all details specified and a parsed source type syntax node.
+    /// @param tokenClass The base type (primitive or custom class).
+    /// @param arraySizes The sizes of each array dimension (empty if not an array).
+    /// @param superTypes The super types if this is a class type (null if not a class).
+    /// @param genericParameterType The generic parameter type if this is a generic type (null if not generic).
+    /// @param syntax The source-level parsed type syntax, or {@code null} for inferred/semantic-only types.
+    public ReturnType(TokenClass tokenClass, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType, TypeSyntax syntax) {
+
         this.tokenClass = tokenClass;
         this.arraySizes = arraySizes;
         this.superTypes = superTypes;
         this.genericParameterType = genericParameterType;
+        this.syntax = syntax;
     }
 
     /// Create a simple return type with just a base type (no arrays, no generics).
@@ -42,6 +56,10 @@ public class ReturnType {
     /// Get the generic parameter type if this is a generic type.
     /// @return The ReturnType representing the generic parameter type, or null if this is not a generic type.
     public ReturnType getGenericParameterType() { return genericParameterType; }
+
+    /// Get the parsed source type syntax that produced this ReturnType, when available.
+    /// @return The parsed type syntax, or {@code null} for inferred/semantic-only types.
+    public TypeSyntax getSyntax() { return syntax; }
 
     /// Check if this return type represents an array type.
     /// @return true if this return type is an array type (i.e., has one or more array dimensions), false otherwise.

@@ -6,6 +6,8 @@ import error.diagnostic.ParseErrorsException;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import parser.ast.nodes.type.GenericTypeSyntax;
+import parser.ast.nodes.type.NamedTypeSyntax;
 
 import java.util.List;
 
@@ -229,6 +231,17 @@ public class ClassParserTest {
         assertEquals("NoParent", cls.getSuperClasses()[0].getTokenClass().token());
     }
 
+    @Test
+    void testSuperclassKeepsParsedTypeSyntax() {
+
+        var ast = parse("public class Orphan :: NoParent { }");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+
+        var syntax = assertInstanceOf(NamedTypeSyntax.class, cls.getSuperClasses()[0].getSyntax());
+        assertEquals("NoParent", syntax.getName());
+        assertFalse(syntax.isPrimitive());
+    }
+
     // ─── Generics ─────────────────────────────────────────────────────────────
 
     @Test
@@ -238,6 +251,20 @@ public class ClassParserTest {
             var tokens = new Lexer("public class Container[T] { }").tokenize();
             new Parser(tokens).parse();
         });
+    }
+
+    @Test
+    void testGenericParameterKeepsParsedTypeSyntax() {
+
+        var ast = parse("public class Container[T] { public T value; }");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+
+        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, cls.getGenericClassParameter().getSyntax());
+        assertEquals("T", genericSyntax.getName());
+
+        var fieldSyntax = assertInstanceOf(NamedTypeSyntax.class, cls.getFields()[0].getDeclaredType().getSyntax());
+        assertEquals("T", fieldSyntax.getName());
+        assertFalse(fieldSyntax.isPrimitive());
     }
 
     // ─── Inner classes ────────────────────────────────────────────────────────

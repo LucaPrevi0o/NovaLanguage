@@ -11,7 +11,7 @@ import java.util.List;
 ///
 /// This registry is not a semantic type table and should not be used for validation.
 /// Declaration and class parsing still use it to preserve class/generic ReturnType metadata
-/// until Phase 5 introduces parsed type syntax nodes and resolved semantic type symbols.
+/// until Phase 5 introduces resolved semantic type symbols.
 public class TypeRegistry {
 
     private final List<ReturnType> types = new ArrayList<>();

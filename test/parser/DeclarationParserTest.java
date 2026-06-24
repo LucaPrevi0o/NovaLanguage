@@ -3,6 +3,8 @@ package parser;
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.type.ArrayTypeSyntax;
+import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import semantic.analysis.DuplicateDeclarationValidator;
@@ -121,6 +123,33 @@ public class DeclarationParserTest {
     void testUndefinedVariableExpressionParsesSyntactically() {
 
         assertDoesNotThrow(() -> parse("unknownVar;"));
+    }
+
+    @Test
+    void testPrimitiveArrayTypeKeepsParsedTypeSyntax() {
+
+        var ast = parse("int[3][] values;");
+        var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
+
+        var typeSyntax = assertInstanceOf(ArrayTypeSyntax.class, declaration.getDeclaredType().getSyntax());
+        assertEquals("int", typeSyntax.getName());
+        assertEquals(2, typeSyntax.getSizes().length);
+        assertNotNull(typeSyntax.getSizes()[0]);
+        assertNull(typeSyntax.getSizes()[1]);
+
+        var elementType = assertInstanceOf(NamedTypeSyntax.class, typeSyntax.getElementType());
+        assertTrue(elementType.isPrimitive());
+    }
+
+    @Test
+    void testIdentifierTypeKeepsParsedTypeSyntaxBeforeResolution() {
+
+        var ast = parse("Missing value;");
+        var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
+
+        var typeSyntax = assertInstanceOf(NamedTypeSyntax.class, declaration.getDeclaredType().getSyntax());
+        assertEquals("Missing", typeSyntax.getName());
+        assertFalse(typeSyntax.isPrimitive());
     }
 
     // ─── Function declarations ────────────────────────────────────────────────

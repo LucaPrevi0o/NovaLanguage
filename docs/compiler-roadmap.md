@@ -6,15 +6,16 @@ This document is the narrative version of [`../PLAN.md`](../PLAN.md).
 
 ## Current focus
 
-Current focus: **Phase 4 - semantic analysis split**.
+Current focus: **Phase 5 - type model groundwork**.
 
-The main goal is to keep the parser syntactic and move language meaning into semantic passes.
+The main goal is to introduce a real type model without undoing the parser/semantic boundary.
 
 In practical terms:
 
 - invalid syntax should be reported by the parser;
 - syntactically valid but meaningless code should be reported by semantic analysis;
-- future compiler stages should consume a stable AST plus semantic information.
+- parsed type syntax should be preserved before semantic resolution;
+- future compiler stages should consume a stable AST plus semantic type information.
 
 ## Phase 1 - Build health
 
@@ -92,22 +93,27 @@ Completed or partially completed work includes:
 - moving undefined identifier and undefined class checks out of expression parsing;
 - removing parser-owned symbol-table scope construction and symbol registration;
 - narrowing parser `TypeRegistry` usage so expression parsing no longer depends on parser-side type metadata.
+- adding parsed type syntax nodes that can be carried by parser-created `ReturnType` adapters.
 
 Remaining work includes:
 
 - expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- replacing the remaining declaration/class parser `TypeRegistry` adapter with real parsed type syntax nodes;
+- replacing the remaining declaration/class parser `TypeRegistry` adapter with resolved semantic type symbols;
 - keeping parser-generated ASTs simple and complete.
 
 ## Phase 5 - Real type model
 
-Status: **not started**.
+Status: **in progress**.
 
 The compiler still relies too much on lexer token classes as semantic type representation.
 
+Completed work:
+
+- parsed type syntax nodes for named, array, and generic-parameter type syntax;
+- parser-created `ReturnType` objects can carry their source `TypeSyntax`.
+
 Planned work:
 
-- add parsed type syntax nodes;
 - add resolved semantic type symbols;
 - separate primitive, class, array, and generic types at the semantic level;
 - remove the parser `TypeRegistry` once type syntax nodes can preserve class and generic metadata directly;

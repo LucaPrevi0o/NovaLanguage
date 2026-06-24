@@ -12,13 +12,16 @@ import parser.ast.nodes.statement.declaration.*;
 import error.diagnostic.ParseException;
 import parser.support.ParserBase;
 import parser.support.ParserState;
+import parser.support.TypeSyntaxAdapter;
 import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
-import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.Operator;
+import parser.ast.nodes.type.ArrayTypeSyntax;
+import parser.ast.nodes.type.NamedTypeSyntax;
+import parser.ast.nodes.type.TypeSyntax;
 import java.util.ArrayList;
 
 /// Unified parser for declarations and statements.
@@ -113,25 +116,37 @@ public class DeclarationParser extends ParserBase {
     /// Grammar rule:
     /// `type → (primitiveType | CLASSNAME) arrayDimensions?`
     /// @return A ReturnType representing the parsed type, including base type, array dimensions, super types, and generic parameters as applicable.
-    protected ReturnType parseType() {
+    protected ReturnType parseType() { return TypeSyntaxAdapter.toReturnType(parseTypeSyntax(), typeRegistry); }
+
+    /// Parses source-level type syntax without resolving its meaning.
+    ///
+    /// Grammar rule:
+    /// `type → (primitiveType | typeName) arrayDimensions?`
+    /// @return A TypeSyntax node representing the parsed type spelling.
+    protected TypeSyntax parseTypeSyntax() {
 
         var token = peek();
         if (token instanceof TypeToken) {
 
             var typeToken = advance();
-            var baseType = typeToken.getType(); // TokenClass (PrimitiveType etc.)
+            var baseType = new NamedTypeSyntax(
+                typeToken.getLine(),
+                typeToken.getColumn(),
+                typeToken.getType().token(),
+                true
+            );
             var arrayDims = parseArrayDimensions();
-            return new ReturnType(baseType, arrayDims, null, null);
+            if (arrayDims.length == 0) return baseType;
+            return new ArrayTypeSyntax(baseType.getLine(), baseType.getColumn(), baseType, arrayDims);
         } else if (isTypeName(token)) {
 
             var classToken = advance();
             var className = getLiteralValue(classToken);
 
-            var classType = typeRegistry.getReturnType(className);
+            var baseType = new NamedTypeSyntax(classToken.getLine(), classToken.getColumn(), className, false);
             var arrayDims = parseArrayDimensions();
-            if (classType == null) return new ReturnType(new NonPrimitiveType(className), arrayDims, null, null);
-            if (arrayDims.length == 0) return classType;
-            return new ReturnType(classType.getTokenClass(), arrayDims, classType.getSuperTypes(), classType.getGenericParameterType());
+            if (arrayDims.length == 0) return baseType;
+            return new ArrayTypeSyntax(baseType.getLine(), baseType.getColumn(), baseType, arrayDims);
         }
 
         throw parseError("Expect type (primitive or class name)", token);
