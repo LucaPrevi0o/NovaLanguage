@@ -42,6 +42,9 @@ public final class AstPrinter {
 
     /// Iterates over a node's {@link PrintEntry} list and prints each one, using
     /// {@code ├─} for non-last entries and {@code └─} for the last entry.
+    /// @param entries The list of entries to print.
+    /// @param spacers Mutable list of indentation segments accumulated from ancestor nodes.
+    /// @param vLine Whether to draw a vertical line for this node's children.
     private static void printEntries(List<PrintEntry> entries, List<String> spacers, boolean vLine) {
 
         for (var i = 0; i < entries.size(); i++) {
@@ -80,6 +83,9 @@ public final class AstPrinter {
 
     // ─── Shared helpers ────────────────────────────────────────────────────────
 
+    /// Prints a single line of text with the given indentation spacers.
+    /// @param spacers The list of indentation segments accumulated from ancestor nodes.
+    /// @param text The text to print on this line.
     private static void printLine(List<String> spacers, String text) {
 
         var prefix = new StringBuilder();
