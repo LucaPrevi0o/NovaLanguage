@@ -1,4 +1,4 @@
-package semantic;
+package semantic.declaration;
 
 /// Kinds of declarations discovered during semantic declaration collection.
 public enum DeclarationKind {

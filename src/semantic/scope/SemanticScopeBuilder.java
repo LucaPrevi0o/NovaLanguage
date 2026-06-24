@@ -1,4 +1,4 @@
-package semantic;
+package semantic.scope;
 
 import lexer.token.ReturnType;
 import parser.ast.AstNode;
@@ -15,6 +15,8 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import semantic.declaration.DeclarationKind;
+import semantic.declaration.SemanticDeclaration;
 
 import java.util.List;
 

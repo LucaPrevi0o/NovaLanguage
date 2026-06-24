@@ -1,6 +1,7 @@
-package semantic;
+package semantic.scope;
 
 import parser.ast.AstNode;
+import semantic.declaration.SemanticDeclaration;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

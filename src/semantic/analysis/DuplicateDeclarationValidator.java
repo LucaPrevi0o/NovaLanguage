@@ -1,9 +1,13 @@
-package semantic;
+package semantic.analysis;
 
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import parser.ast.nodes.StatementNode;
+import semantic.declaration.DeclarationKind;
+import semantic.declaration.SemanticDeclaration;
+import semantic.scope.SemanticScope;
+import semantic.scope.SemanticScopeBuilder;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

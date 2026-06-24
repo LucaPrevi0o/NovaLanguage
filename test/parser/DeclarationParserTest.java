@@ -5,7 +5,7 @@ import lexer.Lexer;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import semantic.DuplicateDeclarationValidator;
+import semantic.analysis.DuplicateDeclarationValidator;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package semantic;
+package semantic.declaration;
 
 import lexer.token.ReturnType;
 import parser.ast.AstNode;

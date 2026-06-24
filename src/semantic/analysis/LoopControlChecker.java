@@ -1,4 +1,4 @@
-package semantic;
+package semantic.analysis;
 
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;

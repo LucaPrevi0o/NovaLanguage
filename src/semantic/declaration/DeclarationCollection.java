@@ -1,4 +1,4 @@
-package semantic;
+package semantic.declaration;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package semantic;
+package semantic.declaration;
 
 import lexer.Lexer;
 import lexer.token.ReturnType;

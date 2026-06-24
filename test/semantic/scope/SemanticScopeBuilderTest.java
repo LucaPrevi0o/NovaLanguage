@@ -1,9 +1,11 @@
-package semantic;
+package semantic.scope;
 
 import lexer.Lexer;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
+import semantic.declaration.DeclarationKind;
+import semantic.declaration.SemanticDeclaration;
 
 import java.util.List;
 

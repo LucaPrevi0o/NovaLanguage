@@ -1,4 +1,4 @@
-package semantic;
+package semantic.analysis;
 
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
@@ -32,8 +32,11 @@ import parser.ast.nodes.statement.conditional.WhileStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
-import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import semantic.declaration.DeclarationKind;
+import semantic.declaration.SemanticDeclaration;
+import semantic.scope.SemanticScope;
+import semantic.scope.SemanticScopeBuilder;
 
 import java.util.List;
 

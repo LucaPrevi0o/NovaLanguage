@@ -10,7 +10,7 @@ import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.ExpressionStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import error.diagnostic.ParseErrorsException;
-import semantic.NameResolver;
+import semantic.analysis.NameResolver;
 import static org.junit.jupiter.api.Assertions.*;
 
 /// Test suite for the Parser class
