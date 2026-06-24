@@ -1,6 +1,4 @@
-package parser.parser.util;
-
-import error.diagnostic.Diagnostic;
+package error.diagnostic;
 
 import java.util.List;
 

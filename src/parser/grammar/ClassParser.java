@@ -1,4 +1,4 @@
-package parser.parser;
+package parser.grammar;
 
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
@@ -7,7 +7,7 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
-import parser.parser.util.ParserBase;
+import parser.support.ParserBase;
 import lexer.token.ReturnType;
 
 import java.util.ArrayList;

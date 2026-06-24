@@ -3,7 +3,6 @@ package lexer;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
-import error.syntax.UnrecognizedTokenError;
 import lexer.token.TokenClass;
 import lexer.token.family.*;
 import lexer.token.family.literal.*;
@@ -98,8 +97,7 @@ public class Lexer {
     private Token unknownToken(int tokenLine, int tokenColumn, String lexeme) {
 
         var token = new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
-        var error = new UnrecognizedTokenError(token);
-        diagnostics.report(Diagnostic.error(DiagnosticPhase.LEXER, error.getDescription(), token));
+        diagnostics.report(Diagnostic.error(DiagnosticPhase.LEXER, "Unrecognized token: '" + lexeme + "'", token));
         return token;
     }
 

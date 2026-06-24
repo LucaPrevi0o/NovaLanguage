@@ -1,8 +1,8 @@
-package parser.parser.util;
+package parser.support;
 
-import error.Error;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticPhase;
+import error.diagnostic.ParseException;
 import lexer.Token;
 import lexer.token.type.LiteralToken;
 import parser.ast.SymbolTable;
@@ -134,9 +134,6 @@ public abstract class ParserBase {
 
     /// Compatibility alias for parser code still being migrated to {@link #consume(TokenClass, String)}.
     protected Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
-
-    /// Compatibility alias for parser code that constructs structured error objects.
-    protected Token getNextToken(TokenClass expectedType, Error error) { return state.getNextToken(expectedType, error); }
 
     /// Retrieves the literal value associated with the specified token, if applicable.
     /// @param token The token for which to retrieve the literal value.

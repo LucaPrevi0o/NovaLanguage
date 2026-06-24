@@ -55,14 +55,6 @@ public final class Diagnostic {
         return fromToken(DiagnosticSeverity.ERROR, phase, message, token, expectedToken);
     }
 
-    public static Diagnostic fromError(error.Error error, DiagnosticPhase phase) {
-        return error(phase, error != null ? error.getMessage() : "<unknown diagnostic>");
-    }
-
-    public static Diagnostic fromError(error.Error error, DiagnosticPhase phase, Token token) {
-        return error(phase, error != null ? error.getMessage() : "<unknown diagnostic>", token);
-    }
-
     private static Diagnostic fromToken(
             DiagnosticSeverity severity,
             DiagnosticPhase phase,

@@ -1,4 +1,4 @@
-package parser.parser;
+package parser.grammar;
 
 import lexer.*;
 import lexer.token.family.literal.IdentifierLiteral;
@@ -10,9 +10,9 @@ import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
 import parser.ast.nodes.statement.conditional.*;
 import parser.ast.nodes.statement.declaration.*;
-import parser.parser.util.ParseException;
-import parser.parser.util.ParserBase;
-import parser.parser.util.ParserState;
+import error.diagnostic.ParseException;
+import parser.support.ParserBase;
+import parser.support.ParserState;
 import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;

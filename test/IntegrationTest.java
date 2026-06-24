@@ -3,7 +3,7 @@ import lexer.Lexer;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import parser.parser.util.ParseErrorsException;
+import error.diagnostic.ParseErrorsException;
 
 import java.util.List;
 

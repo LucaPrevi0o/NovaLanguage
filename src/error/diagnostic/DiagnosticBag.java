@@ -29,20 +29,6 @@ public final class DiagnosticBag {
         return diagnostic;
     }
 
-    public Diagnostic report(error.Error error, DiagnosticPhase phase) {
-
-        var diagnostic = Diagnostic.fromError(error, phase);
-        report(diagnostic);
-        return diagnostic;
-    }
-
-    public Diagnostic report(error.Error error, DiagnosticPhase phase, Token token) {
-
-        var diagnostic = Diagnostic.fromError(error, phase, token);
-        report(diagnostic);
-        return diagnostic;
-    }
-
     public List<Diagnostic> getDiagnostics() { return List.copyOf(diagnostics); }
 
     public boolean hasDiagnostics() { return !diagnostics.isEmpty(); }

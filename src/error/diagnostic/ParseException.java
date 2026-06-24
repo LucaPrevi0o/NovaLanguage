@@ -1,7 +1,5 @@
-package parser.parser.util;
+package error.diagnostic;
 
-import error.diagnostic.Diagnostic;
-import error.diagnostic.DiagnosticPhase;
 import lexer.Token;
 
 /// Represents an exception that occurs during parsing when the input does not conform to the expected grammar.

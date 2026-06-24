@@ -1,7 +1,7 @@
 import lexer.Lexer;
 import parser.Parser;
 import parser.ast.Printable;
-import parser.parser.util.ParseErrorsException;
+import error.diagnostic.ParseErrorsException;
 import printer.AstPrinter;
 import printer.SymbolTablePrinter;
 

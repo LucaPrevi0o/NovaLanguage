@@ -1,4 +1,4 @@
-package parser.parser;
+package parser.grammar;
 
 import lexer.Token;
 import lexer.token.family.literal.*;
@@ -16,8 +16,8 @@ import parser.ast.nodes.expression.literal.NullLiteralExpression;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.ast.nodes.expression.literal.number.*;
-import parser.parser.util.ParserBase;
-import parser.parser.util.ParserState;
+import parser.support.ParserBase;
+import parser.support.ParserState;
 import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;

@@ -8,7 +8,7 @@ import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.ExpressionStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import parser.parser.util.ParseErrorsException;
+import error.diagnostic.ParseErrorsException;
 import semantic.NameResolver;
 import static org.junit.jupiter.api.Assertions.*;
 

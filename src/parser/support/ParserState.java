@@ -1,10 +1,9 @@
-package parser.parser.util;
+package parser.support;
 
-import error.Error;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
-import error.syntax.UnrecognizedTokenError;
+import error.diagnostic.ParseException;
 import lexer.Token;
 import lexer.token.TokenClass;
 import lexer.token.type.TypeToken;
@@ -177,16 +176,6 @@ public class ParserState {
     /// Compatibility alias for older parser code.
     public Token getNextToken(TokenClass expectedType, String message) { return consume(expectedType, message); }
 
-    /// Compatibility alias for parser code that constructs structured error objects.
-    public Token getNextToken(TokenClass expectedType, Error error) {
-
-        if (check(expectedType)) return advance();
-
-        var actual = peek();
-        var diagnostic = Diagnostic.fromError(error, DiagnosticPhase.PARSER, actual);
-        throw new ParseException(diagnostic, actual);
-    }
-    
     // ========== Helper Methods ==========
 
     /// Checks if the current token is a literal token.
@@ -217,9 +206,21 @@ public class ParserState {
 
         if (getCurrentToken().getType() == Special.UNKNOWN) {
 
-            var error = new UnrecognizedTokenError(getCurrentToken());
-            var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, error.getDescription(), getCurrentToken());
+            var token = getCurrentToken();
+            var diagnostic = Diagnostic.error(
+                    DiagnosticPhase.PARSER,
+                    "Unrecognized token: '" + tokenLexeme(token) + "'",
+                    token
+            );
             throw new ParseException(diagnostic, getCurrentToken());
         }
+    }
+
+    private String tokenLexeme(Token token) {
+
+        if (token == null) return "<unknown>";
+        if (token.getLexeme() != null) return token.getLexeme();
+        if (token.getType() != null && token.getType().token() != null) return token.getType().token();
+        return "<unknown>";
     }
 }

@@ -2,11 +2,10 @@ import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import error.diagnostic.DiagnosticSeverity;
-import error.syntax.UnrecognizedTokenError;
+import error.diagnostic.ParseException;
 import lexer.Token;
 import lexer.token.family.Special;
 import org.junit.jupiter.api.Test;
-import parser.parser.util.ParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,13 +44,12 @@ public class DiagnosticTest {
     }
 
     @Test
-    void diagnosticBagCanWrapLegacyErrorWithTokenContext() {
+    void diagnosticBagReportsTokenDiagnosticsDirectly() {
 
         var token = new Token(Special.UNKNOWN, 4, 7, "$");
-        var error = new UnrecognizedTokenError(token);
         var bag = new DiagnosticBag();
 
-        var diagnostic = bag.report(error, DiagnosticPhase.PARSER, token);
+        var diagnostic = bag.reportError(DiagnosticPhase.PARSER, "Unrecognized token: '$'", token);
 
         assertEquals(1, bag.size());
         assertTrue(diagnostic.getMessage().contains("Unrecognized token"));
