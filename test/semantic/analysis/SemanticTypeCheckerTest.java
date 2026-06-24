@@ -70,6 +70,18 @@ public class SemanticTypeCheckerTest {
     }
 
     @Test
+    void testAcceptsForwardClassAssignmentThroughSemanticTypeSymbols() {
+
+        var diagnostics = check("""
+            Later value;
+            public class Later { }
+            value = new Later();
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
     void testReportsConstructedClassAssignmentMismatch() {
 
         var diagnostics = check("""
@@ -81,6 +93,26 @@ public class SemanticTypeCheckerTest {
 
         assertEquals(1, diagnostics.size());
         assertTrue(diagnostics.getFirst().message().contains("cannot assign Other to Box"));
+    }
+
+    @Test
+    void testReportsUnknownDeclaredTypeWithoutCascadeMismatch() {
+
+        var diagnostics = check("Missing value = 1;");
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined type 'Missing'"));
+        assertFalse(diagnostics.getFirst().message().contains("cannot assign"));
+    }
+
+    @Test
+    void testReportsUnknownArrayElementTypeWithoutCascadeMismatch() {
+
+        var diagnostics = check("Missing[3] values = 1;");
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("Undefined type 'Missing'"));
+        assertFalse(diagnostics.getFirst().message().contains("cannot assign"));
     }
 
     @Test
