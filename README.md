@@ -37,6 +37,7 @@ Not implemented yet:
 - Optimization
 - Native/backend code generation
 - Advanced Nova features such as full generics, lambdas, variadic generics, monomorphization, access-control checks, and operator-overloadable Nova types
+- Ecosystem tools such as Pulsar, Orbit, Nebula, and Quark package resolution
 
 For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md).
 
@@ -59,6 +60,7 @@ Important documentation:
 - [`docs/parser.md`](docs/parser.md) - parser structure and responsibilities
 - [`docs/semantic-analysis.md`](docs/semantic-analysis.md) - semantic passes and scope model
 - [`docs/language-design.md`](docs/language-design.md) - long-term Nova language vision
+- [`docs/ecosystem.md`](docs/ecosystem.md) - Nova ecosystem naming and package vocabulary
 - [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md) - roadmap explained in narrative form
 - [`docs/testing.md`](docs/testing.md) - test and CI notes
 - [`docs/contributing.md`](docs/contributing.md) - development rules for future changes
@@ -93,9 +95,11 @@ Nova is designed as a compiled, object-oriented language with a **hard-static** 
 > [!NOTE]
 > In Nova, "hard-static" means ordinary language semantics should be known at compile time: overload resolution, operator dispatch, generic instantiation, and type-driven tooling should not depend on runtime reflection or dynamic method lookup.
 
-Those language goals are documented separately from the implementation status because many of them are not implemented yet.
+The broader ecosystem vocabulary is also being reserved now: **Pulsar** for the compiler, **Orbit** for the package manager, **Nebula** for the community package registry, and **Quark** for standalone Nova artifacts.
 
-See [`docs/language-design.md`](docs/language-design.md) for the broader design vision.
+Those language and ecosystem goals are documented separately from the implementation status because many of them are not implemented yet.
+
+See [`docs/language-design.md`](docs/language-design.md) for the broader design vision and [`docs/ecosystem.md`](docs/ecosystem.md) for the ecosystem naming guide.
 
 ## Development approach
 
