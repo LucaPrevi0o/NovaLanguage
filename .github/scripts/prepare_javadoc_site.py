@@ -13,6 +13,7 @@ SITE_DIR = Path("_site")
 
 def main() -> None:
     SITE_DIR.mkdir(parents=True, exist_ok=True)
+    (SITE_DIR / ".nojekyll").touch()
 
     index = f"""<!doctype html>
 <html lang="en">

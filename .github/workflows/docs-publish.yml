@@ -97,9 +97,23 @@ jobs:
         run: |
           set -euo pipefail
 
+          rm -rf _site
+
+          if [ ! -f target/site/apidocs/index.html ]; then
+            echo "::error::Expected Javadoc index at target/site/apidocs/index.html"
+            echo "Generated Javadoc files:"
+            find target/site -maxdepth 4 -type f | sort
+            exit 1
+          fi
+
           mkdir -p _site/javadoc
           cp -R target/site/apidocs/. _site/javadoc/
           python3 .github/scripts/prepare_javadoc_site.py
+
+          touch _site/.nojekyll
+
+          test -f _site/index.html
+          test -f _site/javadoc/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

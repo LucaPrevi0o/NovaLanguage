@@ -30,7 +30,7 @@ Do not commit a Wiki clone into the main repository.
 If you clone the Wiki locally for debugging, use a temporary ignored folder such as:
 
 ```bash
-git clone https://github.com/LucaPrevi0o/NovaLanguage.wiki.git wiki-repo
+git clone https://github.com/OWNER/REPOSITORY.wiki.git wiki-repo
 ```
 
 `wiki-repo/`, `.wiki/`, and `wiki/` are ignored by `.gitignore`.
@@ -74,13 +74,26 @@ The Maven Javadoc Plugin writes output to:
 target/site/apidocs/
 ```
 
+The expected Javadoc entrypoint is:
+
+```text
+target/site/apidocs/index.html
+```
+
 The workflow copies that output to:
 
 ```text
 _site/javadoc/
 ```
 
-Then it uploads `_site/` as a GitHub Pages artifact and deploys it with GitHub Pages Actions.
+The expected Pages artifact entrypoints are:
+
+```text
+_site/index.html
+_site/javadoc/index.html
+```
+
+Then it uploads `_site/` as a GitHub Pages artifact and deploys it with GitHub Pages Actions. The workflow fails before deployment if these files are missing, so a broken artifact is not published silently.
 
 ## Local Javadoc generation
 
@@ -109,6 +122,18 @@ The workflow uses:
 - `actions/configure-pages`
 - `actions/upload-pages-artifact`
 - `actions/deploy-pages`
+
+The deployed URL is the `page_url` reported by the `Deploy Javadoc to GitHub Pages` job. For a normal project Pages repository, the URL usually has this shape:
+
+```text
+https://OWNER.github.io/REPOSITORY/
+```
+
+The generated Javadoc is available under:
+
+```text
+https://OWNER.github.io/REPOSITORY/javadoc/
+```
 
 ## Trigger behavior
 
