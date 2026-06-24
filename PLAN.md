@@ -16,7 +16,7 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Parsed type syntax nodes exist; lexer token classes are still used too deeply as semantic type representation.                                          |
+| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; type checking still uses `ReturnType` and lexer token classes.                                |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
@@ -40,7 +40,7 @@ Status: Current.
 - [x] Structured diagnostics and parse exceptions live in `error.diagnostic`.
 - [x] Legacy `error.Error`, `error.syntax`, and `error.parsing` wrappers have been removed.
 - [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
-- [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, and `semantic.scope`.
+- [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, `semantic.scope`, and `semantic.type`.
 - [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
 
 ## Phase 1 - Restore Build Health
@@ -188,7 +188,8 @@ Parser-owned semantic checks inventory:
 - [x] Scope construction coupling: declaration and class parsers no longer build parser symbol-table scopes or register symbols while parsing syntax.
 - [x] TypeRegistry boundary decision: expression parsing no longer depends on parser type metadata, and `TypeRegistry` is not used for semantic validation.
 - [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes before adapting them to `ReturnType`.
-- [ ] TypeRegistry adapter removal: declaration/class parsing still uses `TypeRegistry` only as a temporary `ReturnType` metadata adapter until resolved semantic type symbols exist.
+- [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
+- [ ] TypeRegistry adapter removal: declaration/class parsing still uses `TypeRegistry` only as a temporary `ReturnType` metadata adapter until class/generic metadata is represented semantically.
 
 Exit criteria:
 
@@ -205,8 +206,10 @@ Goal: stop using lexer token classes as the semantic type model.
 Tasks:
 
 - [x] Add parsed type syntax nodes, such as `TypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`.
-- [ ] Add resolved semantic type symbols, such as `PrimitiveTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
+- [x] Add resolved semantic type symbols, such as `PrimitiveTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
+- [x] Resolve declared type names through semantic type symbols during name resolution.
 - [x] Let parser-created `ReturnType` objects carry source `TypeSyntax` while downstream code still uses the temporary adapter.
+- [ ] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
 - [ ] Keep `ReturnType` only as a temporary adapter, or replace it fully.
 - [ ] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [ ] Model Nova classes and Nova types separately, matching the README design.
@@ -214,7 +217,7 @@ Tasks:
 Exit criteria:
 
 - [x] Type names can be parsed before they are resolved.
-- [ ] Forward and mutual references become possible.
+- [x] Forward and mutual references become possible.
 - [ ] Semantic types no longer depend on lexer token classes.
 
 ## Phase 6 - Multi-File Project Pipeline
@@ -311,6 +314,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Introduce resolved semantic type symbols that can be built from `TypeSyntax`.
-2. Migrate name resolution and type checking to semantic type symbols instead of lexer token classes.
+1. Migrate type checking to semantic type symbols instead of lexer token classes.
+2. Move `ReturnType` closer to a compatibility adapter rather than the semantic type representation.
 3. Remove the remaining parser `TypeRegistry` adapter once class/generic metadata is represented semantically.

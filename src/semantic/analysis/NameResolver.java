@@ -4,9 +4,6 @@ import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import lexer.token.ReturnType;
-import lexer.token.family.GenericParameterType;
-import lexer.token.family.NonPrimitiveType;
-import lexer.token.family.PrimitiveType;
 import parser.ast.AstNode;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
@@ -33,10 +30,11 @@ import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
-import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
+import semantic.type.TypeResolution;
+import semantic.type.TypeResolver;
 
 import java.util.List;
 
@@ -44,6 +42,7 @@ import java.util.List;
 public final class NameResolver {
 
     private final DiagnosticBag diagnostics = new DiagnosticBag();
+    private final TypeResolver typeResolver = new TypeResolver();
     private SemanticScope rootScope;
 
     /// Resolves a list of statements, building semantic scopes and checking for unresolved names.
@@ -126,12 +125,8 @@ public final class NameResolver {
     /// @param scope The current semantic scope in which to resolve names.
     private void resolveClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
-        for (var superClass : classDeclaration.getSuperClasses()) {
-
-            var superClassName = superClass.getTokenClass().token();
-            if (hasNoVisibleClasses(scope, superClassName))
-                report("Undefined superclass '" + superClassName + "'", classDeclaration);
-        }
+        for (var superClass : classDeclaration.getSuperClasses())
+            report(typeResolver.resolve(superClass, classDeclaration, scope, "superclass"));
 
         var classScope = childScope(scope, "class " + classDeclaration.getName(), classDeclaration);
 
@@ -211,8 +206,7 @@ public final class NameResolver {
             }
             case ObjectCreationExpression objectCreation -> {
 
-                if (hasNoVisibleClasses(scope, objectCreation.getClassName()))
-                    report("Undefined class '" + objectCreation.getClassName() + "'", objectCreation);
+                report(typeResolver.resolveClassName(objectCreation.getClassName(), objectCreation, scope, "class"));
                 for (var argument : objectCreation.getArguments()) resolveExpression(argument, scope);
             }
             case AssignmentExpression assignment -> {
@@ -257,12 +251,7 @@ public final class NameResolver {
 
         if (type == null) return;
         for (var size : type.getSizes()) resolveExpression(size, scope);
-
-        var tokenClass = type.getTokenClass();
-        if (tokenClass instanceof PrimitiveType || tokenClass instanceof GenericParameterType) return;
-
-        if (tokenClass instanceof NonPrimitiveType(String typeName) && hasNoVisibleClasses(scope, typeName))
-            report("Undefined type '" + typeName + "'", owner);
+        report(typeResolver.resolve(type, owner, scope));
     }
 
     /// Finds visible declarations with the given name in the current semantic scope and its parent scopes.
@@ -279,22 +268,6 @@ public final class NameResolver {
             current = current.getParent();
         }
         return List.of();
-    }
-
-    /// Checks if there are no visible class declarations with the given name in the current semantic scope and its parent scopes.
-    /// @param scope The current semantic scope in which to search for class declarations.
-    /// @param name The name of the class to check for visibility.
-    /// @return `true` if no visible class declarations with the given name are found; otherwise, `false`.
-    private boolean hasNoVisibleClasses(SemanticScope scope, String name) {
-
-        var current = scope;
-        while (current != null) {
-
-            for (var declaration : current.findLocal(name))
-                if (declaration.getKind() == DeclarationKind.CLASS) return false;
-            current = current.getParent();
-        }
-        return true;
     }
 
     /// Returns a child semantic scope with the given name and owner, or the current scope if no matching child is found.
@@ -314,5 +287,11 @@ public final class NameResolver {
     /// @param node The AST node associated with the unresolved name or type.
     private void report(String message, AstNode node) {
         diagnostics.report(Diagnostic.error(DiagnosticPhase.SEMANTIC, message, node.getLine(), node.getColumn()));
+    }
+
+    /// Reports diagnostics produced by semantic type resolution.
+    /// @param resolution The type-resolution result.
+    private void report(TypeResolution resolution) {
+        for (var diagnostic : resolution.diagnostics()) diagnostics.report(diagnostic);
     }
 }

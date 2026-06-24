@@ -98,7 +98,8 @@ Completed or partially completed work includes:
 Remaining work includes:
 
 - expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- replacing the remaining declaration/class parser `TypeRegistry` adapter with resolved semantic type symbols;
+- migrating type checking from `ReturnType` token-class comparisons to semantic type symbols;
+- replacing the remaining declaration/class parser `TypeRegistry` adapter after semantic class/generic metadata is represented directly;
 - keeping parser-generated ASTs simple and complete.
 
 ## Phase 5 - Real type model
@@ -110,11 +111,13 @@ The compiler still relies too much on lexer token classes as semantic type repre
 Completed work:
 
 - parsed type syntax nodes for named, array, and generic-parameter type syntax;
-- parser-created `ReturnType` objects can carry their source `TypeSyntax`.
+- parser-created `ReturnType` objects can carry their source `TypeSyntax`;
+- semantic type symbols for primitive, class, array, generic-parameter, and unknown types;
+- name resolution resolves declared types through the semantic type resolver.
 
 Planned work:
 
-- add resolved semantic type symbols;
+- migrate type checking to semantic type symbols;
 - separate primitive, class, array, and generic types at the semantic level;
 - remove the parser `TypeRegistry` once type syntax nodes can preserve class and generic metadata directly;
 - model Nova classes and Nova mathematical/value types separately.

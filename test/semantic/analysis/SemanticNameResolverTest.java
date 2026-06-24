@@ -117,6 +117,17 @@ public class SemanticNameResolverTest {
     }
 
     @Test
+    void testResolvesMutualClassFieldTypes() {
+
+        var diagnostics = resolve("""
+            public class A { public B b; }
+            public class B { public A a; }
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
     void testResolvesForEachElementInsideBody() {
 
         var diagnostics = resolve("int items; for (int elem : items) { elem; }");

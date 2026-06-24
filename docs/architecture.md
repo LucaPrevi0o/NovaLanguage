@@ -145,7 +145,7 @@ The parser now builds AST nodes and parser diagnostics. It does not register var
 
 Semantic declaration collection and semantic scope construction are the source of truth for lexical visibility and language meaning.
 
-One transitional parser dependency remains: declaration and class parsing build parsed type syntax nodes, then adapt them to `ReturnType` metadata through `TypeRegistry` for the existing AST and semantic passes. Expression parsing does not depend on that registry, and the registry must not be used for semantic validation. The next Phase 5 step is to replace this adapter with resolved semantic type symbols.
+One transitional parser dependency remains: declaration and class parsing build parsed type syntax nodes, then adapt them to `ReturnType` metadata through `TypeRegistry` for the existing AST and semantic passes. Expression parsing does not depend on that registry, and the registry must not be used for semantic validation. Semantic type symbols now exist and name resolution uses them for declared types; type checking still needs to migrate away from `ReturnType` token-class comparisons.
 
 ## Future architecture
 

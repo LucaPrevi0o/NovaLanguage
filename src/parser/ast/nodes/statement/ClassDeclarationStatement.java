@@ -75,7 +75,7 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
 
     /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
-    /// This ReturnType remains the parser-side metadata adapter until Phase 5 adds resolved semantic type symbols.
+    /// This ReturnType remains the parser-side metadata adapter until class metadata is represented semantically.
     /// @return A ReturnType representing the type of this class.
     public ReturnType getReturnType() {
 
