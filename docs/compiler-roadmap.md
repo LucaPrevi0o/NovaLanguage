@@ -174,6 +174,33 @@ Planned work includes:
 - variadic generics;
 - monomorphization.
 
+> [!WARNING]
+> Variadic generics and lambdas are not independent features.
+> A likely lambda representation depends on `Function[{A}, R]`, where `{A}` is a variable-length argument-type list.
+> That means the type checker, function signatures, overload resolution, and monomorphizer must understand variadic type parameters before lambdas can be considered complete.
+
+## Compile-time metaprogramming
+
+Status: **future design item**.
+
+Nova's hard-static model deliberately excludes ordinary runtime reflection and dynamic method discovery from core language semantics.
+Anything that would normally rely on runtime type inspection should be redesigned as a compile-time facility.
+
+Examples include:
+
+- test discovery;
+- serialization metadata;
+- dependency injection registries;
+- plugin or command registries;
+- schema generation;
+- generated adapters for standard-library tooling.
+
+The expected direction is compiler-assisted code generation: the compiler or build tool scans source-level constructs and emits direct registries or generated code.
+
+> [!NOTE]
+> This is not a backend-only concern.
+> Compile-time metaprogramming needs a stable semantic model because generated code must be based on resolved declarations, resolved types, visibility rules, and eventually package/project boundaries.
+
 ## Development rule of thumb
 
 When in doubt, prefer the smallest change that makes the compiler more testable.

@@ -132,6 +132,11 @@ class A {}
 
 This should parse as two class declarations, then fail during duplicate declaration validation.
 
+> [!IMPORTANT]
+> This boundary is intentional architecture.
+> Parser changes should not reintroduce checks for undefined names, duplicate declarations, invalid assignment targets, type mismatches, overload resolution, access control, or inheritance validity.
+> Those checks belong in semantic passes so the front end can produce a complete AST and deterministic diagnostics.
+
 ## Parser scopes versus semantic scopes
 
 The codebase still contains parser-level scope machinery and semantic-level scope machinery.

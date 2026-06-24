@@ -88,7 +88,10 @@ The GitHub Actions workflow runs the test suite automatically on pushes and pull
 
 ## What Nova is intended to become
 
-Nova is designed as a compiled, object-oriented language with a strong static type system, a distinction between classes and mathematical/value-like types, and a long-term goal of native compilation.
+Nova is designed as a compiled, object-oriented language with a **hard-static** type system, a deliberate distinction between classes and mathematical/value-like types, and a long-term goal of native compilation.
+
+> [!NOTE]
+> In Nova, "hard-static" means ordinary language semantics should be known at compile time: overload resolution, operator dispatch, generic instantiation, and type-driven tooling should not depend on runtime reflection or dynamic method lookup.
 
 Those language goals are documented separately from the implementation status because many of them are not implemented yet.
 
