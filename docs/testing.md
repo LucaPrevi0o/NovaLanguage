@@ -24,7 +24,7 @@ The Maven Wrapper is included in the repository, so contributors should prefer i
 
 The project is configured for Java 24 or newer.
 
-The GitHub Actions workflow currently uses Temurin JDK 26.
+The GitHub Actions workflow currently tests with Temurin JDK 24 and 26.
 
 ## Test organization
 
@@ -120,9 +120,9 @@ Good tests usually answer one question:
 
 ## CI behavior
 
-The repository has a GitHub Actions workflow that runs the test suite on pushes and pull requests targeting `main`.
+The repository has a GitHub Actions workflow that runs the test suite on pushed branches and pull requests targeting `main`.
 
-The workflow also uploads Surefire test reports as artifacts and publishes a JUnit test report in GitHub Actions.
+The workflow also uploads Surefire test reports as artifacts, publishes a JUnit test report in GitHub Actions, and checks local Markdown documentation links.
 
 ## Reports
 
@@ -132,7 +132,7 @@ Maven Surefire writes test reports under:
 target/surefire-reports/
 ```
 
-When CI fails, download the `surefire-reports` artifact from the failed workflow run to inspect the raw test output.
+When CI fails, download the matching `surefire-reports-jdk-24` or `surefire-reports-jdk-26` artifact from the failed workflow run to inspect the raw test output.
 
 ## Before opening a pull request
 

@@ -3,7 +3,7 @@ name: Java CI
 on:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     branches:
       - main
@@ -20,8 +20,14 @@ concurrency:
 
 jobs:
   test:
-    name: Build and test
+    name: Build and test (JDK ${{ matrix.java }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - '24'
+          - '26'
 
     steps:
       - name: Checkout repository
@@ -31,25 +37,30 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '26'
+          java-version: ${{ matrix.java }}
           cache: maven
-          cache-dependency-path: pom.xml
+          cache-dependency-path: |
+            pom.xml
+            .mvn/wrapper/maven-wrapper.properties
+
+      - name: Ensure Maven wrapper is executable
+        run: chmod +x ./mvnw
 
       - name: Show Java and Maven versions
         run: |
           java -version
-          mvn -version
+          ./mvnw -version
 
       - name: Run JUnit tests
         id: test
-        run: mvn -B -ntp test
+        run: ./mvnw -B -ntp test
         continue-on-error: true
 
       - name: Upload Surefire test reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: surefire-reports
+          name: surefire-reports-jdk-${{ matrix.java }}
           path: target/surefire-reports/
           if-no-files-found: warn
           retention-days: 14
@@ -58,7 +69,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: dorny/test-reporter@v3
         with:
-          name: JUnit test report
+          name: JUnit test report (JDK ${{ matrix.java }})
           path: target/surefire-reports/*.xml
           reporter: java-junit
           fail-on-error: true
@@ -70,3 +81,57 @@ jobs:
       - name: Fail workflow if Maven tests failed
         if: ${{ steps.test.outcome == 'failure' }}
         run: exit 1
+
+  docs-check:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check local Markdown links
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+          import urllib.parse
+
+          repo = Path.cwd().resolve()
+          files = [Path("README.md"), Path("PLAN.md"), *sorted(Path("docs").glob("*.md"))]
+          link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+          ok = True
+
+          for file in files:
+              text = file.read_text(encoding="utf-8")
+              for raw_target in link_pattern.findall(text):
+                  target = raw_target.strip()
+                  if not target or target.startswith(("#", "http://", "https://", "mailto:")):
+                      continue
+                  if target.startswith("<") and target.endswith(">"):
+                      target = target[1:-1]
+
+                  target = target.split("#", 1)[0]
+                  if not target:
+                      continue
+
+                  parsed = urllib.parse.urlparse(target)
+                  if parsed.scheme:
+                      continue
+
+                  path = (file.parent / urllib.parse.unquote(target)).resolve()
+                  try:
+                      path.relative_to(repo)
+                  except ValueError:
+                      print(f"{file}: link escapes repository: {raw_target}")
+                      ok = False
+                      continue
+
+                  if not path.exists():
+                      print(f"{file}: missing linked file: {raw_target}")
+                      ok = False
+
+          sys.exit(0 if ok else 1)
+          PY

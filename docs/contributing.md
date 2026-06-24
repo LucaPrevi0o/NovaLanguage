@@ -25,7 +25,7 @@ Before committing or opening a pull request, run:
 ./mvnw test
 ```
 
-The GitHub Actions workflow also runs tests on pushes and pull requests targeting `main`.
+The GitHub Actions workflow also runs tests on pushed branches and pull requests targeting `main`.
 
 ## Parser changes
 

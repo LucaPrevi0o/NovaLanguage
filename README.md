@@ -68,7 +68,7 @@ Important documentation:
 - Java 24 or newer
 - Maven Wrapper, included in the repository
 
-The CI workflow currently uses Temurin JDK 26.
+The CI workflow currently tests with Temurin JDK 24 and 26.
 
 ## Build and test
 
@@ -84,7 +84,7 @@ On Windows:
 .\mvnw.cmd test
 ```
 
-The GitHub Actions workflow runs the test suite automatically on pushes and pull requests targeting `main`.
+The GitHub Actions workflow runs the test suite automatically on pushed branches and pull requests targeting `main`. It also checks local Markdown documentation links.
 
 ## What Nova is intended to become
 
