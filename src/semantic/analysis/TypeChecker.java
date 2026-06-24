@@ -35,9 +35,11 @@ import parser.ast.nodes.statement.conditional.IfStatement;
 import parser.ast.nodes.statement.conditional.SwitchStatement;
 import parser.ast.nodes.statement.conditional.WhileStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
@@ -262,9 +264,7 @@ public final class TypeChecker {
 
         if (expression instanceof CallExpression call) {
 
-            var calleeType = inferExpression(call.getCallee(), scope);
-            for (var argument : call.getArguments()) inferExpression(argument, scope);
-            return calleeType;
+            return inferCall(call, scope);
         }
 
         if (expression instanceof MemberAccessExpression memberAccess) {
@@ -283,6 +283,82 @@ public final class TypeChecker {
         return null;
     }
 
+    private ReturnType inferCall(CallExpression call, SemanticScope scope) {
+
+        var argumentTypes = inferArguments(call.getArguments(), scope);
+
+        if (call.getCallee() instanceof IdentifierLiteralExpression identifier) {
+
+            var declarations = firstVisibleDeclarations(scope, identifier.getName());
+            if (declarations.isEmpty()) return null;
+
+            var callable = firstCallable(declarations);
+            if (callable == null) {
+
+                diagnostics.report(Diagnostic.error(
+                    DiagnosticPhase.SEMANTIC,
+                    "Cannot call non-function '" + identifier.getName() + "'",
+                    call.getLine(),
+                    call.getColumn()
+                ));
+                return null;
+            }
+
+            if (callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
+                checkCallArguments(call, functionDeclaration, argumentTypes);
+
+            return callable.getDeclaredType();
+        }
+
+        return inferExpression(call.getCallee(), scope);
+    }
+
+    private ReturnType[] inferArguments(ExpressionNode[] arguments, SemanticScope scope) {
+
+        var argumentTypes = new ReturnType[arguments.length];
+        for (var i = 0; i < arguments.length; i++)
+            argumentTypes[i] = inferExpression(arguments[i], scope);
+        return argumentTypes;
+    }
+
+    private void checkCallArguments(
+        CallExpression call,
+        FunctionDeclarationStatement functionDeclaration,
+        ReturnType[] argumentTypes
+    ) {
+
+        var parameters = functionDeclaration.getParameters();
+        if (parameters.length != argumentTypes.length) diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "Function '" + functionDeclaration.getName() + "' expects " + parameters.length +
+                " arguments but got " + argumentTypes.length,
+            call.getLine(),
+            call.getColumn()
+        ));
+
+        var checkedCount = Math.min(parameters.length, argumentTypes.length);
+        for (var i = 0; i < checkedCount; i++)
+            checkArgument(functionDeclaration, parameters[i], argumentTypes[i], call.getArguments()[i], i + 1);
+    }
+
+    private void checkArgument(
+        FunctionDeclarationStatement functionDeclaration,
+        FunctionParameter parameter,
+        ReturnType argumentType,
+        ExpressionNode argument,
+        int argumentNumber
+    ) {
+
+        if (isAssignable(parameter.getType(), argumentType)) return;
+        diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "Argument " + argumentNumber + " for function '" + functionDeclaration.getName() +
+                "' expects " + typeName(parameter.getType()) + " but got " + typeName(argumentType),
+            argument.getLine(),
+            argument.getColumn()
+        ));
+    }
+
     private void expectBool(ExpressionNode expression, SemanticScope scope, String message) {
 
         if (expression == null) return;
@@ -297,13 +373,27 @@ public final class TypeChecker {
 
     private SemanticDeclaration firstVisible(SemanticScope scope, String name) {
 
+        var declarations = firstVisibleDeclarations(scope, name);
+        return declarations.isEmpty() ? null : declarations.getFirst();
+    }
+
+    private List<SemanticDeclaration> firstVisibleDeclarations(SemanticScope scope, String name) {
+
         var current = scope;
         while (current != null) {
 
             var local = current.findLocal(name);
-            if (!local.isEmpty()) return local.getFirst();
+            if (!local.isEmpty()) return local;
             current = current.getParent();
         }
+        return List.of();
+    }
+
+    private SemanticDeclaration firstCallable(List<SemanticDeclaration> declarations) {
+
+        for (var declaration : declarations)
+            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD)
+                return declaration;
         return null;
     }
 

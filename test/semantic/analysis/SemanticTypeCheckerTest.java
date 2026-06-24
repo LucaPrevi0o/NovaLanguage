@@ -82,4 +82,52 @@ public class SemanticTypeCheckerTest {
         assertEquals(1, diagnostics.size());
         assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign Other to Box"));
     }
+
+    @Test
+    void testAcceptsMatchingFunctionCallArguments() {
+
+        var diagnostics = check("""
+            int choose(int value, bool ok) { return value; }
+            int result = choose(1, true);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsFunctionCallArityMismatch() {
+
+        var diagnostics = check("""
+            int choose(int value, bool ok) { return value; }
+            int result = choose(1);
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("expects 2 arguments but got 1"));
+    }
+
+    @Test
+    void testReportsFunctionCallArgumentTypeMismatch() {
+
+        var diagnostics = check("""
+            int choose(int value, bool ok) { return value; }
+            int result = choose(true, true);
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Argument 1"));
+        assertTrue(diagnostics.getFirst().getMessage().contains("expects int but got bool"));
+    }
+
+    @Test
+    void testUsesFunctionCallReturnTypeInInitializerChecking() {
+
+        var diagnostics = check("""
+            int choose(int value, bool ok) { return value; }
+            bool result = choose(1, true);
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().getMessage().contains("cannot assign int to bool"));
+    }
 }

@@ -10,17 +10,17 @@ In this sense, the plan is a living document that can be updated as the project 
 
 Current focus: Phase 4 - semantic analysis split.
 
-| Phase                         | Status      | Summary                                                                                                                         |
-|-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------|
-| 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                              |
-| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser/semantic separation still needs work. |
-| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                  |
+| Phase                         | Status      | Summary                                                                                                                                                 |
+|-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
+| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser/semantic separation still needs work.       |
+| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                  |
-| 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                            |
-| 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                         |
-| 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                  |
-| 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                          |
+| 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                                          |
+| 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
+| 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                                                 |
+| 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
+| 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                  |
 
 ## Working Rules
 
@@ -40,6 +40,7 @@ Status: Current.
 - [x] Structured diagnostics and parse exceptions live in `error.diagnostic`.
 - [x] Legacy `error.Error`, `error.syntax`, and `error.parsing` wrappers have been removed.
 - [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
+- [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, and `semantic.scope`.
 
 ## Phase 1 - Restore Build Health
 
@@ -168,6 +169,7 @@ Parser-owned semantic checks inventory:
 - [x] Name resolution pass: unresolved expression identifiers and constructed class names produce semantic diagnostics.
 - [x] Duplicate validation pass: repeated non-constructor declarations in the same semantic scope produce semantic diagnostics.
 - [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for primitive and constructed class types.
+- [x] Type checking pass: identifier-based function calls validate argument count and argument types, and expose their declared return type to surrounding expressions.
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
