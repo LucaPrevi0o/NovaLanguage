@@ -104,6 +104,7 @@ PY
 - [Language Design](Language-Design)
 - [Testing](Testing)
 - [Contributing](Contributing)
+- [Documentation Publishing](Documentation-Publishing)
 
 ## API
 
@@ -125,7 +126,7 @@ EOF
         run: |
           set -euo pipefail
 
-          if git diff --quiet --exit-code; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo "Wiki is already up to date."
             exit 0
           fi
