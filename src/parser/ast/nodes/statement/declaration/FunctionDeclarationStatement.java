@@ -51,17 +51,9 @@ public class FunctionDeclarationStatement extends DeclarationStatement implement
 
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
-        entries.add(new PrintEntry.Info("Parameters: " + parameters.length));
-        appendParameterEntries(entries, parameters);
+        entries.add(new PrintEntry.Children("Parameters", parameters));
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Child("Body", body));
         return entries;
-    }
-
-    /// Appends individual parameter info entries to the given list.
-    /// @param entries The list to append parameter info entries to.
-    /// @param params The array of FunctionParameter objects to generate entries for.
-    public static void appendParameterEntries(List<PrintEntry> entries, FunctionParameter[] params) {
-        for (var param : params) entries.add(new PrintEntry.Info("  param " + param.getName() + ": " + buildTypeStringWithSizes(param.getType())));
     }
 }

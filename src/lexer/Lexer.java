@@ -1,14 +1,12 @@
 package lexer;
 
-import lexer.token.TokenFamily;
+import error.diagnostic.Diagnostic;
+import error.diagnostic.DiagnosticBag;
+import error.diagnostic.DiagnosticPhase;
+import lexer.token.TokenClass;
+import lexer.token.family.*;
 import lexer.token.family.literal.*;
 import lexer.token.type.*;
-import lexer.token.family.AccessModifier;
-import lexer.token.family.Delimiter;
-import lexer.token.family.Keyword;
-import lexer.token.family.Operator;
-import lexer.token.family.PrimitiveType;
-import lexer.token.family.Special;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,32 +22,46 @@ public class Lexer {
     private int line;
     private int column;
     private char currentChar;
-    
-    private static final Map<String, TokenFamily> TYPES = new HashMap<>();
-    private static final Map<String, TokenFamily> KEYWORDS = new HashMap<>();
-    private static final Map<String, TokenFamily> OPERATORS = new HashMap<>();
-    private static final Map<String, TokenFamily> DELIMITERS = new HashMap<>();
+    private final DiagnosticBag diagnostics;
+
+    // Maps for quick lookup of pre-defined token types by their string representation
+    private static final Map<String, TokenClass> TYPES = new HashMap<>();
+    private static final Map<String, TokenClass> KEYWORDS = new HashMap<>();
+    private static final Map<String, TokenClass> ACCESS_MODIFIERS = new HashMap<>();
+    private static final Map<String, TokenClass> OPERATORS = new HashMap<>();
+    private static final Map<String, TokenClass> DELIMITERS = new HashMap<>();
+    private static final Map<String, TokenClass> LITERALS = new HashMap<>();
 
     static {
 
         // Automatically populate types from TokenType enum
-        for (var value : Delimiter.values()) DELIMITERS.put(value.get(), value);
-        for (var value : Keyword.values()) KEYWORDS.put(value.get(), value);
-        for (var value : AccessModifier.values()) KEYWORDS.put(value.get(), value);  // Add access modifiers
-        for (var value : PrimitiveType.values()) TYPES.put(value.get(), value);
-        for (var value : Operator.values()) OPERATORS.put(value.get(), value);
+        for (var value : PrimitiveType.values()) TYPES.put(value.token(), value);
+        for (var value : Keyword.values()) KEYWORDS.put(value.token(), value);
+        for (var value : AccessModifier.values()) ACCESS_MODIFIERS.put(value.token(), value);  // Add access modifiers
+        for (var value : Operator.values()) OPERATORS.put(value.token(), value);
+        for (var value : Delimiter.values()) DELIMITERS.put(value.token(), value);
+
+        // Boolean literals "true" and "false" are tokenized as LiteralTokens with BooleanLiteral type
+        LITERALS.put("true", BoolLiteral.TRUE);
+        LITERALS.put("false", BoolLiteral.FALSE);
     }
 
     /// Constructs a Lexer with the given source code.
     /// Initializes the position, line, column, and current character.
     /// @param source The source code to be tokenized.
-    public Lexer(String source) {
+    public Lexer(String source) { this(source, new DiagnosticBag()); }
+
+    /// Constructs a Lexer with the given source code and diagnostic bag.
+    /// @param source The source code to be tokenized.
+    /// @param diagnostics The diagnostic bag used to collect lexer diagnostics.
+    public Lexer(String source, DiagnosticBag diagnostics) {
 
         this.source = source;
         this.position = 0;
         this.line = 1;
         this.column = 1;
         this.currentChar = !source.isEmpty() ? source.charAt(0) : '\0';
+        this.diagnostics = diagnostics != null ? diagnostics : new DiagnosticBag();
     }
 
     /// Advance the current position by one character, updating line and column numbers.
@@ -77,6 +89,17 @@ public class Lexer {
 
     /// Skip over any whitespace characters.
     private void skipWhitespace() { while (currentChar != '\0' && Character.isWhitespace(currentChar)) advance(); }
+
+    /// Returns the diagnostics collected during tokenization.
+    /// @return An immutable list of lexer diagnostics.
+    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
+
+    private Token unknownToken(int tokenLine, int tokenColumn, String lexeme) {
+
+        var token = new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
+        diagnostics.report(Diagnostic.error(DiagnosticPhase.LEXER, "Unrecognized token: '" + lexeme + "'", token));
+        return token;
+    }
 
     /// Skip over comments (single-line and multi-line).
     ///
@@ -126,6 +149,7 @@ public class Lexer {
         while (currentChar != '\0' && (Character.isDigit(currentChar) || currentChar == '.')) {
 
             if (currentChar == '.') {
+
                 if (seenDot) break;   // second dot — stop here; leave it for the next token
                 seenDot = true;
             }
@@ -135,6 +159,7 @@ public class Lexer {
 
         // Consume optional type suffix: l/L, f/F, d/D, b/B
         if (currentChar != '\0' && "lLfFdDbB".indexOf(currentChar) >= 0) {
+
             number.append(currentChar);
             advance();
         }
@@ -143,7 +168,7 @@ public class Lexer {
     }
 
     /// Read an identifier or keyword, which starts with a letter or underscore and can contain letters, digits, and underscores.
-    /// After reading the sequence, check if it matches a keyword or type; if not, treat it as an identifier.
+    /// After reading the sequence, checkCurrentTokenType if it matches a keyword or type; if not, treat it as an identifier.
     /// @return A KeywordToken, TypeToken, or LiteralToken representing the identifier or keyword.
     private Token readIdentifierOrKeyword() {
 
@@ -159,54 +184,60 @@ public class Lexer {
         
         var value = identifier.toString();
 
-        // Boolean literals "true" and "false" are tokenized as LiteralTokens with BooleanLiteral type
-        if ("true".equals(value)) return new LiteralToken(BoolLiteral.TRUE,  startLine, startColumn);
-        if ("false".equals(value)) return new LiteralToken(BoolLiteral.FALSE, startLine, startColumn);
+        var asLiteral = LITERALS.get(value);
+        var asKeyword = KEYWORDS.get(value);
+        var asAccessModifier = ACCESS_MODIFIERS.get(value);
+        var asPrimitiveType = TYPES.get(value);
 
-        var isKeyword = KEYWORDS.get(value);
-        var isType = TYPES.get(value);
-
-        if (isKeyword != null) return new KeywordToken(isKeyword, startLine, startColumn);
-        if (isType != null) return new TypeToken(isType, startLine, startColumn);
+        if (asLiteral != null) return new LiteralToken((Literal) asLiteral, startLine, startColumn);
+        if (asKeyword != null) return new KeywordToken((Keyword) asKeyword, startLine, startColumn);
+        if (asAccessModifier != null) return new KeywordToken((AccessModifier) asAccessModifier, startLine, startColumn);
+        if (asPrimitiveType != null) return new TypeToken((PrimitiveType) asPrimitiveType, startLine, startColumn);
         return new LiteralToken(new IdentifierLiteral(value), startLine, startColumn);
     }
 
     /// Read a string literal, which starts and ends with double quotes.
     ///
     /// Handles escape sequences for double quotes (e.g., {@code \\"} becomes a double quote in the string).
-    /// @return A LiteralToken representing the string literal.
+    /// Returns an {@code UNKNOWN} token when end-of-file is reached before the closing double quote.
+    /// @return A LiteralToken representing the string literal, or an UNKNOWN token on error.
     private Token readString() {
 
         var startLine = line;
         var startColumn = column;
         var string = new StringBuilder();
+        var raw = new StringBuilder("\"");
         advance(); // skip opening quote
 
         while (currentChar != '\0' && currentChar != '"') if (currentChar == '\\') {
 
+            raw.append(currentChar);
             advance(); // skip backslash
-            if (currentChar != '\0') {
+            if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
 
-                // Handle escape sequences
-                var escapedChar = switch (currentChar) {
-                    case 'n' -> '\n';
-                    case 't' -> '\t';
-                    case 'r' -> '\r';
-                    case '"' -> '"';
-                    case '\'' -> '\'';
-                    case '\\' -> '\\';
-                    default -> currentChar;  // Unrecognized escape: pass through verbatim
-                };
-                string.append(escapedChar);
-                advance();
-            }
+            raw.append(currentChar);
+            // Handle escape sequences
+            var escapedChar = switch (currentChar) {
+                case 'n' -> '\n';
+                case 't' -> '\t';
+                case 'r' -> '\r';
+                case '"' -> '"';
+                case '\'' -> '\'';
+                case '\\' -> '\\';
+                default -> currentChar;  // Unrecognized escape: pass through verbatim
+            };
+            string.append(escapedChar);
+            advance();
         } else {
 
+            raw.append(currentChar);
             string.append(currentChar);
             advance();
         }
-        
-        if (currentChar == '"') advance(); // skip closing quote
+
+        if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
+
+        advance(); // skip closing quote
         return new LiteralToken(new StringLiteral(string.toString()), startLine, startColumn);
     }
 
@@ -225,19 +256,22 @@ public class Lexer {
         if (currentChar == '\'') {
 
             advance(); // skip closing quote
-            return new Token(Special.UNKNOWN, startLine, startColumn);
+            return unknownToken(startLine, startColumn, "''");
         }
 
         // Unterminated char literal: reached EOF before closing quote
-        if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
+        if (currentChar == '\0') return unknownToken(startLine, startColumn, "'");
 
         var ch = '\0';
+        var raw = new StringBuilder("'");
         if (currentChar == '\\') {
 
+            raw.append('\\');
             advance(); // skip backslash
-            if (currentChar == '\0') return new Token(Special.UNKNOWN, startLine, startColumn);
+            if (currentChar == '\0') return unknownToken(startLine, startColumn, raw.toString());
 
             // Handle escape sequences
+            raw.append(currentChar);
             ch = switch (currentChar) {
                 case 'n' -> '\n';
                 case 't' -> '\t';
@@ -249,12 +283,13 @@ public class Lexer {
             advance();
         } else {
 
+            raw.append(currentChar);
             ch = currentChar;
             advance();
         }
 
         // Expect closing quote; if missing, return UNKNOWN
-        if (currentChar != '\'') return new Token(Special.UNKNOWN, startLine, startColumn);
+        if (currentChar != '\'') return unknownToken(startLine, startColumn, raw.toString());
         advance(); // skip closing quote
         return new LiteralToken(new CharLiteral(ch), startLine, startColumn);
     }
@@ -276,7 +311,7 @@ public class Lexer {
 
             advance();
             advance();
-            return new OperatorToken(type, tokenLine, tokenColumn);
+            return new OperatorToken((Operator) type, tokenLine, tokenColumn);
         }
         
         var oneChar = "" + currentChar;
@@ -285,7 +320,7 @@ public class Lexer {
         if (type != null) {
 
             advance();
-            return new OperatorToken(type, tokenLine, tokenColumn);
+            return new OperatorToken((Operator) type, tokenLine, tokenColumn);
         }
         
         return null;
@@ -301,22 +336,22 @@ public class Lexer {
         var tokenColumn = column;
         
         var twoChar = "" + currentChar + peek();
-        var type = DELIMITERS.get(twoChar);
+        var asDelimiter = DELIMITERS.get(twoChar);
 
-        if (type != null) {
+        if (asDelimiter != null) {
 
             advance();
             advance();
-            return new DelimiterToken(type, tokenLine, tokenColumn);
+            return new DelimiterToken((Delimiter) asDelimiter, tokenLine, tokenColumn);
         }
         
         var oneChar = "" + currentChar;
-        type = DELIMITERS.get(oneChar);
+        asDelimiter = DELIMITERS.get(oneChar);
         
-        if (type != null) {
+        if (asDelimiter != null) {
 
             advance();
-            return new DelimiterToken(type, tokenLine, tokenColumn);
+            return new DelimiterToken((Delimiter) asDelimiter, tokenLine, tokenColumn);
         }
         
         return null;
@@ -356,8 +391,9 @@ public class Lexer {
             
             var tokenLine = line;
             var tokenColumn = column;
+            var lexeme = Character.toString(currentChar);
             advance();
-            return new Token(Special.UNKNOWN, tokenLine, tokenColumn);
+            return unknownToken(tokenLine, tokenColumn, lexeme);
         }
         
         return new Token(Special.EOF, line, column);

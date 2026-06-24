@@ -1,21 +1,10 @@
 package lexer.token.family;
 
-import parser.ast.nodes.statement.ClassDeclarationStatement;
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
-/// Represents a non-primitive type in the token family, which is associated with a class declaration.
-public class NonPrimitiveType implements TokenFamily {
-
-    private final ClassDeclarationStatement classDecl;
-
-    /// Constructs a new NonPrimitiveType with the specified class declaration.
-    /// @param className The ClassDeclarationStatement representing the class associated with this non-primitive type.
-    public NonPrimitiveType(ClassDeclarationStatement className) { this.classDecl = className; }
+/// Represents a non-primitive type, which is a user-defined class or interface type.
+public record NonPrimitiveType(String typeName) implements TokenClass {
 
     @Override
-    public String get() { return classDecl.getName(); }
-
-    /// Returns the ClassDeclarationStatement associated with this non-primitive type.
-    /// @return The ClassDeclarationStatement representing the class associated with this non-primitive type.
-    public ClassDeclarationStatement getClassDeclaration() { return classDecl; }
+    public String token() { return typeName; }
 }

@@ -1,9 +1,9 @@
 package lexer.token.family;
 
-import lexer.token.TokenFamily;
+import lexer.token.TokenClass;
 
 /// Represents primitive types in the programming language, such as int, long, byte, float, double, char, bool, and void.
-public enum PrimitiveType implements TokenFamily {
+public enum PrimitiveType implements TokenClass {
 
     /// The int primitive type, representing integer values.
     INT("int"),
@@ -39,5 +39,5 @@ public enum PrimitiveType implements TokenFamily {
     PrimitiveType(String name) { this.name = name; }
 
     @Override
-    public String get() {  return name; }
+    public String token() {  return name; }
 }

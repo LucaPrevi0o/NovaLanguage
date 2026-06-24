@@ -1,16 +1,17 @@
 package parser;
 
+import error.diagnostic.Diagnostic;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
-import parser.parser.DeclarationParser;
-import parser.parser.util.ParseErrorsException;
-import parser.parser.util.ParseException;
-import parser.parser.util.ParserBase;
-import parser.parser.util.ParserState;
-import parser.parser.ClassParser;
-import parser.parser.ExpressionParser;
+import parser.grammar.DeclarationParser;
+import error.diagnostic.ParseErrorsException;
+import error.diagnostic.ParseException;
+import parser.support.ParserBase;
+import parser.support.ParserState;
+import parser.grammar.ClassParser;
+import parser.grammar.ExpressionParser;
 import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
@@ -99,6 +100,10 @@ public class Parser extends ParserBase {
         symbolTable.register(new FunctionDeclarationStatement(0, 0, returnType, name, params, null));
     }
 
+    /// Returns the diagnostics collected during this parser run.
+    /// @return An immutable list of parser diagnostics.
+    public List<Diagnostic> getDiagnostics() { return state.getDiagnostics(); }
+
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
     /// <p>Errors are collected via {@link #synchronize() error recovery}: parsing continues after
@@ -110,17 +115,18 @@ public class Parser extends ParserBase {
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
+        state.clearErrors();
         var statements = new ArrayList<StatementNode>();
-        var errors     = new ArrayList<ParseException>();
 
         while (isNotAtEnd()) try {
             statements.add(declarationParser.parseDeclaration());
         } catch (ParseException e) {
 
-            errors.add(e);
+            state.report(e);
             synchronize();
         }
 
+        var errors = state.getErrors();
         if (!errors.isEmpty()) throw new ParseErrorsException(errors);
         return statements;
     }
@@ -140,19 +146,19 @@ public class Parser extends ParserBase {
     /// </ul>
     private void synchronize() {
 
-        if (isNotAtEnd()) advance();  // always skip the offending token
+        if (isNotAtEnd()) getNextToken();  // always skip the offending token
         while (isNotAtEnd()) {
 
-            // A semicolon marks the end of the previous statement — safe to resume after it.
-            if (previous().getType() == Delimiter.SEMICOLON) return;
+            // A semicolon marks the end of the getPreviousToken statement — safe to resume after it.
+            if (getPreviousToken().getType() == Delimiter.SEMICOLON) return;
 
             // Keywords that begin a new declaration or statement are also safe resume points.
-            var next = peek().getType();
+            var next = getCurrentToken().getType();
             if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
                 next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
                 next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
 
-            advance();
+            getNextToken();
         }
     }
 }

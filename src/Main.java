@@ -1,5 +1,7 @@
 import lexer.Lexer;
 import parser.Parser;
+import parser.ast.Printable;
+import error.diagnostic.ParseErrorsException;
 import printer.AstPrinter;
 import printer.SymbolTablePrinter;
 
@@ -45,10 +47,17 @@ public class Main {
             System.out.println("Total AST nodes: " + ast.size());
 
             System.out.println("\n=== AST STRUCTURE ===\n");
-            for (var node : ast) AstPrinter.printASTNode(node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
+            for (var node : ast) AstPrinter.printASTNode((Printable) node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
 
             System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable(), new ArrayList<>());
+            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable());
+
+        } catch (ParseErrorsException e) {
+
+            System.out.println("Parsing failed with " + e.getDiagnostics().size() + " error(s).\n");
+            System.out.println("=== PARSING ERRORS ===\n");
+            for (var diagnostic : e.getDiagnostics()) System.out.println("  " + diagnostic.format());
+
         } catch (Exception e) {
 
             System.err.println("\n=== PARSING ERROR ===");

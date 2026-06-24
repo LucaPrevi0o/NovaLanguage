@@ -120,7 +120,7 @@ The package manager is **Orbit**, and the community package registry is **the Ne
 > The backend (IR generation, optimization, and native code emission) is a future milestone described in the [Further development](#further-development) section.
 
 ## Requirements
-- **Maven** (see [pom.xml](pom.xml))
+- **Maven Wrapper** (included; use `./mvnw` from the repository root)
 - **Java** (version 24+ - suggested: [**OpenJDK release 26**](https://jdk.java.net/26/) for latest features and improvements)
 
 > [!NOTE]
@@ -198,7 +198,7 @@ Every token carries its **source position** (line and column), which propagates 
 
 ### Token families
 
-All token types implement the [`TokenFamily`](src/lexer/token/TokenFamily.java) marker interface, organized into enums and classes under `token/family/`:
+All token types implement the [`TokenClass`](src/lexer/token/TokenClass.java) marker interface, organized into enums and classes under `token/family/`:
 
 | Type                                                           | Examples                                       |
 |----------------------------------------------------------------|------------------------------------------------|

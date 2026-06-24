@@ -1,8 +1,6 @@
 # Folders
 .idea
 target
-docs
-out
 
 # Files
 *.txt

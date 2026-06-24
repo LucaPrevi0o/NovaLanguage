@@ -5,33 +5,31 @@ import parser.ast.nodes.ExpressionNode;
 /// Represents the return type of a declaration, which can be a primitive type, a non-primitive type, an array type, or a generic type.
 public class ReturnType {
     
-    private final TokenFamily baseType;
+    private final TokenClass tokenClass;
     private final ExpressionNode[] arraySizes;
     private final ReturnType[] superTypes;
     private final ReturnType genericParameterType;
-    private final boolean isGeneric;
 
     /// Create a return type with all details specified.
-    /// @param baseType The base type (primitive or custom class).
+    /// @param tokenClass The base type (primitive or custom class).
     /// @param arraySizes The sizes of each array dimension (empty if not an array).
     /// @param superTypes The super types if this is a class type (null if not a class).
     /// @param genericParameterType The generic parameter type if this is a generic type (null if not generic).
-    public ReturnType(TokenFamily baseType, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType, boolean isGeneric) {
+    public ReturnType(TokenClass tokenClass, ExpressionNode[] arraySizes, ReturnType[] superTypes, ReturnType genericParameterType) {
 
-        this.baseType = baseType;
+        this.tokenClass = tokenClass;
         this.arraySizes = arraySizes;
         this.superTypes = superTypes;
         this.genericParameterType = genericParameterType;
-        this.isGeneric = isGeneric;
     }
 
     /// Create a simple return type with just a base type (no arrays, no generics).
-    /// @param baseType The base type (primitive or custom class).
-    public ReturnType(TokenFamily baseType) { this(baseType, new ExpressionNode[0], null, null, false); }
+    /// @param tokenClass The base type (primitive or custom class).
+    public ReturnType(TokenClass tokenClass) { this(tokenClass, new ExpressionNode[0], null, null); }
 
     /// Get the base type (primitive or custom class).
     /// @return The base type of this return type.
-    public TokenFamily getBaseType() { return baseType; }
+    public TokenClass getTokenClass() { return tokenClass; }
 
     /// Get the array sizes if this is an array type.
     /// @return An array of ExpressionNodes representing the sizes of each array dimension, or an empty array if this is not an array type.
@@ -49,14 +47,10 @@ public class ReturnType {
     /// @return true if this return type is an array type (i.e., has one or more array dimensions), false otherwise.
     public boolean isArray() { return arraySizes.length > 0; }
 
-    /// Check if this return type represents a generic type.
-    /// @return true if this return type is a generic type (i.e., has a generic parameter type), false otherwise.
-    public boolean isGeneric() { return isGeneric; }
-
     @Override
     public String toString() {
 
-        var sb = new StringBuilder(baseType.get());
+        var sb = new StringBuilder(tokenClass.token());
         for (var arraySize : arraySizes) sb.append("[").append(arraySize).append("]");
         return sb.toString();
     }
