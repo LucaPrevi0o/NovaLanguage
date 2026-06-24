@@ -1,12 +1,31 @@
-/**
- * Semantic scope representation and construction for Nova programs.
- *
- * <p>This package models lexical visibility after parsing. Semantic scopes organize
- * declarations into global, class, function, constructor, block, loop, switch, and branch
- * contexts so analysis passes can resolve names according to source structure.</p>
- *
- * <p>The semantic scope tree is the long-term source of truth for name visibility. Parser
- * code should avoid rebuilding semantic meaning once declarations and scopes are available
- * here.</p>
- */
+/// # Semantic scopes
+///
+/// Semantic scope representation and construction for Nova programs.
+///
+/// This package models lexical visibility after parsing. Semantic scopes organize declarations
+/// into a tree that later passes can use for name lookup and contextual validation.
+///
+/// ## Scope categories
+///
+/// - Global scope
+/// - Class scope
+/// - Function scope
+/// - Constructor scope
+/// - Block scope
+/// - Loop scope
+/// - Switch scope
+/// - Branch scope
+///
+/// ## Responsibilities
+///
+/// - Attach declarations to the scope where they are introduced.
+/// - Preserve parent/child visibility relationships.
+/// - Support semantic name resolution.
+/// - Provide the foundation for duplicate validation and contextual checks.
+///
+/// ## Design direction
+///
+/// The semantic scope tree should be the long-term source of truth for name visibility. Parser
+/// code should avoid rebuilding or validating semantic scope meaning once this model is
+/// available.
 package semantic.scope;
