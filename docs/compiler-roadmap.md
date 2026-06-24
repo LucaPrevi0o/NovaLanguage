@@ -90,12 +90,13 @@ Completed or partially completed work includes:
 - l-value checking;
 - `break` / `continue` context checking;
 - moving undefined identifier and undefined class checks out of expression parsing;
-- removing parser-owned symbol-table scope construction and symbol registration.
+- removing parser-owned symbol-table scope construction and symbol registration;
+- narrowing parser `TypeRegistry` usage so expression parsing no longer depends on parser-side type metadata.
 
 Remaining work includes:
 
 - expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- replacing the remaining parser-side type-registry/type-syntax coupling;
+- replacing the remaining declaration/class parser `TypeRegistry` adapter with real parsed type syntax nodes;
 - keeping parser-generated ASTs simple and complete.
 
 ## Phase 5 - Real type model
@@ -109,6 +110,7 @@ Planned work:
 - add parsed type syntax nodes;
 - add resolved semantic type symbols;
 - separate primitive, class, array, and generic types at the semantic level;
+- remove the parser `TypeRegistry` once type syntax nodes can preserve class and generic metadata directly;
 - model Nova classes and Nova mathematical/value types separately.
 
 This phase is important before implementing advanced language features.

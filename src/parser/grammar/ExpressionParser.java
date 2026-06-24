@@ -17,7 +17,6 @@ import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.ast.nodes.expression.literal.number.*;
 import parser.support.ParserBase;
 import parser.support.ParserState;
-import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
 import lexer.token.family.Operator;
@@ -46,10 +45,9 @@ import java.util.ArrayList;
 public class ExpressionParser extends ParserBase {
 
     /// Constructs a new ExpressionParser.
-    /// @param state        The current parser state (token stream).
-    /// @param typeRegistry The per-session type registry.
-    public ExpressionParser(ParserState state, TypeRegistry typeRegistry) {
-        super(state, typeRegistry);
+    /// @param state The current parser state (token stream).
+    public ExpressionParser(ParserState state) {
+        super(state);
     }
 
     /// Entry point: parses a full expression.

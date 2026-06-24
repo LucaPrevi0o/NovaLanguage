@@ -1,15 +1,17 @@
 package lexer.token;
 
-import lexer.token.family.GenericParameterType;
-import lexer.token.family.NonPrimitiveType;
 import lexer.token.family.PrimitiveType;
 import java.util.ArrayList;
 import java.util.List;
 
-/// A per-parse-session registry of all known types (primitives + user-declared classes).
+/// Temporary per-parse-session adapter for parser-side ReturnType metadata.
 ///
 /// Each {@link parser.Parser} creates its own instance, eliminating static shared state
 /// and making concurrent parsing and testing safe.
+///
+/// This registry is not a semantic type table and should not be used for validation.
+/// Declaration and class parsing still use it to preserve class/generic ReturnType metadata
+/// until Phase 5 introduces parsed type syntax nodes and resolved semantic type symbols.
 public class TypeRegistry {
 
     private final List<ReturnType> types = new ArrayList<>();
@@ -28,14 +30,4 @@ public class TypeRegistry {
         return types.stream().filter(t -> t.getTokenClass().token().equals(typeName)).findFirst().orElse(null);
     }
 
-    /// Determines whether the given name corresponds to a registered custom class.
-    /// @param typeName The class name to checkCurrentTokenType.
-    /// @return {@code true} if the name is a registered type;
-    public boolean isCustomType(String typeName) {
-
-        var returnType = getReturnType(typeName);
-        if (returnType == null) return false;
-        var tokenClass = returnType.getTokenClass();
-        return tokenClass instanceof NonPrimitiveType || tokenClass instanceof GenericParameterType;
-    }
 }

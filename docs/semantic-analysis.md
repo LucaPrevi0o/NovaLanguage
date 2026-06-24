@@ -192,7 +192,7 @@ The current semantic architecture is still transitional.
 Known limitations include:
 
 - the type model still depends too heavily on lexer token classes;
-- parser type parsing still uses a temporary parse-session `TypeRegistry`;
+- declaration/class type parsing still uses a temporary parse-session `TypeRegistry` as a `ReturnType` metadata adapter;
 - the compiler is still single-file oriented;
 - builtins and standard-library declarations are not yet modeled semantically or loaded through the same source pipeline as user code;
 - advanced features such as full generics, lambdas, and monomorphization are deliberately deferred.

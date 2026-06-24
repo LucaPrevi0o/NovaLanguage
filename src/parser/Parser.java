@@ -50,7 +50,8 @@ public class Parser extends ParserBase {
     private List<StatementNode> parsedStatements = List.of();
 
     /// Constructs a new Parser with the given list of tokens.
-    /// Creates a fresh per-session {@link TypeRegistry} and initializes the declaration parser.
+    /// Creates a fresh per-session {@link TypeRegistry} for declaration/class type metadata
+    /// and initializes the declaration parser.
     /// @param tokens The list of tokens to be parsed into an AST.
     public Parser(List<Token> tokens) {
 

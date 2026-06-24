@@ -13,12 +13,12 @@ Current focus: Phase 4 - semantic analysis split.
 | Phase                         | Status      | Summary                                                                                                                                                 |
 |-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
-| 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                    |
+| 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                                          |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
-| 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                               |
+| 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
 | 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                  |
 
@@ -186,7 +186,8 @@ Parser-owned semantic checks inventory:
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
 - [x] Type syntax/resolution coupling: `DeclarationParser.parseType()` now accepts identifier type syntax; semantic name resolution reports unknown types.
 - [x] Scope construction coupling: declaration and class parsers no longer build parser symbol-table scopes or register symbols while parsing syntax.
-- [ ] Type syntax coupling: parser `TypeRegistry` remains as a temporary parse-session helper until Phase 5 introduces real type syntax nodes.
+- [x] TypeRegistry boundary decision: expression parsing no longer depends on parser type metadata, and `TypeRegistry` is not used for semantic validation.
+- [ ] Type syntax coupling: declaration/class parsing still uses `TypeRegistry` only as a temporary `ReturnType` metadata adapter until Phase 5 introduces real type syntax nodes.
 
 Exit criteria:
 
@@ -205,6 +206,7 @@ Tasks:
 - [ ] Add parsed type syntax nodes, such as `TypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`.
 - [ ] Add resolved semantic type symbols, such as `PrimitiveTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
 - [ ] Keep `ReturnType` only as a temporary adapter, or replace it fully.
+- [ ] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [ ] Model Nova classes and Nova types separately, matching the README design.
 
 Exit criteria:
@@ -307,6 +309,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
-2. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.
-3. Start the next Phase 4/5 boundary step once the TypeRegistry decision is documented.
+1. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.
+2. Start the next Phase 4/5 boundary step once the TypeRegistry decision is documented.
+3. Keep future TypeRegistry work limited to the Phase 5 type-syntax replacement.

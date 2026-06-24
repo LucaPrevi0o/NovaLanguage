@@ -15,9 +15,16 @@ public abstract class ParserBase {
     protected final ParserState state;
     protected final TypeRegistry typeRegistry;
 
+    /// Constructor for parser components that do not need parse-session type metadata.
+    /// @param state The parser state to use for token management.
+    protected ParserBase(ParserState state) {
+
+        this(state, null);
+    }
+
     /// Constructor for parser components.
     /// @param state        The parser state to use for token management.
-    /// @param typeRegistry The per-session type registry to use.
+    /// @param typeRegistry The per-session type registry to use, or {@code null} for parsers that do not parse type syntax.
     protected ParserBase(ParserState state, TypeRegistry typeRegistry) {
 
         this.state = state;
@@ -29,7 +36,7 @@ public abstract class ParserBase {
     public ParserState getState() { return state; }
 
     /// Returns the type registry for this parse session.
-    /// @return The type registry.
+    /// @return The type registry, or {@code null} when this parser component does not parse type syntax.
     public TypeRegistry getTypeRegistry() { return typeRegistry; }
 
     // ========== Convenience Delegates to State ==========

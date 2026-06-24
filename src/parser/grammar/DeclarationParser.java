@@ -79,7 +79,7 @@ public class DeclarationParser extends ParserBase {
     public DeclarationParser(ParserState state, TypeRegistry typeRegistry) {
 
         super(state, typeRegistry);
-        this.expressionParser = new ExpressionParser(state, typeRegistry);
+        this.expressionParser = new ExpressionParser(state);
         this.classParser = new ClassParser(this);
     }
 
