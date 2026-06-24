@@ -54,7 +54,7 @@ public class Main {
 
         } catch (ParseErrorsException e) {
 
-            System.out.println("Parsing completed with " + e.getDiagnostics().size() + " error(s).\n");
+            System.out.println("Parsing failed with " + e.getDiagnostics().size() + " error(s).\n");
             System.out.println("=== PARSING ERRORS ===\n");
             for (var diagnostic : e.getDiagnostics()) System.out.println("  " + diagnostic.format());
 
