@@ -23,6 +23,8 @@ The long-term goal is to combine:
 - rich standard tooling;
 - a standard library that covers common needs without forcing every project to depend on fragile third-party packages.
 
+The wider Nova ecosystem follows the naming guide in [`ecosystem.md`](ecosystem.md). In that vocabulary, **Pulsar** is the compiler, **Orbit** is the planned package manager, **Nebula** is the planned community package registry, and each standalone package/artifact is a **Quark**.
+
 ## Syntax philosophy
 
 Nova syntax is intended to remain familiar.
@@ -277,29 +279,42 @@ However, this depends on a robust representation of function types, variadic gen
 
 Nova source files are expected to use the `.nv` extension.
 
-The language design currently reserves these names:
+The ecosystem vocabulary is defined in [`ecosystem.md`](ecosystem.md). The central names are:
 
-- **Orbit**: package manager;
-- **Nebula**: community package registry.
+- **Pulsar**: the Nova compiler;
+- **Orbit**: the planned package manager;
+- **Nebula**: the planned community package registry;
+- **Quark**: a standalone Nova artifact/package.
+
+The intended model is similar in spirit to Ruby's Gems, but with Nova's own vocabulary:
+
+> Orbit resolves, downloads, and upgrades Quark dependencies from Nebula.
+
+A Quark may represent a user library, an application package, a standard-library component, or a future compiler/tooling extension.
 
 These are design placeholders, not implemented tools.
 
 ## Standard library vision
 
-The long-term standard library should be broad enough that basic development does not require immediately reaching for third-party packages.
+The long-term standard library should be broad enough that basic development does not require immediately reaching for third-party packages, but it should not become a single monolithic unit.
 
-Potential areas include:
+The intended package family is:
 
-- I/O;
-- strings;
-- math;
-- collections;
-- testing support;
-- package tooling;
-- event-driven programming;
-- graphics/audio interfaces, eventually.
+- **Core**: the standard base package and minimal language/runtime foundation;
+- **Solar**: math and numeric utilities;
+- **Pulse**: event-driven programming, I/O, and asynchronous interaction;
+- **Spectrum**: graphics, rendering, and GPU-oriented utilities;
+- **Echo**: audio utilities;
+- **Atlas**: data structures and collections.
 
-Current compiler work should not try to implement all of this yet. The first step is to make the standard library load through the same source pipeline as user code.
+The intended dependency model is:
+
+- Core is the minimal base package;
+- additional standard packages are loaded on demand;
+- standard packages are conceptually Quarks;
+- user code and standard-library code should eventually pass through the same package, declaration, and compilation pipeline.
+
+Current compiler work should not try to implement all of this yet. The first step is to make standard-library declarations load through the same semantic path as user code.
 
 ## Native compilation
 
@@ -334,4 +349,4 @@ This document is allowed to be ambitious.
 
 The README should not be.
 
-When a language feature is only planned, keep it in this document or in the roadmap. The README should describe only what a reader can actually build, run, or inspect today.
+When a language feature is only planned, keep it in this document, in [`ecosystem.md`](ecosystem.md), or in the roadmap. The README should describe only what a reader can actually build, run, or inspect today.

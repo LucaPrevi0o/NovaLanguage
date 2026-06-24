@@ -4,6 +4,8 @@ This document is the narrative version of [`../PLAN.md`](../PLAN.md).
 
 `PLAN.md` remains the authoritative implementation checklist. This file explains the same direction in a more readable form for contributors and future readers.
 
+For the ecosystem naming vocabulary, see [`ecosystem.md`](ecosystem.md).
+
 ## Current focus
 
 Current focus: **Phase 5 - type model groundwork**.
@@ -16,6 +18,20 @@ In practical terms:
 - syntactically valid but meaningless code should be reported by semantic analysis;
 - parsed type syntax should be preserved before semantic resolution;
 - future compiler stages should consume a stable AST plus semantic type information.
+
+## Ecosystem direction
+
+The compiler itself is planned under the name **Pulsar**.
+
+The package ecosystem is planned around these names:
+
+- **Quark**: a standalone Nova artifact or package;
+- **Orbit**: the package manager that resolves and updates Quark dependencies;
+- **Nebula**: the community registry that hosts published Quarks;
+- **Core**: the minimal standard base package;
+- **Solar**, **Pulse**, **Spectrum**, **Echo**, and **Atlas**: optional standard-library package families.
+
+These names are documentation and design commitments, not current implementation status. Package resolution, registry access, and standard-package loading are future phases.
 
 ## Phase 1 - Build health
 
@@ -141,19 +157,32 @@ Planned work:
 
 Exit condition: two `.nv` files can reference each other.
 
+This phase is also the first real prerequisite for later Quark dependency support, because Pulsar needs a project-level view before Orbit can invoke it with a dependency graph.
+
 ## Phase 7 - Standard library as source
 
 Status: **not started**.
 
 The parser no longer hard-codes standard-library function registration. The long-term direction is for user code and standard-library code to share the same compiler path, but builtin and standard-library declarations are not modeled semantically yet.
 
+Planned standard-package direction:
+
+- **Core** should contain the minimal base package and fundamental declarations;
+- **Solar** should cover math and numeric utilities;
+- **Pulse** should cover event-driven programming, I/O, and asynchronous interaction;
+- **Spectrum** should cover graphics, rendering, and GPU-oriented utilities;
+- **Echo** should cover audio utilities;
+- **Atlas** should cover data structures and collections.
+
 Planned work:
 
-- create `stdlib/`;
+- create `stdlib/` with Nova source files;
 - decide how native/builtin declarations enter semantic declaration collection before source loading exists;
+- preload Core through the multi-file compiler pipeline;
 - represent standard-library functions as Nova source declarations where possible;
 - represent native/builtin functions as declarations with backend flags;
-- preload standard-library source through the multi-file compiler pipeline.
+- model optional standard packages as Quarks once package metadata exists;
+- keep user code and standard-library code on the same symbol/type path.
 
 ## Phase 8 - IR preparation
 
@@ -191,6 +220,21 @@ Planned work includes:
 > Variadic generics and lambdas are not independent features.
 > A likely lambda representation depends on `Function[{A}, R]`, where `{A}` is a variable-length argument-type list.
 > That means the type checker, function signatures, overload resolution, and monomorphizer must understand variadic type parameters before lambdas can be considered complete.
+
+## Orbit, Nebula, and Quarks
+
+Status: **future design item**.
+
+Package-management work should come after the multi-file compiler pipeline is reliable.
+
+Expected direction:
+
+- Orbit reads project metadata and resolves dependency graphs;
+- Nebula hosts published Quarks and version metadata;
+- each Quark exposes source files, metadata, dependencies, and eventually build/test documentation;
+- Pulsar compiles the project plus all resolved Quark dependencies using the same project-level pipeline.
+
+This phase should not start until compilation units, project contexts, and cross-file semantic analysis are stable.
 
 ## Compile-time metaprogramming
 
