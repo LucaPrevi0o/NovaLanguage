@@ -19,10 +19,16 @@ public final class DuplicateDeclarationValidator {
 
     private final DiagnosticBag diagnostics = new DiagnosticBag();
 
+    /// Validates a list of statements for duplicate declarations.
+    /// @param statements The list of statements to validate.
+    /// @return A list of diagnostics for any duplicate declarations found.
     public List<Diagnostic> validate(List<StatementNode> statements) {
         return validate(new SemanticScopeBuilder().build(statements));
     }
 
+    /// Validates a semantic scope for duplicate declarations.
+    /// @param rootScope The root semantic scope to validate.
+    /// @return A list of diagnostics for any duplicate declarations found.
     public List<Diagnostic> validate(SemanticScope rootScope) {
 
         diagnostics.clear();
@@ -30,6 +36,8 @@ public final class DuplicateDeclarationValidator {
         return diagnostics.getDiagnostics();
     }
 
+    /// Recursively validates a semantic scope and its children for duplicate declarations.
+    /// @param scope The semantic scope to validate.
     private void validateScope(SemanticScope scope) {
 
         if (scope == null) return;
@@ -44,6 +52,9 @@ public final class DuplicateDeclarationValidator {
         for (var child : scope.getChildren()) validateScope(child);
     }
 
+    /// Groups a list of semantic declarations by their names, ignoring constructors.
+    /// @param declarations The list of semantic declarations to group.
+    /// @return A map where the keys are declaration names and the values are lists of declarations with that name.
     private Map<String, List<SemanticDeclaration>> groupByName(List<SemanticDeclaration> declarations) {
 
         var groups = new LinkedHashMap<String, List<SemanticDeclaration>>();
@@ -55,6 +66,8 @@ public final class DuplicateDeclarationValidator {
         return groups;
     }
 
+    /// Reports a diagnostic for a duplicate declaration.
+    /// @param declaration The duplicate semantic declaration to report.
     private void reportDuplicate(SemanticDeclaration declaration) {
 
         diagnostics.report(Diagnostic.error(

@@ -24,6 +24,9 @@ public final class ReturnChecker {
 
     private final DiagnosticBag diagnostics = new DiagnosticBag();
 
+    /// Checks a list of statements for return statement issues.
+    /// @param statements The list of statements to check.
+    /// @return A list of diagnostics for any return statement issues found.
     public List<Diagnostic> check(List<StatementNode> statements) {
 
         diagnostics.clear();
@@ -32,67 +35,47 @@ public final class ReturnChecker {
         return diagnostics.getDiagnostics();
     }
 
+    /// Recursively checks a statement and its nested statements for return statement issues.
+    /// @param statement The statement to check.
+    /// @param context The current return context, which tracks the enclosing function or constructor.
     private void checkStatement(StatementNode statement, ReturnContext context) {
 
-        if (statement == null) return;
+        switch (statement) {
 
-        if (statement instanceof ClassDeclarationStatement classDeclaration) {
+            case ClassDeclarationStatement classDeclaration -> {
 
-            for (var method : classDeclaration.getMethods()) checkFunction(method);
-            for (var constructor : classDeclaration.getConstructors()) checkConstructor(constructor);
-            for (var innerClass : classDeclaration.getInnerClasses()) checkStatement(innerClass, context);
-            return;
+                for (var method : classDeclaration.getMethods()) checkFunction(method);
+                for (var constructor : classDeclaration.getConstructors()) checkConstructor(constructor);
+                for (var innerClass : classDeclaration.getInnerClasses()) checkStatement(innerClass, context);
+            }
+            case FunctionDeclarationStatement functionDeclaration -> checkFunction(functionDeclaration);
+            case ReturnStatement returnStatement -> checkReturn(returnStatement, context);
+            case BlockStatement block -> {
+                for (var child : block.getStatements()) checkStatement(child, context);
+            }
+            case IfStatement ifStatement -> {
+
+                checkStatement(ifStatement.getThenBlock(), context);
+                checkStatement(ifStatement.getElseBlock(), context);
+            }
+            case WhileStatement whileStatement -> checkStatement(whileStatement.getBody(), context);
+            case ForStatement forStatement -> {
+
+                checkStatement(forStatement.getInitialization(), context);
+                checkStatement(forStatement.getIncrement(), context);
+                checkStatement(forStatement.getBody(), context);
+            }
+            case ForEachStatement forEachStatement -> checkStatement(forEachStatement.getBody(), context);
+            case SwitchStatement switchStatement -> {
+                for (var switchCase : switchStatement.getCases()) checkStatement(switchCase.getBody(), context);
+            }
+            case null, default -> {}
         }
 
-        if (statement instanceof FunctionDeclarationStatement functionDeclaration) {
-
-            checkFunction(functionDeclaration);
-            return;
-        }
-
-        if (statement instanceof ReturnStatement returnStatement) {
-
-            checkReturn(returnStatement, context);
-            return;
-        }
-
-        if (statement instanceof BlockStatement block) {
-
-            for (var child : block.getStatements()) checkStatement(child, context);
-            return;
-        }
-
-        if (statement instanceof IfStatement ifStatement) {
-
-            checkStatement(ifStatement.getThenBlock(), context);
-            checkStatement(ifStatement.getElseBlock(), context);
-            return;
-        }
-
-        if (statement instanceof WhileStatement whileStatement) {
-
-            checkStatement(whileStatement.getBody(), context);
-            return;
-        }
-
-        if (statement instanceof ForStatement forStatement) {
-
-            checkStatement(forStatement.getInitialization(), context);
-            checkStatement(forStatement.getIncrement(), context);
-            checkStatement(forStatement.getBody(), context);
-            return;
-        }
-
-        if (statement instanceof ForEachStatement forEachStatement) {
-
-            checkStatement(forEachStatement.getBody(), context);
-            return;
-        }
-
-        if (statement instanceof SwitchStatement switchStatement)
-            for (var switchCase : switchStatement.getCases()) checkStatement(switchCase.getBody(), context);
     }
 
+    /// Checks a function declaration for return statement issues, ensuring that non-void functions have a return statement in all code paths.
+    /// @param functionDeclaration The function declaration to check.
     private void checkFunction(FunctionDeclarationStatement functionDeclaration) {
 
         var context = new ReturnContext(functionDeclaration.getName(), functionDeclaration.getDeclaredType(), false);
@@ -107,12 +90,17 @@ public final class ReturnChecker {
             ));
     }
 
+    /// Checks a class constructor declaration for return statement issues, ensuring that constructors do not return a value.
+    /// @param constructorDeclaration The class constructor declaration to check.
     private void checkConstructor(ClassConstructorDeclaration constructorDeclaration) {
 
         var context = new ReturnContext("<constructor>", new ReturnType(PrimitiveType.VOID), true);
         checkStatement(constructorDeclaration.getBody(), context);
     }
 
+    /// Checks a return statement against its enclosing function or constructor context, reporting errors for invalid return usage.
+    /// @param returnStatement The return statement to check.
+    /// @param context The current return context, which tracks the enclosing function or constructor.
     private void checkReturn(ReturnStatement returnStatement, ReturnContext context) {
 
         if (context == null) {
@@ -153,29 +141,34 @@ public final class ReturnChecker {
         ));
     }
 
+    /// Determines if a statement guarantees a return in all code paths.
+    /// @param statement The statement to check.
+    /// @return `true` if the statement guarantees a return; otherwise, `false`.
     private boolean guaranteesReturn(StatementNode statement) {
 
-        if (statement == null) return false;
-        if (statement instanceof ReturnStatement) return true;
+        return switch (statement) {
 
-        if (statement instanceof BlockStatement block) {
+            case ReturnStatement _ -> true;
+            case BlockStatement block -> {
 
-            for (var child : block.getStatements())
-                if (guaranteesReturn(child)) return true;
-            return false;
-        }
-
-        if (statement instanceof IfStatement ifStatement)
-            return ifStatement.getElseBlock() != null &&
-                guaranteesReturn(ifStatement.getThenBlock()) &&
-                guaranteesReturn(ifStatement.getElseBlock());
-
-        return false;
+                for (var child : block.getStatements())
+                    if (guaranteesReturn(child)) yield true;
+                yield false;
+            }
+            case IfStatement ifStatement -> ifStatement.getElseBlock() != null &&
+                    guaranteesReturn(ifStatement.getThenBlock()) &&
+                    guaranteesReturn(ifStatement.getElseBlock());
+            case null, default -> false;
+        };
     }
 
+    /// Determines if a return type is void.
+    /// @param returnType The return type to check.
+    /// @return `true` if the return type is void; otherwise, `false`.
     private boolean isVoid(ReturnType returnType) {
         return returnType != null && returnType.getTokenClass() == PrimitiveType.VOID;
     }
 
+    /// Represents the context of a return statement, including the name of the enclosing function or constructor, its return type, and whether it is a constructor.
     private record ReturnContext(String name, ReturnType returnType, boolean constructor) { }
 }

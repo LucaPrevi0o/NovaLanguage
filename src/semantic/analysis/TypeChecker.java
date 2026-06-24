@@ -56,6 +56,9 @@ public final class TypeChecker {
     private final DiagnosticBag diagnostics = new DiagnosticBag();
     private SemanticScope rootScope;
 
+    /// Checks a list of statements for type errors and returns a list of diagnostics.
+    /// @param statements The list of statements to check.
+    /// @return A list of diagnostics for any type errors found.
     public List<Diagnostic> check(List<StatementNode> statements) {
 
         diagnostics.clear();
@@ -65,98 +68,65 @@ public final class TypeChecker {
         return diagnostics.getDiagnostics();
     }
 
+    /// Returns the root semantic scope built during type checking.
+    /// @return The root semantic scope.
     public SemanticScope getRootScope() { return rootScope; }
 
+    /// Recursively checks a statement and its nested statements for type errors.
+    /// @param statement The statement to check.
+    /// @param scope The current semantic scope for type checking.
     private void checkStatement(StatementNode statement, SemanticScope scope) {
 
-        if (statement == null) return;
+        switch (statement) {
 
-        if (statement instanceof ClassDeclarationStatement classDeclaration) {
+            case ClassDeclarationStatement classDeclaration -> checkClass(classDeclaration, scope);
+            case ClassMethodDeclaration methodDeclaration -> checkFunction(methodDeclaration, scope, "method " + methodDeclaration.getName());
+            case FunctionDeclarationStatement functionDeclaration -> checkFunction(functionDeclaration, scope, "function " + functionDeclaration.getName());
+            case VariableDeclarationStatement variableDeclaration -> checkInitializer(variableDeclaration, scope);
+            case BlockStatement block -> checkBlock(block, scope);
+            case ExpressionStatement expressionStatement -> inferExpression(expressionStatement.getExpression(), scope);
+            case ReturnStatement returnStatement -> inferExpression(returnStatement.getReturnValue(), scope);
+            case IfStatement ifStatement -> {
 
-            checkClass(classDeclaration, scope);
-            return;
-        }
-
-        if (statement instanceof ClassMethodDeclaration methodDeclaration) {
-
-            checkFunction(methodDeclaration, scope, "method " + methodDeclaration.getName());
-            return;
-        }
-
-        if (statement instanceof FunctionDeclarationStatement functionDeclaration) {
-
-            checkFunction(functionDeclaration, scope, "function " + functionDeclaration.getName());
-            return;
-        }
-
-        if (statement instanceof VariableDeclarationStatement variableDeclaration) {
-
-            checkInitializer(variableDeclaration, scope);
-            return;
-        }
-
-        if (statement instanceof BlockStatement block) {
-
-            checkBlock(block, scope);
-            return;
-        }
-
-        if (statement instanceof ExpressionStatement expressionStatement) {
-
-            inferExpression(expressionStatement.getExpression(), scope);
-            return;
-        }
-
-        if (statement instanceof ReturnStatement returnStatement) {
-
-            inferExpression(returnStatement.getReturnValue(), scope);
-            return;
-        }
-
-        if (statement instanceof IfStatement ifStatement) {
-
-            expectBool(ifStatement.getCondition(), scope, "If condition must be bool");
-            checkBranch(ifStatement.getThenBlock(), scope, "if-then", ifStatement);
-            checkBranch(ifStatement.getElseBlock(), scope, "if-else", ifStatement);
-            return;
-        }
-
-        if (statement instanceof WhileStatement whileStatement) {
-
-            expectBool(whileStatement.getCondition(), scope, "While condition must be bool");
-            checkBranch(whileStatement.getBody(), scope, "while", whileStatement);
-            return;
-        }
-
-        if (statement instanceof ForStatement forStatement) {
-
-            var forScope = childScope(scope, "for", forStatement);
-            checkStatement(forStatement.getInitialization(), forScope);
-            expectBool(forStatement.getCondition(), forScope, "For condition must be bool");
-            checkStatement(forStatement.getIncrement(), forScope);
-            checkBranch(forStatement.getBody(), forScope, "for-body", forStatement);
-            return;
-        }
-
-        if (statement instanceof ForEachStatement forEachStatement) {
-
-            inferExpression(forEachStatement.getIterable(), scope);
-            var forEachScope = childScope(scope, "for-each", forEachStatement);
-            checkBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
-            return;
-        }
-
-        if (statement instanceof SwitchStatement switchStatement) {
-
-            inferExpression(switchStatement.getSubject(), scope);
-            var switchScope = childScope(scope, "switch", switchStatement);
-            for (var switchCase : switchStatement.getCases()) {
-                inferExpression(switchCase.getValue(), scope);
-                checkBranch(switchCase.getBody(), switchScope, "switch-case", switchCase);
+                expectBool(ifStatement.getCondition(), scope, "If condition must be bool");
+                checkBranch(ifStatement.getThenBlock(), scope, "if-then", ifStatement);
+                checkBranch(ifStatement.getElseBlock(), scope, "if-else", ifStatement);
             }
+            case WhileStatement whileStatement -> {
+
+                expectBool(whileStatement.getCondition(), scope, "While condition must be bool");
+                checkBranch(whileStatement.getBody(), scope, "while", whileStatement);
+            }
+            case ForStatement forStatement -> {
+
+                var forScope = childScope(scope, "for", forStatement);
+                checkStatement(forStatement.getInitialization(), forScope);
+                expectBool(forStatement.getCondition(), forScope, "For condition must be bool");
+                checkStatement(forStatement.getIncrement(), forScope);
+                checkBranch(forStatement.getBody(), forScope, "for-body", forStatement);
+            }
+            case ForEachStatement forEachStatement -> {
+
+                inferExpression(forEachStatement.getIterable(), scope);
+                var forEachScope = childScope(scope, "for-each", forEachStatement);
+                checkBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
+            }
+            case SwitchStatement switchStatement -> {
+
+                inferExpression(switchStatement.getSubject(), scope);
+                var switchScope = childScope(scope, "switch", switchStatement);
+                for (var switchCase : switchStatement.getCases()) {
+                    inferExpression(switchCase.getValue(), scope);
+                    checkBranch(switchCase.getBody(), switchScope, "switch-case", switchCase);
+                }
+            }
+            case null, default -> {}
         }
     }
 
+    /// Recursively checks a class declaration and its members for type errors.
+    /// @param classDeclaration The class declaration to check.
+    /// @param scope The current semantic scope for type checking.
     private void checkClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
         var classScope = childScope(scope, "class " + classDeclaration.getName(), classDeclaration);
@@ -167,22 +137,29 @@ public final class TypeChecker {
         for (var innerClass : classDeclaration.getInnerClasses()) checkClass(innerClass, classScope);
     }
 
+    /// Recursively checks a function declaration and its body for type errors.
+    /// @param functionDeclaration The function declaration to check.
+    /// @param scope The current semantic scope for type checking.
+    /// @param scopeName The name of the scope for error reporting.
     private void checkFunction(FunctionDeclarationStatement functionDeclaration, SemanticScope scope, String scopeName) {
 
         var functionScope = childScope(scope, scopeName, functionDeclaration);
         checkFunctionBody(functionDeclaration.getBody(), functionScope);
     }
 
-    private void checkConstructor(
-        ClassConstructorDeclaration constructorDeclaration,
-        ClassDeclarationStatement classDeclaration,
-        SemanticScope classScope
-    ) {
+    /// Recursively checks a class constructor declaration and its body for type errors.
+    /// @param constructorDeclaration The class constructor declaration to check.
+    /// @param classDeclaration The class declaration that owns the constructor.
+    /// @param classScope The current semantic scope for type checking.
+    private void checkConstructor(ClassConstructorDeclaration constructorDeclaration, ClassDeclarationStatement classDeclaration, SemanticScope classScope) {
 
         var constructorScope = childScope(classScope, "constructor " + classDeclaration.getName(), constructorDeclaration);
         checkFunctionBody(constructorDeclaration.getBody(), constructorScope);
     }
 
+    /// Recursively checks a function or constructor body for type errors.
+    /// @param body The body of the function or constructor to check.
+    /// @param functionScope The current semantic scope for type checking.
     private void checkFunctionBody(StatementNode body, SemanticScope functionScope) {
 
         if (body instanceof BlockStatement block)
@@ -190,12 +167,20 @@ public final class TypeChecker {
         else checkStatement(body, functionScope);
     }
 
+    /// Recursively checks a block statement and its nested statements for type errors.
+    /// @param block The block statement to check.
+    /// @param scope The current semantic scope for type checking.
     private void checkBlock(BlockStatement block, SemanticScope scope) {
 
         var blockScope = childScope(scope, "block", block);
         for (var statement : block.getStatements()) checkStatement(statement, blockScope);
     }
 
+    /// Recursively checks a branch statement (if, while, for, etc.) and its nested statements for type errors.
+    /// @param statement The branch statement to check.
+    /// @param scope The current semantic scope for type checking.
+    /// @param scopeName The name of the scope for error reporting.
+    /// @param owner The AST node that owns the branch statement.
     private void checkBranch(StatementNode statement, SemanticScope scope, String scopeName, AstNode owner) {
 
         if (statement == null) return;
@@ -203,6 +188,9 @@ public final class TypeChecker {
         else checkStatement(statement, childScope(scope, scopeName, owner));
     }
 
+    /// Checks a variable declaration statement for type errors in its initializer expression.
+    /// @param declaration The variable declaration statement to check.
+    /// @param scope The current semantic scope for type checking.
     private void checkInitializer(VariableDeclarationStatement declaration, SemanticScope scope) {
 
         var valueType = inferExpression(declaration.getInitialValue(), scope);
@@ -210,79 +198,73 @@ public final class TypeChecker {
             reportTypeMismatch(declaration.getDeclaredType(), valueType, declaration.getInitialValue());
     }
 
+    /// Infers the type of an expression and checks for type errors.
+    /// @param expression The expression to infer the type of.
+    /// @param scope The current semantic scope for type checking.
+    /// @return The inferred type of the expression, or `null` if the type could not be determined.
     private ReturnType inferExpression(ExpressionNode expression, SemanticScope scope) {
 
-        if (expression == null) return null;
+        return switch (expression) {
 
-        if (expression instanceof BoolLiteralExpression) return BOOL_TYPE;
-        if (expression instanceof CharLiteralExpression) return new ReturnType(PrimitiveType.CHAR);
-        if (expression instanceof StringLiteralExpression) return new ReturnType(PrimitiveType.STRING);
-        if (expression instanceof NullLiteralExpression) return null;
-        if (expression instanceof NumberLiteralExpression number) return new ReturnType(number.getTypeToken().getType());
+            case BoolLiteralExpression _ -> BOOL_TYPE;
+            case CharLiteralExpression _ -> new ReturnType(PrimitiveType.CHAR);
+            case StringLiteralExpression _ -> new ReturnType(PrimitiveType.STRING);
+            case NullLiteralExpression _ -> null;
+            case NumberLiteralExpression number -> new ReturnType(number.getTypeToken().getType());
+            case IdentifierLiteralExpression identifier -> {
 
-        if (expression instanceof IdentifierLiteralExpression identifier) {
+                var declaration = firstVisible(scope, identifier.getName());
+                yield declaration != null ? declaration.getDeclaredType() : null;
+            }
+            case ObjectCreationExpression objectCreation -> {
 
-            var declaration = firstVisible(scope, identifier.getName());
-            return declaration != null ? declaration.getDeclaredType() : null;
-        }
+                for (var argument : objectCreation.getArguments()) inferExpression(argument, scope);
+                yield new ReturnType(new NonPrimitiveType(objectCreation.getClassName()));
+            }
+            case AssignmentExpression assignment -> {
 
-        if (expression instanceof ObjectCreationExpression objectCreation) {
+                var targetType = inferExpression(assignment.getTarget(), scope);
+                var valueType = inferExpression(assignment.getValue(), scope);
+                if (!isAssignable(targetType, valueType))
+                    reportTypeMismatch(targetType, valueType, assignment.getValue());
+                yield targetType;
+            }
+            case BinaryExpression binary -> {
 
-            for (var argument : objectCreation.getArguments()) inferExpression(argument, scope);
-            return new ReturnType(new NonPrimitiveType(objectCreation.getClassName()));
-        }
+                var leftType = inferExpression(binary.getLeft(), scope);
+                var rightType = inferExpression(binary.getRight(), scope);
+                var operator = binary.getOperator().getType();
+                if (operator == Operator.LESS_THAN || operator == Operator.GREATER_THAN ||
+                        operator == Operator.LESS_EQUAL || operator == Operator.GREATER_EQUAL ||
+                        operator == Operator.EQUAL || operator == Operator.NOT_EQUAL ||
+                        operator == Operator.LOGICAL_AND || operator == Operator.LOGICAL_OR)
+                    yield BOOL_TYPE;
+                yield sameType(leftType, rightType) ? leftType : null;
+            }
+            case UnaryExpression unary -> inferExpression(unary.getOperand(), scope);
+            case PostfixUnaryExpression postfix -> inferExpression(postfix.getOperand(), scope);
+            case TernaryExpression ternary -> {
 
-        if (expression instanceof AssignmentExpression assignment) {
+                expectBool(ternary.getCondition(), scope, "Ternary condition must be bool");
+                var thenType = inferExpression(ternary.getThenExpr(), scope);
+                var elseType = inferExpression(ternary.getElseExpr(), scope);
+                yield sameType(thenType, elseType) ? thenType : null;
+            }
+            case CallExpression call -> inferCall(call, scope);
+            case MemberAccessExpression memberAccess -> {
 
-            var targetType = inferExpression(assignment.getTarget(), scope);
-            var valueType = inferExpression(assignment.getValue(), scope);
-            if (!isAssignable(targetType, valueType)) reportTypeMismatch(targetType, valueType, assignment.getValue());
-            return targetType;
-        }
-
-        if (expression instanceof BinaryExpression binary) {
-
-            var leftType = inferExpression(binary.getLeft(), scope);
-            var rightType = inferExpression(binary.getRight(), scope);
-            var operator = binary.getOperator().getType();
-            if (operator == Operator.LESS_THAN || operator == Operator.GREATER_THAN ||
-                operator == Operator.LESS_EQUAL || operator == Operator.GREATER_EQUAL ||
-                operator == Operator.EQUAL || operator == Operator.NOT_EQUAL ||
-                operator == Operator.LOGICAL_AND || operator == Operator.LOGICAL_OR)
-                return BOOL_TYPE;
-            return sameType(leftType, rightType) ? leftType : null;
-        }
-
-        if (expression instanceof UnaryExpression unary) return inferExpression(unary.getOperand(), scope);
-        if (expression instanceof PostfixUnaryExpression postfix) return inferExpression(postfix.getOperand(), scope);
-
-        if (expression instanceof TernaryExpression ternary) {
-
-            expectBool(ternary.getCondition(), scope, "Ternary condition must be bool");
-            var thenType = inferExpression(ternary.getThenExpr(), scope);
-            var elseType = inferExpression(ternary.getElseExpr(), scope);
-            return sameType(thenType, elseType) ? thenType : null;
-        }
-
-        if (expression instanceof CallExpression call) {
-
-            return inferCall(call, scope);
-        }
-
-        if (expression instanceof MemberAccessExpression memberAccess) {
-
-            var member = resolveMemberAccess(memberAccess, scope);
-            return member != null ? member.getDeclaredType() : null;
-        }
-
-        if (expression instanceof ArrayAccessExpression arrayAccess) {
-
-            return inferArrayAccess(arrayAccess, scope);
-        }
-
-        return null;
+                var member = resolveMemberAccess(memberAccess, scope);
+                yield member != null ? member.getDeclaredType() : null;
+            }
+            case ArrayAccessExpression arrayAccess -> inferArrayAccess(arrayAccess, scope);
+            case null, default -> null;
+        };
     }
 
+    /// Infers the type of an array access expression and checks for type errors.
+    /// @param arrayAccess The array access expression to infer the type of.
+    /// @param scope The current semantic scope for type checking.
+    /// @return The inferred type of the array access expression, or `null` if the type could not be determined or if there was a type error.
     private ReturnType inferArrayAccess(ArrayAccessExpression arrayAccess, SemanticScope scope) {
 
         var arrayType = inferExpression(arrayAccess.getArray(), scope);
@@ -315,13 +297,17 @@ public final class TypeChecker {
         );
     }
 
+    /// Resolves a member access expression to its corresponding semantic declaration and checks for type errors.
+    /// @param memberAccess The member access expression to resolve.
+    /// @param scope The current semantic scope for type checking.
+    /// @return The semantic declaration corresponding to the member access, or `null` if the member could not be resolved or if there was a type error.
     private SemanticDeclaration resolveMemberAccess(MemberAccessExpression memberAccess, SemanticScope scope) {
 
         var objectType = inferExpression(memberAccess.getObject(), scope);
         if (objectType == null) return null;
 
         var tokenClass = objectType.getTokenClass();
-        if (!(tokenClass instanceof NonPrimitiveType nonPrimitiveType)) {
+        if (!(tokenClass instanceof NonPrimitiveType(String typeName))) {
 
             diagnostics.report(Diagnostic.error(
                 DiagnosticPhase.SEMANTIC,
@@ -332,7 +318,7 @@ public final class TypeChecker {
             return null;
         }
 
-        var classDeclaration = visibleClass(scope, nonPrimitiveType.typeName());
+        var classDeclaration = visibleClass(scope, typeName);
         if (classDeclaration == null) return null;
 
         var member = classMember(classDeclaration, memberAccess.getMemberName());
@@ -347,33 +333,38 @@ public final class TypeChecker {
         return null;
     }
 
+    /// Resolves a member name within a class declaration to its corresponding semantic declaration.
+    /// @param classDeclaration The class declaration to search for the member.
+    /// @param memberName The name of the member to resolve.
+    /// @return The semantic declaration corresponding to the member, or `null` if the member could not be found.
     private SemanticDeclaration classMember(ClassDeclarationStatement classDeclaration, String memberName) {
 
         for (var field : classDeclaration.getFields())
-            if (field.getName().equals(memberName))
-                return declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field);
+            if (field.getName().equals(memberName)) return declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field);
 
         for (var method : classDeclaration.getMethods())
-            if (method.getName().equals(memberName))
-                return declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method);
+            if (method.getName().equals(memberName)) return declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method);
 
         return null;
     }
 
-    private SemanticDeclaration declaration(
-        DeclarationKind kind,
-        String name,
-        ReturnType declaredType,
-        AstNode node
-    ) {
-
+    /// Creates a new semantic declaration with the specified kind, name, declared type, and AST node.
+    /// @param kind The kind of the declaration (e.g., field, method).
+    /// @param name The name of the declaration.
+    /// @param declaredType The declared type of the declaration.
+    /// @param node The AST node corresponding to the declaration.
+    /// @return A new semantic declaration.
+    private SemanticDeclaration declaration(DeclarationKind kind, String name, ReturnType declaredType, AstNode node) {
         return new SemanticDeclaration(kind, name, declaredType, node, null);
     }
 
+    /// Infers the type of a function or method call expression and checks for type errors in the arguments.
+    /// @param call The call expression to infer the type of.
+    /// @param scope The current semantic scope for type checking.
+    /// @return The inferred return type of the call expression, or `null` if the type could not be determined or if there was a type error.
     private ReturnType inferCall(CallExpression call, SemanticScope scope) {
 
         var argumentTypes = inferArguments(call.getArguments(), scope);
-
         if (call.getCallee() instanceof IdentifierLiteralExpression identifier) {
 
             var declarations = firstVisibleDeclarations(scope, identifier.getName());
@@ -421,6 +412,10 @@ public final class TypeChecker {
         return inferExpression(call.getCallee(), scope);
     }
 
+    /// Infers the types of the arguments in a function or method call expression.
+    /// @param arguments The array of argument expressions to infer the types of.
+    /// @param scope The current semantic scope for type checking.
+    /// @return An array of inferred types corresponding to the argument expressions.
     private ReturnType[] inferArguments(ExpressionNode[] arguments, SemanticScope scope) {
 
         var argumentTypes = new ReturnType[arguments.length];
@@ -429,12 +424,12 @@ public final class TypeChecker {
         return argumentTypes;
     }
 
-    private void checkCallArguments(
-        CallExpression call,
-        FunctionDeclarationStatement functionDeclaration,
-        ReturnType[] argumentTypes,
-        String callableKind
-    ) {
+    /// Checks the arguments of a function or method call against the expected parameters and reports type errors if there are mismatches.
+    /// @param call The call expression being checked.
+    /// @param functionDeclaration The function declaration corresponding to the call.
+    /// @param argumentTypes The array of inferred types for the call's arguments.
+    /// @param callableKind A string representing the kind of callable (e.g., "function" or "method") for error reporting.
+    private void checkCallArguments(CallExpression call, FunctionDeclarationStatement functionDeclaration, ReturnType[] argumentTypes, String callableKind) {
 
         var parameters = functionDeclaration.getParameters();
         if (parameters.length != argumentTypes.length) diagnostics.report(Diagnostic.error(
@@ -450,14 +445,14 @@ public final class TypeChecker {
             checkArgument(functionDeclaration, parameters[i], argumentTypes[i], call.getArguments()[i], i + 1, callableKind);
     }
 
-    private void checkArgument(
-        FunctionDeclarationStatement functionDeclaration,
-        FunctionParameter parameter,
-        ReturnType argumentType,
-        ExpressionNode argument,
-        int argumentNumber,
-        String callableKind
-    ) {
+    /// Checks a single argument against its corresponding parameter in a function or method call and reports a type error if there is a mismatch.
+    /// @param functionDeclaration The function declaration corresponding to the call.
+    /// @param parameter The parameter to check against.
+    /// @param argumentType The inferred type of the argument.
+    /// @param argument The argument expression being checked.
+    /// @param argumentNumber The position of the argument in the call (1-based index)
+    /// @param callableKind A string representing the kind of callable (e.g., "function" or "method") for error reporting.
+    private void checkArgument(FunctionDeclarationStatement functionDeclaration, FunctionParameter parameter, ReturnType argumentType, ExpressionNode argument, int argumentNumber, String callableKind) {
 
         if (isAssignable(parameter.getType(), argumentType)) return;
         diagnostics.report(Diagnostic.error(
@@ -469,6 +464,10 @@ public final class TypeChecker {
         ));
     }
 
+    /// Checks if an expression is of boolean type and reports a type error if it is not.
+    /// @param expression The expression to check.
+    /// @param scope The current semantic scope for type checking.
+    /// @param message The error message to report if the expression is not of boolean type.
     private void expectBool(ExpressionNode expression, SemanticScope scope, String message) {
 
         if (expression == null) return;
@@ -481,12 +480,20 @@ public final class TypeChecker {
         ));
     }
 
+    /// Finds the first visible semantic declaration with the specified name in the given scope and its parent scopes.
+    /// @param scope The semantic scope to start the search from.
+    /// @param name The name of the declaration to find.
+    /// @return The first visible semantic declaration with the specified name, or `null` if no such declaration is found.
     private SemanticDeclaration firstVisible(SemanticScope scope, String name) {
 
         var declarations = firstVisibleDeclarations(scope, name);
         return declarations.isEmpty() ? null : declarations.getFirst();
     }
 
+    /// Finds all visible semantic declarations with the specified name in the given scope and its parent scopes.
+    /// @param scope The semantic scope to start the search from.
+    /// @param name The name of the declarations to find.
+    /// @return A list of all visible semantic declarations with the specified name, or an empty list if no such declarations are found.
     private List<SemanticDeclaration> firstVisibleDeclarations(SemanticScope scope, String name) {
 
         var current = scope;
@@ -499,19 +506,27 @@ public final class TypeChecker {
         return List.of();
     }
 
+    /// Finds the first callable semantic declaration (function or method) in a list of declarations.
+    /// @param declarations The list of semantic declarations to search.
+    /// @return The first callable semantic declaration found, or `null` if no callable declarations are found.
     private SemanticDeclaration firstCallable(List<SemanticDeclaration> declarations) {
 
         for (var declaration : declarations)
-            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD)
-                return declaration;
+            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD) return declaration;
         return null;
     }
 
+    /// Returns a string representing the kind of callable (function or method) for error reporting.
+    /// @param declaration The semantic declaration to check.
+    /// @return A string representing the kind of callable ("Function" or "Method").
     private String callableKind(SemanticDeclaration declaration) {
-
         return declaration.getKind() == DeclarationKind.METHOD ? "Method" : "Function";
     }
 
+    /// Finds the first visible class declaration with the specified name in the given scope and its parent scopes.
+    /// @param scope The semantic scope to start the search from.
+    /// @param name The name of the class declaration to find.
+    /// @return The first visible class declaration with the specified name, or `null` if no such class declaration is found.
     private ClassDeclarationStatement visibleClass(SemanticScope scope, String name) {
 
         var current = scope;
@@ -526,10 +541,18 @@ public final class TypeChecker {
         return null;
     }
 
+    /// Checks if a value type can be assigned to a target type, considering nullability and type compatibility.
+    /// @param targetType The target type to assign to.
+    /// @param valueType The value type to assign from.
+    /// @return `true` if the value type can be assigned to the target type, `false` otherwise.
     private boolean isAssignable(ReturnType targetType, ReturnType valueType) {
         return targetType == null || valueType == null || sameType(targetType, valueType);
     }
 
+    /// Checks if two return types are the same, considering their sizes and token classes.
+    /// @param left The first return type to compare.
+    /// @param right The second return type to compare.
+    /// @return `true` if the two return types are the same, `false` otherwise.
     private boolean sameType(ReturnType left, ReturnType right) {
 
         if (left == null || right == null) return false;
@@ -538,6 +561,11 @@ public final class TypeChecker {
         return left.getTokenClass().token().equals(right.getTokenClass().token());
     }
 
+    /// Creates a child semantic scope with the specified name and owner node, or returns the current scope if no matching child scope is found.
+    /// @param scope The current semantic scope to search for a child scope.
+    /// @param name The name of the child scope to find.
+    /// @param owner The AST node that owns the child scope.
+    /// @return The child semantic scope with the specified name and owner, or the current scope if no matching child scope is found.
     private SemanticScope childScope(SemanticScope scope, String name, AstNode owner) {
 
         for (var child : scope.getChildren())
@@ -545,6 +573,10 @@ public final class TypeChecker {
         return scope;
     }
 
+    /// Reports a type mismatch error when a value type cannot be assigned to a target type.
+    /// @param targetType The target type to assign to.
+    /// @param valueType The value type to assign from.
+    /// @param node The AST node where the type mismatch occurred.
     private void reportTypeMismatch(ReturnType targetType, ReturnType valueType, AstNode node) {
 
         if (node == null) return;
@@ -556,6 +588,9 @@ public final class TypeChecker {
         ));
     }
 
+    /// Returns a string representation of a return type for error reporting, or "<unknown>" if the type is null or has no token class.
+    /// @param type The return type to represent as a string.
+    /// @return A string representation of the return type, or "<unknown>" if the type is null or has no token class.
     private String typeName(ReturnType type) {
         return type != null && type.getTokenClass() != null ? type.getTokenClass().token() : "<unknown>";
     }
