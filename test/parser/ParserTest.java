@@ -212,6 +212,28 @@ public class ParserTest {
     }
 
     @Test
+    void testBlockRecoveryHandlesUnknownTokenBeforeStatement() {
+
+        var source = "void f() { int before; @ int after; } int top;";
+        var lexer  = new Lexer(source);
+        var tokens = lexer.tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the unknown token inside the block should produce an error");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered function body");
+
+        var fn = assertInstanceOf(FunctionDeclarationStatement.class, parsed.getFirst());
+        var body = assertInstanceOf(BlockStatement.class, fn.getBody());
+        assertEquals(2, body.getStatements().length, "Valid block statements around the unknown token should be retained");
+        assertInstanceOf(VariableDeclarationStatement.class, body.getStatements()[0]);
+        assertInstanceOf(VariableDeclarationStatement.class, body.getStatements()[1]);
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
+    }
+
+    @Test
     void testUnknownTokenReportsUnrecognizedTokenError() {
 
         var source = "@; int y;";

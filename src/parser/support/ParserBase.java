@@ -82,6 +82,12 @@ public abstract class ParserBase {
     /// @return True if the current token matches any of the specified types.
     protected boolean check(TokenClass... types) { return state.check(types); }
 
+    /// Checks the current token kind without triggering parser diagnostics.
+    /// This is intended for recovery guards that must safely inspect unknown tokens.
+    /// @param type The token family to compare against the current token.
+    /// @return True when the current token has the given token family.
+    protected boolean currentTokenIs(TokenClass type) { return isNotAtEnd() && peek().getType() == type; }
+
     /// Consumes the current token if it matches any of the specified types.
     /// @param types The token families to match.
     /// @return True when a token was consumed.

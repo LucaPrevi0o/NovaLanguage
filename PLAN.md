@@ -83,10 +83,11 @@ Completed:
 - [x] Keep parser failure handling based on `ParseException` plus explicit recovery boundaries; do not introduce AST error nodes yet.
 - [x] Add class-body member recovery so malformed class members do not discard the whole class AST.
 - [x] Add regression tests for class-member token advancement and recovery.
+- [x] Review recovery loops that inspected tokens with `check(...)` before local recovery catches.
+- [x] Add block-level unknown-token recovery that preserves valid statements before and after the error.
 
 Remaining:
 
-- [ ] Review parser loops that call `check(...)` before entering local recovery guards.
 - [ ] Review class parsing against the previous working shape and current README grammar.
 - [ ] Keep grammar methods small enough that cursor movement is obvious from local code.
 
@@ -303,6 +304,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Review parser loops that call `check(...)` before entering local recovery guards, starting with block-level recovery.
+1. Review class parsing against the previous working shape and current README grammar.
 2. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
 3. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.

@@ -125,6 +125,8 @@ Recovery is especially important at:
 
 The current parser recovery model is based on `ParseException` plus explicit recovery boundaries. It does not create AST error nodes yet; successfully recovered AST nodes are retained, and collected parser diagnostics are reported at the end of the parse run.
 
+Recovery loop guards should inspect raw token kinds instead of using `check(...)`, because `check(...)` intentionally reports parser diagnostics for unknown tokens. Local recovery code should be the first layer that sees recoverable syntax failures inside blocks or class bodies.
+
 A parser recovery change should usually include a regression test that proves valid code after the error is still parsed.
 
 ## What not to put in the parser

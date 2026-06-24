@@ -2,7 +2,6 @@ package parser.grammar;
 
 import error.diagnostic.ParseException;
 import lexer.Token;
-import lexer.token.TokenClass;
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
@@ -226,11 +225,6 @@ public class ClassParser extends ParserBase {
         return token instanceof LiteralToken &&
                token.getType() instanceof IdentifierLiteral &&
                className.equals(getLiteralValue(token));
-    }
-
-    private boolean currentTokenIs(TokenClass type) {
-
-        return isNotAtEnd() && peek().getType() == type;
     }
 
     /// Parses a class field declaration, which may optionally include an initializer.

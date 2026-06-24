@@ -512,7 +512,7 @@ public class DeclarationParser extends ParserBase {
 
         var statements = new ArrayList<StatementNode>();
 
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) try {
+        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
             statements.add(parseDeclaration());
         } catch (ParseException e) {
 
@@ -527,10 +527,10 @@ public class DeclarationParser extends ParserBase {
     /// Synchronizes after a block-level statement error without escaping the current block.
     private void synchronizeBlockStatement() {
 
-        if (!isNotAtEnd() || check(Delimiter.RBRACE) || isBlockRecoveryBoundary(peek())) return;
+        if (!isNotAtEnd() || currentTokenIs(Delimiter.RBRACE) || isBlockRecoveryBoundary(peek())) return;
 
         advance();  // skip the offending token
-        while (isNotAtEnd() && !check(Delimiter.RBRACE)) {
+        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) {
 
             if (previous().getType() == Delimiter.SEMICOLON) return;
             if (isBlockRecoveryBoundary(peek())) return;
