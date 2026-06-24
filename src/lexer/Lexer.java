@@ -94,6 +94,11 @@ public class Lexer {
     /// @return An immutable list of lexer diagnostics.
     public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
 
+    /// Create an `UNKNOWN` token for unrecognized characters or sequences, and report a diagnostic.
+    /// @param tokenLine The line number where the unrecognized token starts.
+    /// @param tokenColumn The column number where the unrecognized token starts.
+    /// @param lexeme The unrecognized character or sequence.
+    /// @return An `UNKNOWN` Token representing the unrecognized token.
     private Token unknownToken(int tokenLine, int tokenColumn, String lexeme) {
 
         var token = new Token(Special.UNKNOWN, tokenLine, tokenColumn, lexeme);
@@ -103,8 +108,8 @@ public class Lexer {
 
     /// Skip over comments (single-line and multi-line).
     ///
-    /// Single-line comments start with '//' and continue to the end of the line.
-    /// Multi-line comments start with '/*' and end with '*/', and can span multiple lines.
+    /// Single-line comments start with `//` and continue to the end of the line.
+    /// Multi-line comments start with `/*` and end with `*/`, and can span multiple lines.
     private void skipComment() {
 
         if (currentChar == '/' && peek() == '/') skipSingleLineComment();
@@ -114,7 +119,7 @@ public class Lexer {
     /// Skip a single-line comment by advancing until the end of the line or end of file.
     private void skipSingleLineComment() { while (currentChar != '\0' && currentChar != '\n') advance(); }
 
-    /// Skip a multi-line comment by advancing until the closing '*/' is found.
+    /// Skip a multi-line comment by advancing until the closing `*/` is found.
     /// Handles nested comments and updates line and column numbers appropriately.
     private void skipMultiLineComment() {
 
@@ -133,11 +138,13 @@ public class Lexer {
     }
 
     /// Read a number literal, which can be an integer or a floating-point number.
+    ///
     /// Handles sequences of digits and at most one decimal point. A second decimal
     /// point stops lexing the number; the remaining characters will be tokenized
     /// separately so that callers receive a clear, isolated bad-token rather than
     /// one bloated number string.
-    /// An optional type suffix (l/L, f/F, d/D, b/B) after the digits is also consumed.
+    ///
+    /// An optional type suffix (`l/L`, `f/F`, `d/D`, `b/B`) after the digits is also consumed.
     /// @return A LiteralToken representing the number literal.
     private Token readNumber() {
 
@@ -168,7 +175,8 @@ public class Lexer {
     }
 
     /// Read an identifier or keyword, which starts with a letter or underscore and can contain letters, digits, and underscores.
-    /// After reading the sequence, checkCurrentTokenType if it matches a keyword or type; if not, treat it as an identifier.
+    ///
+    /// After reading the sequence, check if the current token matches a keyword or type; if not, treat it as an identifier.
     /// @return A KeywordToken, TypeToken, or LiteralToken representing the identifier or keyword.
     private Token readIdentifierOrKeyword() {
 
@@ -198,9 +206,9 @@ public class Lexer {
 
     /// Read a string literal, which starts and ends with double quotes.
     ///
-    /// Handles escape sequences for double quotes (e.g., {@code \\"} becomes a double quote in the string).
-    /// Returns an {@code UNKNOWN} token when end-of-file is reached before the closing double quote.
-    /// @return A LiteralToken representing the string literal, or an UNKNOWN token on error.
+    /// Handles escape sequences for double quotes (e.g., `\\"` becomes a double quote in the string).
+    /// Returns an `UNKNOWN` token when end-of-file is reached before the closing double quote.
+    /// @return A LiteralToken representing the string literal, or an `UNKNOWN` token on error.
     private Token readString() {
 
         var startLine = line;
@@ -245,7 +253,7 @@ public class Lexer {
     /// Handles escape sequences similar to string literals.
     /// Returns an {@code UNKNOWN} token when the literal is empty ({@code ''}) or unterminated
     /// (end-of-file reached before the closing single quote).
-    /// @return A LiteralToken representing the character literal, or an UNKNOWN token on error.
+    /// @return A LiteralToken representing the character literal, or an `UNKNOWN` token on error.
     private Token readChar() {
 
         var startLine = line;
@@ -298,7 +306,7 @@ public class Lexer {
     ///
     /// Checks for two-character operators first (e.g., {@code ==}, {@code !=}, {@code <=}, {@code >=}), then checks
     /// for single-character operators (e.g., {@code +}, {@code -}, {@code *}, {@code /}).
-    /// @return An OperatorToken representing the operator, or null if no valid operator is found at the current position.
+    /// @return An OperatorToken representing the operator, or `null` if no valid operator is found at the current position.
     private Token readOperator() {
         
         var tokenLine = line;
@@ -329,7 +337,7 @@ public class Lexer {
     /// Read a delimiter token, which can be one or two characters long.
     ///
     /// Checks for two-character delimiters first (e.g., {@code ::}), then checks for single-character delimiters (e.g., {@code (}, {@code }, {@code ,}).
-    /// @return A DelimiterToken representing the delimiter, or null if no valid delimiter is found at the current position.
+    /// @return A DelimiterToken representing the delimiter, or `null` if no valid delimiter is found at the current position.
     private Token readDelimiter() {
 
         var tokenLine = line;
@@ -361,7 +369,7 @@ public class Lexer {
     ///
     /// Skips whitespace and comments, then checks for literals, keywords, operators, and delimiters in that order.
     /// If no valid token is found, returns an {@code UNKNOWN} token for the current character.
-    /// @return The next Token in the source code, or an EOF token if the end of the source is reached.
+    /// @return The next Token in the source code, or an `EOF` token if the end of the source is reached.
     public Token getNextToken() {
 
         while (currentChar != '\0') {

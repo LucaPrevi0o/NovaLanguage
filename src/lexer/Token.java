@@ -44,7 +44,7 @@ public class Token {
     public int getColumn() { return column; }
 
     /// Returns the raw source text for this token when explicitly preserved by the lexer.
-    /// @return The raw token lexeme, or null if the token class fully describes the token text.
+    /// @return The raw token lexeme, or `null` if the token class fully describes the token text.
     public String getLexeme() { return lexeme; }
 
     @Override
