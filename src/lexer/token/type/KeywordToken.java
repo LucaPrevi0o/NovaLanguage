@@ -10,7 +10,6 @@ public class KeywordToken extends Token {
 
     /// Constructs a new KeywordToken with the specified keyword, value, line, and column.
     /// @param keyword The specific keyword token type (must be a member of the {@link Keyword} family).
-    /// @param value The string value of the keyword token (e.g., "if", "else", "while").
     /// @param line The line number where the token appears.
     /// @param column The column number where the token starts.
     public KeywordToken(Keyword keyword, int line, int column) {
@@ -19,7 +18,6 @@ public class KeywordToken extends Token {
 
     /// Constructs a new KeywordToken with the specified access modifier, value, line, and column.
     /// @param accessModifier The specific access modifier token type (must be a member of the {@link AccessModifier} family).
-    /// @param value The string value of the access modifier token (e.g., "public", "private", "protected").
     /// @param line The line number where the token appears.
     /// @param column The column number where the token starts.
     public KeywordToken(AccessModifier accessModifier, int line, int column) {
