@@ -4,7 +4,6 @@ import lexer.Token;
 import lexer.token.family.literal.*;
 import lexer.token.type.LiteralToken;
 import lexer.token.type.OperatorToken;
-import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.expression.*;
 import parser.ast.nodes.expression.access.ArrayAccessExpression;
@@ -48,10 +47,9 @@ public class ExpressionParser extends ParserBase {
 
     /// Constructs a new ExpressionParser.
     /// @param state        The current parser state (token stream).
-    /// @param symbolTable  The symbol table for the current scope.
     /// @param typeRegistry The per-session type registry.
-    public ExpressionParser(ParserState state, SymbolTable symbolTable, TypeRegistry typeRegistry) {
-        super(state, symbolTable, typeRegistry);
+    public ExpressionParser(ParserState state, TypeRegistry typeRegistry) {
+        super(state, typeRegistry);
     }
 
     /// Entry point: parses a full expression.

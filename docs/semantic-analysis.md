@@ -78,7 +78,7 @@ Current scope categories include, or are moving toward:
 - switch scope;
 - branch scope.
 
-The semantic scope tree should be the long-term source of truth for name visibility.
+The semantic scope tree is the source of truth for name visibility. Parser-owned symbol-table scope construction has been removed, so new visibility rules should be implemented here rather than in grammar parsers.
 
 ## Name resolution
 
@@ -191,10 +191,10 @@ The current semantic architecture is still transitional.
 
 Known limitations include:
 
-- parser-side symbol-table behavior still exists in some places;
 - the type model still depends too heavily on lexer token classes;
+- parser type parsing still uses a temporary parse-session `TypeRegistry`;
 - the compiler is still single-file oriented;
-- builtins are not yet loaded through the same source pipeline as user code;
+- builtins and standard-library declarations are not yet modeled semantically or loaded through the same source pipeline as user code;
 - advanced features such as full generics, lambdas, and monomorphization are deliberately deferred.
 
 These limitations are tracked in [`../PLAN.md`](../PLAN.md).

@@ -96,9 +96,8 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testFirstVariableVisibleInSecondInitializer() {
+    void testCommaSeparatedInitializerReferencesParseSyntactically() {
 
-        // 'a' should be visible when the initializer for 'b' is parsed (since a is registered first)
         assertDoesNotThrow(() -> parse("int a = 1, b = a;"));
     }
 
@@ -165,14 +164,11 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testFunctionRegisteredInEnclosingScope() {
+    void testFunctionDeclarationKeepsNameInAst() {
 
-        // After parsing, the function symbol must be in the top-level symbol table
-        var tokens = new Lexer("int compute() { return 1; }").tokenize();
-        var parser = new Parser(tokens);
-        parser.parse();
-        assertNotNull(parser.getSymbolTable().lookup("compute"),
-                "function should be in the global symbol table");
+        var ast = parse("int compute() { return 1; }");
+        var fn = assertInstanceOf(FunctionDeclarationStatement.class, ast.getFirst());
+        assertEquals("compute", fn.getName());
     }
 
     @Test

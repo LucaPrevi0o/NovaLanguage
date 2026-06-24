@@ -16,7 +16,6 @@ Implemented or partially implemented today:
 - Recursive-descent parsing
 - AST construction
 - Parser recovery and structured diagnostics
-- Parser-level symbol scopes
 - Semantic declaration collection
 - Semantic scope construction
 - Name resolution
@@ -32,6 +31,7 @@ Not implemented yet:
 
 - A complete semantic type model independent from lexer token classes
 - Multi-file project compilation
+- Semantic standard-library declarations
 - Standard library loading from Nova source files
 - IR generation
 - Optimization

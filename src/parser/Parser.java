@@ -3,8 +3,6 @@ package parser;
 import error.diagnostic.Diagnostic;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
-import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
-import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.grammar.DeclarationParser;
 import error.diagnostic.ParseErrorsException;
 import error.diagnostic.ParseException;
@@ -12,11 +10,9 @@ import parser.support.ParserBase;
 import parser.support.ParserState;
 import parser.grammar.ClassParser;
 import parser.grammar.ExpressionParser;
-import lexer.token.ReturnType;
 import lexer.token.TypeRegistry;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
-import lexer.token.family.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,58 +47,25 @@ import java.util.List;
 public class Parser extends ParserBase {
 
     private final DeclarationParser declarationParser;
+    private List<StatementNode> parsedStatements = List.of();
 
     /// Constructs a new Parser with the given list of tokens.
-    /// Creates a fresh per-session {@link TypeRegistry}, pre-populates the global symbol table
-    /// with built-in stdlib functions, and initializes the declaration parser.
+    /// Creates a fresh per-session {@link TypeRegistry} and initializes the declaration parser.
     /// @param tokens The list of tokens to be parsed into an AST.
     public Parser(List<Token> tokens) {
 
         super(new ParserState(tokens), new TypeRegistry());
-        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
-        registerStdLib();
-    }
-
-    /// Pre-registers built-in standard-library functions in the global symbol table so user code
-    /// can call them without declaring them.
-    ///
-    /// Registered functions:
-    /// <ul>
-    ///   <li>{@code print(string value) → void}</li>
-    ///   <li>{@code println(string value) → void}</li>
-    ///   <li>{@code printInt(int value) → void}</li>
-    ///   <li>{@code printFloat(float value) → void}</li>
-    ///   <li>{@code printBool(boolean value) → void}</li>
-    ///   <li>{@code readLine() → string}</li>
-    ///   <li>{@code parseInt(string value) → int}</li>
-    ///   <li>{@code parseFloat(string value) → float}</li>
-    /// </ul>
-    private void registerStdLib() {
-
-        var voidType   = new ReturnType(PrimitiveType.VOID);
-        var stringType = new ReturnType(PrimitiveType.STRING);
-        var intType    = new ReturnType(PrimitiveType.INT);
-        var floatType  = new ReturnType(PrimitiveType.FLOAT);
-        var boolType   = new ReturnType(PrimitiveType.BOOL);
-
-        registerFunc("print",      voidType,   new FunctionParameter(0, 0, "value", stringType));
-        registerFunc("println",    voidType,   new FunctionParameter(0, 0, "value", stringType));
-        registerFunc("printInt",   voidType,   new FunctionParameter(0, 0, "value", intType));
-        registerFunc("printFloat", voidType,   new FunctionParameter(0, 0, "value", floatType));
-        registerFunc("printBool",  voidType,   new FunctionParameter(0, 0, "value", boolType));
-        registerFunc("readLine",   stringType);
-        registerFunc("parseInt",   intType,    new FunctionParameter(0, 0, "value", stringType));
-        registerFunc("parseFloat", floatType,  new FunctionParameter(0, 0, "value", stringType));
-    }
-
-    /// Convenience helper for registering a stdlib function with zero or more parameters.
-    private void registerFunc(String name, ReturnType returnType, FunctionParameter... params) {
-        symbolTable.register(new FunctionDeclarationStatement(0, 0, returnType, name, params, null));
+        this.declarationParser = new DeclarationParser(state, this.typeRegistry);
     }
 
     /// Returns the diagnostics collected during this parser run.
     /// @return An immutable list of parser diagnostics.
     public List<Diagnostic> getDiagnostics() { return state.getDiagnostics(); }
+
+    /// Returns the successfully parsed top-level statements from the most recent parse run.
+    /// This is useful when parse recovery collected diagnostics and {@link #parse()} threw an aggregate exception.
+    /// @return An immutable list of successfully parsed top-level AST nodes.
+    public List<StatementNode> getParsedStatements() { return parsedStatements; }
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
@@ -117,6 +80,7 @@ public class Parser extends ParserBase {
 
         state.clearErrors();
         var statements = new ArrayList<StatementNode>();
+        parsedStatements = List.of();
 
         while (isNotAtEnd()) try {
             statements.add(declarationParser.parseDeclaration());
@@ -127,8 +91,9 @@ public class Parser extends ParserBase {
         }
 
         var errors = state.getErrors();
+        parsedStatements = List.copyOf(statements);
         if (!errors.isEmpty()) throw new ParseErrorsException(errors);
-        return statements;
+        return parsedStatements;
     }
 
     // ─── Error recovery ────────────────────────────────────────────────────────

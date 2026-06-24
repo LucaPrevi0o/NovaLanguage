@@ -5,37 +5,22 @@ import error.diagnostic.DiagnosticPhase;
 import error.diagnostic.ParseException;
 import lexer.Token;
 import lexer.token.type.LiteralToken;
-import parser.ast.SymbolTable;
 import lexer.token.TokenClass;
 import lexer.token.TypeRegistry;
 import lexer.token.family.AccessModifier;
-import parser.ast.nodes.Symbol;
 
-/// Base class for all parsers, providing common state and symbol table management.
+/// Base class for all parsers, providing common token-state helpers.
 public abstract class ParserBase {
 
     protected final ParserState state;
-    protected SymbolTable symbolTable;  // Current scope
     protected final TypeRegistry typeRegistry;
 
-    /// Constructor for root parser (starts with global scope).
+    /// Constructor for parser components.
     /// @param state        The parser state to use for token management.
     /// @param typeRegistry The per-session type registry to use.
     protected ParserBase(ParserState state, TypeRegistry typeRegistry) {
 
         this.state = state;
-        this.typeRegistry = typeRegistry;
-        this.symbolTable = new SymbolTable(null);  // Start with global scope (no parent)
-    }
-
-    /// Constructor for child parsers (inherits current scope).
-    /// @param state        The parser state to use for token management.
-    /// @param symbolTable  The symbol table representing the current scope to inherit.
-    /// @param typeRegistry The per-session type registry to use.
-    protected ParserBase(ParserState state, SymbolTable symbolTable, TypeRegistry typeRegistry) {
-
-        this.state = state;
-        this.symbolTable = symbolTable;
         this.typeRegistry = typeRegistry;
     }
 
@@ -43,33 +28,9 @@ public abstract class ParserBase {
     /// @return The current parser state.
     public ParserState getState() { return state; }
 
-    /// Returns the current symbol table, representing the current scope.
-    /// @return The current symbol table.
-    public SymbolTable getSymbolTable() { return symbolTable; }
-
     /// Returns the type registry for this parse session.
     /// @return The type registry.
     public TypeRegistry getTypeRegistry() { return typeRegistry; }
-
-    /// Enters a new scope by creating a child symbol table of the current scope.
-    /// @return The new child symbol table representing the new scope.
-    protected SymbolTable enterScope() { return symbolTable.createChildScope(); }
-
-    /// Enters a new scope owned by the specified symbol (e.g., a function or class declaration) by creating a child symbol
-    /// table of the current scope and associating it with the owner symbol.
-    /// @param owner The symbol that owns the new scope (e.g., a function or class declaration).
-    /// @return The new child symbol table representing the new scope owned by the specified symbol.
-    protected SymbolTable enterScope(Symbol owner) { return symbolTable.createChildScope(owner); }
-
-    /// Exits the current scope by returning the parent symbol table of the current scope.
-    /// @param scope The current symbol table representing the current scope.
-    /// @return The parent symbol table representing the enclosing scope, or the current symbol table if already at global scope.
-    protected SymbolTable exitScope(SymbolTable scope) {
-
-        var parent = scope.parent();
-        if (parent != null) return parent;
-        return scope;  // Already at global scope
-    }
 
     // ========== Convenience Delegates to State ==========
 

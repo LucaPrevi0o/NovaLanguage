@@ -13,12 +13,12 @@ Current focus: Phase 4 - semantic analysis split.
 | Phase                         | Status      | Summary                                                                                                                                                 |
 |-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
-| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser/semantic separation still needs work.       |
+| 2. Parser semantics           | In progress | Parser cursor contract, expression parsing, parser package layout, and recovery have been tightened; parser failure cleanup still needs work.           |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
 | 5. Type model                 | Not started | Lexer token classes are still used too deeply as semantic type representation.                                                                          |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
-| 7. Standard library as source | Not started | Builtins are still registered manually.                                                                                                                 |
+| 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                               |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
 | 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                  |
 
@@ -41,6 +41,7 @@ Status: Current.
 - [x] Legacy `error.Error`, `error.syntax`, and `error.parsing` wrappers have been removed.
 - [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
 - [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, and `semantic.scope`.
+- [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
 
 ## Phase 1 - Restore Build Health
 
@@ -157,7 +158,7 @@ Tasks:
 - [x] Add return checking.
 - [x] Add l-value checking.
 - [x] Add `break`/`continue` context checking.
-- [ ] Move symbol-table validation out of parser code where possible.
+- [x] Move symbol-table validation out of parser code where possible.
 - [ ] Keep parser-generated AST simple and complete.
 
 Parser-owned semantic checks inventory:
@@ -175,10 +176,11 @@ Parser-owned semantic checks inventory:
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
-- [x] Declaration validation: `SymbolTable.register(...)` no longer rejects duplicates; semantic duplicate validation reports them.
+- [x] Declaration validation: duplicate declarations are no longer rejected during parsing; semantic duplicate validation reports them.
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
 - [x] Type syntax/resolution coupling: `DeclarationParser.parseType()` now accepts identifier type syntax; semantic name resolution reports unknown types.
-- [ ] Scope construction coupling: declaration and class parsers build scopes and register symbols while parsing syntax.
+- [x] Scope construction coupling: declaration and class parsers no longer build parser symbol-table scopes or register symbols while parsing syntax.
+- [ ] Type syntax coupling: parser `TypeRegistry` remains as a temporary parse-session helper until Phase 5 introduces real type syntax nodes.
 
 Exit criteria:
 
@@ -234,18 +236,19 @@ Exit criteria:
 
 Status: Not started.
 
-Goal: remove hard-coded standard-library function registration from `Parser`.
+Goal: model the standard library through declarations instead of parser-owned hard-coded behavior.
 
 Tasks:
 
 - [ ] Create `stdlib/` with Nova source files.
+- [ ] Decide how native/builtin declarations enter semantic declaration collection before source loading exists.
 - [ ] Preload standard-library source through the multi-file compiler pipeline.
 - [ ] Represent native/builtin functions as declarations with backend flags.
 - [ ] Add later tests for `print`, `println`, `parseInt`, collections, and other standard-library entries.
 
 Exit criteria:
 
-- [ ] `Parser` no longer registers standard-library functions manually.
+- [x] `Parser` no longer registers standard-library functions manually.
 - [ ] User code and standard-library code share the same symbol/type path.
 
 ## Phase 8 - IR Preparation
@@ -298,6 +301,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Reduce parser-owned scope construction and symbol registration now that semantic scopes exist.
-2. Decide whether `error.Error` legacy wrappers should remain as compatibility adapters once semantic diagnostics exist.
-3. Decide how far Phase 4 should go before Phase 5 introduces real type syntax nodes.
+1. Audit parser methods that still encode failure with nullable values or ad-hoc recovery and decide the right boundary for `ParseException` versus error nodes.
+2. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
+3. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.

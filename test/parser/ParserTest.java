@@ -9,6 +9,7 @@ import parser.ast.nodes.statement.BlockStatement;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.ExpressionStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
+import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import error.diagnostic.ParseErrorsException;
 import semantic.analysis.NameResolver;
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,8 +57,8 @@ public class ParserTest {
     @Test
     void testClassDeclarationMembersPopulated() {
 
-        // Verify that the ClassDeclarationStatement in the AST (and the one registered
-        // in the symbol table) is the same object with all members populated, not the empty placeholder.
+        // Verify that the ClassDeclarationStatement in the AST is fully populated,
+        // not the empty type placeholder used while parsing members.
         var source = "public class Counter { " +
                      "  private int count; " +
                      "  public Counter() { count = 0; } " +
@@ -77,13 +78,7 @@ public class ParserTest {
         assertEquals(1, cls.getMethods().length,      "Expected 1 method");
         assertEquals(1, cls.getConstructors().length, "Expected 1 constructor");
 
-        // The symbol in the symbol table must be the same populated object (not the placeholder)
-        var sym = parser.getSymbolTable().lookup("Counter");
-        assertInstanceOf(ClassDeclarationStatement.class, sym);
-        var registered = (ClassDeclarationStatement) sym;
-        assertEquals(1, registered.getFields().length,  "Registered symbol should have 1 field");
-        assertEquals(1, registered.getMethods().length, "Registered symbol should have 1 method");
-        assertSame(cls, registered, "AST node and registered symbol must be the same object");
+        assertSame(cls, ast.getFirst(), "Parsed class node should be the populated AST object");
     }
 
     @Test
@@ -190,7 +185,10 @@ public class ParserTest {
 
         var ex = assertThrows(ParseErrorsException.class, parser::parse);
         assertEquals(1, ex.getErrors().size(), "Only the first (invalid) statement should produce an error");
-        assertNotNull(parser.getSymbolTable().lookup("y"), "The valid declaration after the error should still be parsed");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(1, parsed.size(), "The valid declaration after the error should still be retained");
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.getFirst());
     }
 
     @Test
@@ -204,10 +202,13 @@ public class ParserTest {
         var ex = assertThrows(ParseErrorsException.class, parser::parse);
         assertEquals(1, ex.getErrors().size(), "Only the invalid block statement should produce an error");
 
-        var fn = assertInstanceOf(FunctionDeclarationStatement.class, parser.getSymbolTable().lookup("f"));
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered function body");
+
+        var fn = assertInstanceOf(FunctionDeclarationStatement.class, parsed.getFirst());
         var body = assertInstanceOf(BlockStatement.class, fn.getBody());
         assertEquals(1, body.getStatements().length, "The valid declaration after the error should remain in the function body");
-        assertNotNull(parser.getSymbolTable().lookup("z"), "Top-level parsing should continue after the recovered function body");
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
     }
 
     @Test
@@ -246,12 +247,11 @@ public class ParserTest {
         assertEquals(PrimitiveType.INT, diagnostic.getActualToken());
     }
 
-    // ─── Stdlib tests ─────────────────────────────────────────────────────────
+    // ─── Builtin-like call syntax ─────────────────────────────────────────────
 
     @Test
-    void testStdlibFunctionsAvailable() {
+    void testBuiltinLikeCallsParseSyntactically() {
 
-        // All stdlib functions should be callable without prior declaration
         var source = "print(\"hello\"); println(\"world\");";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();
@@ -260,9 +260,8 @@ public class ParserTest {
     }
 
     @Test
-    void testExtendedStdlibFunctionsAvailable() {
+    void testBuiltinLikeCallAssignmentParsesSyntactically() {
 
-        // readLine, parseInt, parseFloat should be pre-registered as well
         var source = "string s; s = readLine();";
         var lexer  = new Lexer(source);
         var tokens = lexer.tokenize();

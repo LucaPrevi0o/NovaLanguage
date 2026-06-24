@@ -4,7 +4,6 @@ import lexer.*;
 import lexer.token.family.literal.IdentifierLiteral;
 import lexer.token.type.LiteralToken;
 import lexer.token.type.TypeToken;
-import parser.ast.SymbolTable;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.*;
@@ -74,14 +73,13 @@ public class DeclarationParser extends ParserBase {
     private ExpressionParser expressionParser;
     private final ClassParser classParser;
 
-    /// Constructs a new DeclarationParser with the given parser state, symbol table, and type registry.
+    /// Constructs a new DeclarationParser with the given parser state and type registry.
     /// @param state        The parser state containing the tokens to parse.
-    /// @param symbolTable  The symbol table for tracking declared symbols (variables, functions, classes).
     /// @param typeRegistry The per-session type registry.
-    public DeclarationParser(ParserState state, SymbolTable symbolTable, TypeRegistry typeRegistry) {
+    public DeclarationParser(ParserState state, TypeRegistry typeRegistry) {
 
-        super(state, symbolTable, typeRegistry);
-        this.expressionParser = new ExpressionParser(state, symbolTable, typeRegistry);
+        super(state, typeRegistry);
+        this.expressionParser = new ExpressionParser(state, typeRegistry);
         this.classParser = new ClassParser(this);
     }
 
@@ -226,10 +224,6 @@ public class DeclarationParser extends ParserBase {
     ///
     /// Grammar rule:
     /// `functionDecl → type IDENTIFIER "(" parameters? ")" "{" declaration* "}"`
-    ///
-    /// The function is pre-registered in the enclosing scope before its body is parsed so that
-    /// recursive calls inside the body can resolve the function name.
-    ///
     /// @param returnType The return type of the function, already parsed.
     /// @param name The name of the function.
     /// @param line The line number where the function is declared (for error reporting and AST node construction).
@@ -242,33 +236,18 @@ public class DeclarationParser extends ParserBase {
         var parameters = parseParameters();
         consume(Delimiter.RPAREN, "Expect ')' after parameters");
 
-        // Pre-register with null body in the enclosing scope so recursive calls resolve.
-        var decl = new FunctionDeclarationStatement(line, column, returnType, name, parameters, null);
-        this.symbolTable.register(decl);
-
-        var functionScope = enterScope(decl);
-        this.symbolTable = functionScope;
-
-        for (var param : parameters) this.symbolTable.register(param);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
-
         consume(Delimiter.LBRACE, "Expect '{' before function body");
 
-        var bodyStatements = getStatementList(functionScope);
+        var bodyStatements = parseBlockStatements();
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
 
-        decl.setBody(body);  // Attach parsed body to the pre-registered declaration
-        return decl;
+        return new FunctionDeclarationStatement(line, column, returnType, name, parameters, body);
     }
 
     /// Parses a variable declaration, which consists of a type, a name, an optional initializer, and may include multiple declarations separated by commas.
     ///
     /// Grammar rule:
     /// `varDecl → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"`
-    ///
-    /// The first variable is registered in the symbol table immediately so that it is visible
-    /// to subsequent initializers in the same comma-list.
-    ///
     /// @param type The return type of the variable, already parsed.
     /// @param name The name of the variable.
     /// @param line The line number where the variable is declared (for error reporting and AST node construction).
@@ -282,7 +261,6 @@ public class DeclarationParser extends ParserBase {
         if (match(Operator.ASSIGN)) initializer = expressionParser.parseExpression();
 
         var firstDecl = new VariableDeclarationStatement(line, column, type, name, initializer);
-        this.symbolTable.register(firstDecl);  // Register first variable immediately
 
         if (match(Delimiter.COMMA)) {
 
@@ -298,7 +276,6 @@ public class DeclarationParser extends ParserBase {
                 if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
 
                 var decl = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, varName, init);
-                this.symbolTable.register(decl);  // Register each subsequent variable
                 declarations.add(decl);
             } while (match(Delimiter.COMMA));
 
@@ -403,26 +380,11 @@ public class DeclarationParser extends ParserBase {
                 var nameToken = advance();
                 if (match(Delimiter.COLON)) {
 
-                    // for-each: for (Type name : iterable) body
                     var elementName = getLiteralValue(nameToken);
-                    var forEachScope = enterScope();
-                    this.symbolTable = forEachScope;
-                    this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
-
-                    try {
-
-                        var elementDecl = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, elementName, null);
-                        this.symbolTable.register(elementDecl);
-
-                        var iterable = expressionParser.parseExpression();
-                        consume(Delimiter.RPAREN, "Expect ')' after for-each expression");
-                        var body = parseStatement();
-                        return new ForEachStatement(forToken.getLine(), forToken.getColumn(), type, elementName, iterable, body);
-                    } finally {
-
-                        this.symbolTable = exitScope(forEachScope);
-                        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
-                    }
+                    var iterable = expressionParser.parseExpression();
+                    consume(Delimiter.RPAREN, "Expect ')' after for-each expression");
+                    var body = parseStatement();
+                    return new ForEachStatement(forToken.getLine(), forToken.getColumn(), type, elementName, iterable, body);
                 }
 
                 // Not a for-each — restore and fall through to regular for parsing
@@ -441,51 +403,39 @@ public class DeclarationParser extends ParserBase {
     /// @return A ForStatement.
     private ForStatement parseForStatement(Token forToken) {
 
-        var forScope = enterScope();
-        this.symbolTable = forScope;
-        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
+        StatementNode initializer;
+        if (match(Delimiter.SEMICOLON)) initializer = null;
+        else if (startsTypedDeclaration()) {
 
-        try {
+            var type = parseType();
+            var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
+            var name = getLiteralValue(nameToken);
 
-            StatementNode initializer;
-            if (match(Delimiter.SEMICOLON)) initializer = null;
-            else if (startsTypedDeclaration()) {
+            ExpressionNode init = null;
+            if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
+            consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
 
-                var type = parseType();
-                var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
-                var name = getLiteralValue(nameToken);
+            initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, name, init);
+        } else {
 
-                ExpressionNode init = null;
-                if (match(Operator.ASSIGN)) init = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after variable declaration");
-
-                initializer = new VariableDeclarationStatement(nameToken.getLine(), nameToken.getColumn(), type, name, init);
-                this.symbolTable.register((VariableDeclarationStatement) initializer);
-            } else {
-
-                var expr = expressionParser.parseExpression();
-                consume(Delimiter.SEMICOLON, "Expect ';' after expression");
-                initializer = new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
-            }
-
-            ExpressionNode condition = null;
-            if (!check(Delimiter.SEMICOLON)) condition = expressionParser.parseExpression();
-            consume(Delimiter.SEMICOLON, "Expect ';' after loop condition");
-
-            ExpressionNode incrementExpr = null;
-            if (!check(Delimiter.RPAREN)) incrementExpr = expressionParser.parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after for clauses");
-
-            StatementNode increment = null;
-            if (incrementExpr != null) increment = new ExpressionStatement(incrementExpr.getLine(), incrementExpr.getColumn(), incrementExpr);
-
-            var body = parseStatement();
-            return new ForStatement(forToken.getLine(), forToken.getColumn(), initializer, condition, increment, body);
-        } finally {
-
-            this.symbolTable = exitScope(forScope);
-            this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
+            var expr = expressionParser.parseExpression();
+            consume(Delimiter.SEMICOLON, "Expect ';' after expression");
+            initializer = new ExpressionStatement(expr.getLine(), expr.getColumn(), expr);
         }
+
+        ExpressionNode condition = null;
+        if (!check(Delimiter.SEMICOLON)) condition = expressionParser.parseExpression();
+        consume(Delimiter.SEMICOLON, "Expect ';' after loop condition");
+
+        ExpressionNode incrementExpr = null;
+        if (!check(Delimiter.RPAREN)) incrementExpr = expressionParser.parseExpression();
+        consume(Delimiter.RPAREN, "Expect ')' after for clauses");
+
+        StatementNode increment = null;
+        if (incrementExpr != null) increment = new ExpressionStatement(incrementExpr.getLine(), incrementExpr.getColumn(), incrementExpr);
+
+        var body = parseStatement();
+        return new ForStatement(forToken.getLine(), forToken.getColumn(), initializer, condition, increment, body);
     }
 
     /// Parses a switch statement.
@@ -552,18 +502,13 @@ public class DeclarationParser extends ParserBase {
 
         var lbrace = previous();
 
-        var blockScope = enterScope();
-        this.symbolTable = blockScope;
-        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
-
-        var statements = getStatementList(blockScope);
+        var statements = parseBlockStatements();
         return new BlockStatement(lbrace.getLine(), lbrace.getColumn(), statements.toArray(new StatementNode[0]));
     }
 
     /// Helper method to parse a list of statements within a block, until the closing right brace is encountered.
-    /// @param blockScope The symbol table representing the scope of the block.
     /// @return An ArrayList of StatementNode objects.
-    ArrayList<StatementNode> getStatementList(SymbolTable blockScope) {
+    ArrayList<StatementNode> parseBlockStatements() {
 
         var statements = new ArrayList<StatementNode>();
 
@@ -576,9 +521,6 @@ public class DeclarationParser extends ParserBase {
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after block");
-
-        this.symbolTable = exitScope(blockScope);
-        this.expressionParser = new ExpressionParser(state, this.symbolTable, this.typeRegistry);
         return statements;
     }
 

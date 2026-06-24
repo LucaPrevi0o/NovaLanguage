@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import lexer.Lexer;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
-import lexer.token.TypeRegistry;
 
 import java.util.List;
 
@@ -106,46 +105,40 @@ public class ClassParserTest {
                   "}"));
     }
 
-    // ─── Symbol table consistency ──────────────────────────────────────────────
+    // ─── Class AST consistency ────────────────────────────────────────────────
 
     @Test
-    void testClassRegisteredInSymbolTable() {
+    void testClassReturnedInAst() {
 
-        var tokens = new Lexer("public class MyClass { }").tokenize();
-        var parser = new Parser(tokens);
-        parser.parse();
-        var sym = parser.getSymbolTable().lookup("MyClass");
-        assertNotNull(sym, "MyClass should be registered in the symbol table");
+        var ast = parse("public class MyClass { }");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+        assertEquals("MyClass", cls.getName());
     }
 
     @Test
-    void testClassAstNodeAndSymbolTableAreSameObject() {
+    void testClassAstNodeKeepsParsedMembers() {
 
-        var tokens = new Lexer("public class Linked { private int val; public int token() { return val; } }").tokenize();
-        var parser = new Parser(tokens);
-        var ast = parser.parse();
+        var ast = parse("public class Linked { private int val; public int token() { return val; } }");
 
-        var cls = (ClassDeclarationStatement) ast.getFirst();
-        var sym = parser.getSymbolTable().lookup("Linked");
-
-        assertSame(cls, sym, "AST node and registered symbol must be the same object");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+        assertEquals("Linked", cls.getName());
+        assertEquals(1, cls.getFields().length);
+        assertEquals(1, cls.getMethods().length);
     }
 
     @Test
-    void testRegisteredClassHasPopulatedMembers() {
+    void testParsedClassHasPopulatedMembers() {
 
-        var tokens = new Lexer(
+        var ast = parse(
             "public class Populated { " +
             "  public int x; " +
             "  public int foo() { return x; } " +
             "}"
-        ).tokenize();
-        var parser = new Parser(tokens);
-        parser.parse();
+        );
 
-        var sym = (ClassDeclarationStatement) parser.getSymbolTable().lookup("Populated");
-        if (sym != null) assertEquals(1, sym.getFields().length,  "symbol should have 1 field");
-        if (sym != null) assertEquals(1, sym.getMethods().length, "symbol should have 1 method");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+        assertEquals(1, cls.getFields().length,  "class AST should have 1 field");
+        assertEquals(1, cls.getMethods().length, "class AST should have 1 method");
     }
 
     // ─── Inheritance ──────────────────────────────────────────────────────────

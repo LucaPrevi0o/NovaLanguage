@@ -88,12 +88,13 @@ Completed or partially completed work includes:
 - return checking;
 - l-value checking;
 - `break` / `continue` context checking;
-- moving undefined identifier and undefined class checks out of expression parsing.
+- moving undefined identifier and undefined class checks out of expression parsing;
+- removing parser-owned symbol-table scope construction and symbol registration.
 
 Remaining work includes:
 
 - expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- removing the remaining parser-side semantic coupling;
+- replacing the remaining parser-side type-registry/type-syntax coupling;
 - keeping parser-generated ASTs simple and complete.
 
 ## Phase 5 - Real type model
@@ -133,11 +134,12 @@ Exit condition: two `.nv` files can reference each other.
 
 Status: **not started**.
 
-Builtins are currently registered manually. The long-term direction is for user code and standard-library code to share the same compiler path.
+The parser no longer hard-codes standard-library function registration. The long-term direction is for user code and standard-library code to share the same compiler path, but builtin and standard-library declarations are not modeled semantically yet.
 
 Planned work:
 
 - create `stdlib/`;
+- decide how native/builtin declarations enter semantic declaration collection before source loading exists;
 - represent standard-library functions as Nova source declarations where possible;
 - represent native/builtin functions as declarations with backend flags;
 - preload standard-library source through the multi-file compiler pipeline.

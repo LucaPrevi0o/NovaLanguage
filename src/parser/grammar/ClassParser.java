@@ -38,9 +38,6 @@ import java.util.ArrayList;
 /// - **Members**: Mix of fields (with optional initializers), methods, and constructors
 /// - **Access Control**: Public, private, and protected modifiers for all class members
 ///
-/// All scope mutations are wrapped in try/finally blocks so the parser state is always restored even
-/// when a ParseException is thrown mid-class.
-///
 /// @see DeclarationParser
 /// @see ExpressionParser
 public class ClassParser extends ParserBase {
@@ -51,7 +48,7 @@ public class ClassParser extends ParserBase {
     /// @param declarationParser The DeclarationParser to use for parsing types and other declarations within the class.
     public ClassParser(DeclarationParser declarationParser) {
 
-        super(declarationParser.getState(), declarationParser.getSymbolTable(), declarationParser.getTypeRegistry());
+        super(declarationParser.getState(), declarationParser.getTypeRegistry());
         this.declarationParser = declarationParser;
     }
 
@@ -101,8 +98,7 @@ public class ClassParser extends ParserBase {
             }
         }
 
-        // Create a placeholder ClassDeclarationStatement and register it in the type registry and symbol table before
-        // parsing members to allow for recursive references (e.g., a method that returns the class type or a field of the class type)
+        // Register the class type before parsing members to allow recursive type references.
         var classDecl = new ClassDeclarationStatement(
             classToken.getLine(),
             classToken.getColumn(),
@@ -117,59 +113,45 @@ public class ClassParser extends ParserBase {
         );
 
         typeRegistry.registerType(classDecl.getReturnType()); // Register class as a type before parsing members to allow for recursive references
-        this.symbolTable.register(classDecl); // Register class declaration as a symbol in the current scope
 
         consume(Delimiter.LBRACE, "Expect '{' before class body");
-
-        var classScope = enterScope(classDecl);
-        var savedSymbolTable = this.symbolTable;
-
-        this.symbolTable = classScope;
-        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
 
         var fields = new ArrayList<ClassFieldDeclaration>();
         var constructors = new ArrayList<ClassConstructorDeclaration>();
         var methods = new ArrayList<ClassMethodDeclaration>();
         var innerClasses = new ArrayList<ClassDeclarationStatement>();
 
-        try {
+        while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
 
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
+            var memberAccessModifier = parseAccessModifier();
 
-                var memberAccessModifier = parseAccessModifier();
+            if (match(Keyword.CLASS)) {
 
-                if (match(Keyword.CLASS)) {
-
-                    innerClasses.add(parseClassDeclaration(memberAccessModifier));
-                    continue;
-                }
-
-                if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
-
-                    advance();  // consume constructor name
-                    constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
-                    continue;
-                }
-
-                if (!declarationParser.isValidType(peek()))
-                    throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
-
-                var type = declarationParser.parseType();
-                var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
-                var memberName = getLiteralValue(memberNameToken);
-
-                if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
-                else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+                innerClasses.add(parseClassDeclaration(memberAccessModifier));
+                continue;
             }
-        } finally {
 
-            consume(Delimiter.RBRACE, "Expect '}' after class body");
-            this.symbolTable = exitScope(classScope);
-            this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
+            if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
+
+                advance();  // consume constructor name
+                constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
+                continue;
+            }
+
+            if (!declarationParser.isValidType(peek()))
+                throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
+
+            var type = declarationParser.parseType();
+            var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
+            var memberName = getLiteralValue(memberNameToken);
+
+            if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+            else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
         }
 
-        // Populate the already-registered placeholder with the fully parsed members.
-        // Using the same object keeps the symbol table and type registry consistent.
+        consume(Delimiter.RBRACE, "Expect '}' after class body");
+
+        // Populate the already-registered type placeholder with the fully parsed members.
         classDecl.setMethods(methods.toArray(new ClassMethodDeclaration[0]));
         classDecl.setFields(fields.toArray(new ClassFieldDeclaration[0]));
         classDecl.setConstructors(constructors.toArray(new ClassConstructorDeclaration[0]));
@@ -195,9 +177,7 @@ public class ClassParser extends ParserBase {
 
         if (match(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
         consume(Delimiter.SEMICOLON, "Expect ';' after field declaration");
-        var decl = new ClassFieldDeclaration(line, column, type, name, initializer, accessModifier);
-        this.symbolTable.register(decl); // Register field as symbol
-        return decl;
+        return new ClassFieldDeclaration(line, column, type, name, initializer, accessModifier);
     }
 
     /// Parses a class method declaration, including its parameters and body.
@@ -219,33 +199,11 @@ public class ClassParser extends ParserBase {
         var parameters = declarationParser.parseParameters();
         consume(Delimiter.RPAREN, "Expect ')' after parameters");
 
-        // Pre-register method in class scope so recursive calls resolve
-        var placeholder = new ClassMethodDeclaration(line, column, returnType, name, parameters, null, accessModifier);
-        this.symbolTable.register(placeholder);
+        consume(Delimiter.LBRACE, "Expect '{' before method body");
 
-        var methodScope = enterScope(placeholder);
-        var savedSymbolTable = this.symbolTable;
-
-        this.symbolTable = methodScope;
-        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
-        for (var param : parameters) this.symbolTable.register(param);
-
-        try {
-
-            consume(Delimiter.LBRACE, "Expect '{' before method body");
-
-            var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE, "Expect '}' after method body");
-
-            var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
-            placeholder.setBody(body);
-            return placeholder;
-        } finally {
-
-            this.symbolTable = exitScope(methodScope);
-            this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
-        }
+        var bodyStatements = declarationParser.parseBlockStatements();
+        var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+        return new ClassMethodDeclaration(line, column, returnType, name, parameters, body, accessModifier);
     }
 
     /// Parses a class constructor declaration, including its parameters and body.
@@ -265,27 +223,10 @@ public class ClassParser extends ParserBase {
         var parameters = declarationParser.parseParameters();
         consume(Delimiter.RPAREN, "Expect ')' after parameters");
 
-        var constructorScope = enterScope();
-        var savedSymbolTable = this.symbolTable;
+        consume(Delimiter.LBRACE, "Expect '{' before constructor body");
 
-        this.symbolTable = constructorScope;
-        this.declarationParser = new DeclarationParser(state, this.symbolTable, this.typeRegistry);
-        for (var param : parameters) this.symbolTable.register(param);
-
-        try {
-
-            consume(Delimiter.LBRACE, "Expect '{' before constructor body");
-
-            var bodyStatements = new ArrayList<StatementNode>();
-            while (!check(Delimiter.RBRACE) && isNotAtEnd()) bodyStatements.add(declarationParser.parseDeclaration());
-            consume(Delimiter.RBRACE, "Expect '}' after constructor body");
-
-            var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
-            return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);
-        } finally {
-
-            this.symbolTable = exitScope(constructorScope);
-            this.declarationParser = new DeclarationParser(state, savedSymbolTable, this.typeRegistry);
-        }
+        var bodyStatements = declarationParser.parseBlockStatements();
+        var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
+        return new ClassConstructorDeclaration(line, column, parameters, body, accessModifier);
     }
 }

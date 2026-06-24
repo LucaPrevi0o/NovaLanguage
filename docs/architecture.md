@@ -126,8 +126,8 @@ This should parse as an expression statement, then fail during semantic name res
 This should parse as an assignment expression, then fail during semantic l-value analysis.
 
 ```nova
-class A {}
-class A {}
+public class A {}
+public class A {}
 ```
 
 This should parse as two class declarations, then fail during duplicate declaration validation.
@@ -137,15 +137,15 @@ This should parse as two class declarations, then fail during duplicate declarat
 > Parser changes should not reintroduce checks for undefined names, duplicate declarations, invalid assignment targets, type mismatches, overload resolution, access control, or inheritance validity.
 > Those checks belong in semantic passes so the front end can produce a complete AST and deterministic diagnostics.
 
-## Parser scopes versus semantic scopes
+## Scope ownership
 
-The codebase still contains parser-level scope machinery and semantic-level scope machinery.
+Parser-owned `SymbolTable` scope construction has been removed.
 
-That is a transitional state.
+The parser now builds AST nodes and parser diagnostics. It does not register variables, functions, classes, methods, fields, parameters, or local block declarations into parser scopes.
 
-Parser-level scopes are useful while the parser still needs local context to build AST nodes and preserve existing behavior. Semantic scopes are the long-term place where language meaning should be represented and validated.
+Semantic declaration collection and semantic scope construction are the source of truth for lexical visibility and language meaning.
 
-The roadmap in [`../PLAN.md`](../PLAN.md) tracks the remaining work needed to move validation out of parser code and into semantic passes.
+One transitional parser dependency remains: `TypeRegistry` is still used as a parse-session helper for class and generic type syntax until Phase 5 introduces real type syntax nodes and resolved semantic type symbols.
 
 ## Future architecture
 

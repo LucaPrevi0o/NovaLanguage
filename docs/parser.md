@@ -97,7 +97,7 @@ Declaration parsing recognizes source-level declarations such as:
 - fields;
 - parameters.
 
-The parser may still maintain parser-level symbol information in some places, but long-term validation should move toward semantic declarations and semantic scopes.
+The parser no longer constructs lexical symbol scopes for these declarations. It preserves declaration names, types, parameters, bodies, and member lists in the AST; semantic declaration collection and semantic scopes decide visibility and validity later.
 
 ## Class parsing
 
@@ -109,6 +109,8 @@ Important boundary:
 - semantic analysis should decide whether a superclass actually exists;
 - the parser may recognize generic type syntax;
 - a future type model should decide whether generic parameters are valid and visible.
+
+The parser still has a temporary parse-session `TypeRegistry` for class and generic type recognition. That registry is not a semantic scope model and should be replaced by real type syntax and semantic type symbols in Phase 5.
 
 ## Error recovery
 
@@ -130,6 +132,7 @@ Avoid adding new parser checks for:
 - undefined variables;
 - undefined classes;
 - duplicate declarations;
+- declaration scope construction or symbol registration;
 - invalid assignment targets;
 - invalid return placement;
 - invalid `break` or `continue` placement;

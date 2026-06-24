@@ -3,7 +3,6 @@ import parser.Parser;
 import parser.ast.Printable;
 import error.diagnostic.ParseErrorsException;
 import printer.AstPrinter;
-import printer.SymbolTablePrinter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,9 +47,6 @@ public class Main {
 
             System.out.println("\n=== AST STRUCTURE ===\n");
             for (var node : ast) AstPrinter.printASTNode((Printable) node, new ArrayList<>(), !node.equals(ast.getLast()) ? "├─ " : "└─ ");
-
-            System.out.println("\n=== SYMBOL TABLE ===\n");
-            SymbolTablePrinter.printSymbolTableNode(parser.getSymbolTable());
 
         } catch (ParseErrorsException e) {
 

@@ -364,7 +364,6 @@ public class ExpressionParserTest {
     void testCallExpressionMultipleArgs() {
 
         assertDoesNotThrow(() -> {
-            // readLine is pre-registered; use it as a callee
             var tokens = new Lexer("string s; s = readLine();").tokenize();
             new Parser(tokens).parse();
         });
