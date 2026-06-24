@@ -24,6 +24,9 @@ public final class DeclarationCollector {
 
     private final List<SemanticDeclaration> declarations = new ArrayList<>();
 
+    /// Collects declarations from the given list of statements.
+    /// @param statements The list of statements to collect declarations from.
+    /// @return A collection of declarations found in the statements.
     public DeclarationCollection collect(List<StatementNode> statements) {
 
         declarations.clear();
@@ -32,83 +35,53 @@ public final class DeclarationCollector {
         return new DeclarationCollection(declarations);
     }
 
+    /// Collects declarations from the given statement and its children.
+    /// @param statement The statement to collect declarations from.
+    /// @param owner The owner of the statement, or null if the statement has no owner.
     private void collectStatement(StatementNode statement, AstNode owner) {
 
-        if (statement == null) return;
+        switch (statement) {
 
-        if (statement instanceof ClassDeclarationStatement classDeclaration) {
+            case ClassDeclarationStatement classDeclaration -> collectClass(classDeclaration, owner);
+            case ClassMethodDeclaration methodDeclaration -> collectFunction(methodDeclaration, owner, DeclarationKind.METHOD);
+            case FunctionDeclarationStatement functionDeclaration -> collectFunction(functionDeclaration, owner, DeclarationKind.FUNCTION);
+            case ClassFieldDeclaration fieldDeclaration -> declare(DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration, owner);
+            case VariableDeclarationStatement variableDeclaration -> declare(DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration, owner);
+            case BlockStatement block -> {
+                for (var child : block.getStatements()) collectStatement(child, block);
+            }
+            case IfStatement ifStatement -> {
 
-            collectClass(classDeclaration, owner);
-            return;
+                collectStatement(ifStatement.getThenBlock(), ifStatement);
+                collectStatement(ifStatement.getElseBlock(), ifStatement);
+            }
+            case WhileStatement whileStatement -> collectStatement(whileStatement.getBody(), whileStatement);
+            case ForStatement forStatement -> {
+
+                collectStatement(forStatement.getInitialization(), forStatement);
+                collectStatement(forStatement.getBody(), forStatement);
+            }
+            case ForEachStatement forEachStatement -> {
+
+                declare(
+                        DeclarationKind.FOREACH_VARIABLE,
+                        forEachStatement.getElementName(),
+                        forEachStatement.getElementType(),
+                        forEachStatement,
+                        owner
+                );
+                collectStatement(forEachStatement.getBody(), forEachStatement);
+            }
+            case SwitchStatement switchStatement -> {
+                for (var switchCase : switchStatement.getCases()) collectStatement(switchCase.getBody(), switchCase);
+            }
+            case null, default -> {}
         }
-
-        if (statement instanceof ClassMethodDeclaration methodDeclaration) {
-
-            collectFunction(methodDeclaration, owner, DeclarationKind.METHOD);
-            return;
-        }
-
-        if (statement instanceof FunctionDeclarationStatement functionDeclaration) {
-
-            collectFunction(functionDeclaration, owner, DeclarationKind.FUNCTION);
-            return;
-        }
-
-        if (statement instanceof ClassFieldDeclaration fieldDeclaration) {
-
-            declare(DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration, owner);
-            return;
-        }
-
-        if (statement instanceof VariableDeclarationStatement variableDeclaration) {
-
-            declare(DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration, owner);
-            return;
-        }
-
-        if (statement instanceof BlockStatement block) {
-
-            for (var child : block.getStatements()) collectStatement(child, block);
-            return;
-        }
-
-        if (statement instanceof IfStatement ifStatement) {
-
-            collectStatement(ifStatement.getThenBlock(), ifStatement);
-            collectStatement(ifStatement.getElseBlock(), ifStatement);
-            return;
-        }
-
-        if (statement instanceof WhileStatement whileStatement) {
-
-            collectStatement(whileStatement.getBody(), whileStatement);
-            return;
-        }
-
-        if (statement instanceof ForStatement forStatement) {
-
-            collectStatement(forStatement.getInitialization(), forStatement);
-            collectStatement(forStatement.getBody(), forStatement);
-            return;
-        }
-
-        if (statement instanceof ForEachStatement forEachStatement) {
-
-            declare(
-                DeclarationKind.FOREACH_VARIABLE,
-                forEachStatement.getElementName(),
-                forEachStatement.getElementType(),
-                forEachStatement,
-                owner
-            );
-            collectStatement(forEachStatement.getBody(), forEachStatement);
-            return;
-        }
-
-        if (statement instanceof SwitchStatement switchStatement)
-            for (var switchCase : switchStatement.getCases()) collectStatement(switchCase.getBody(), switchCase);
     }
 
+    /// Collects declarations from the given class declaration and its members.
+    /// @param classDeclaration The class declaration to collect declarations from.
+    /// @param owner The owner of the class declaration, or null if the class has no owner.
     private void collectClass(ClassDeclarationStatement classDeclaration, AstNode owner) {
 
         declare(DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getReturnType(), classDeclaration, owner);
@@ -119,6 +92,10 @@ public final class DeclarationCollector {
         for (var innerClass : classDeclaration.getInnerClasses()) collectClass(innerClass, classDeclaration);
     }
 
+    /// Collects declarations from the given function declaration and its parameters.
+    /// @param functionDeclaration The function declaration to collect declarations from.
+    /// @param owner The owner of the function declaration, or `null` if the function has no owner.
+    /// @param kind The kind of the function declaration (e.g., `FUNCTION` or `METHOD`).
     private void collectFunction(FunctionDeclarationStatement functionDeclaration, AstNode owner, DeclarationKind kind) {
 
         declare(kind, functionDeclaration.getName(), functionDeclaration.getDeclaredType(), functionDeclaration, owner);
@@ -127,6 +104,9 @@ public final class DeclarationCollector {
         collectStatement(functionDeclaration.getBody(), functionDeclaration);
     }
 
+    /// Collects declarations from the given constructor declaration and its parameters.
+    /// @param constructorDeclaration The constructor declaration to collect declarations from.
+    /// @param owner The owner of the constructor declaration, or `null` if the constructor has no owner.
     private void collectConstructor(ClassConstructorDeclaration constructorDeclaration, ClassDeclarationStatement owner) {
 
         declare(DeclarationKind.CONSTRUCTOR, owner.getName(), null, constructorDeclaration, owner);
@@ -135,6 +115,12 @@ public final class DeclarationCollector {
         collectStatement(constructorDeclaration.getBody(), constructorDeclaration);
     }
 
+    /// Declares a new semantic declaration and adds it to the list of declarations.
+    /// @param kind The kind of the declaration (e.g., `FUNCTION`, `VARIABLE`, `CLASS`, etc.).
+    /// @param name The name of the declaration.
+    /// @param declaredType The return type of the declaration, or `null` if the declaration does not have a return type.
+    /// @param node The AST node that represents the declaration.
+    /// @param owner The owner of the declaration, or `null` if the declaration has no owner.
     private void declare(DeclarationKind kind, String name, ReturnType declaredType, AstNode node, AstNode owner) {
         declarations.add(new SemanticDeclaration(kind, name, declaredType, node, owner));
     }
