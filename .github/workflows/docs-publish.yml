@@ -78,6 +78,9 @@ jobs:
     name: Build Javadoc site
     runs-on: ubuntu-latest
 
+    env:
+      PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -102,7 +105,15 @@ jobs:
           python3 .github/scripts/prepare_javadoc_site.py
 
       - name: Configure GitHub Pages
+        if: ${{ env.PAGES_DEPLOY_TOKEN == '' }}
         uses: actions/configure-pages@v5
+
+      - name: Configure or enable GitHub Pages
+        if: ${{ env.PAGES_DEPLOY_TOKEN != '' }}
+        uses: actions/configure-pages@v5
+        with:
+          token: ${{ env.PAGES_DEPLOY_TOKEN }}
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
