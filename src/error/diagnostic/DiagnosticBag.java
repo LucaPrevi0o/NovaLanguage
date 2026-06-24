@@ -37,11 +37,9 @@ public final class DiagnosticBag {
         return diagnostic;
     }
 
-    /// Returns the list of diagnostics in the collection.
-    /// > NOTE: The returned list should not be modified directly, although it is not strictly immutable.
-    /// > Use the `report` method to add diagnostics instead.
-    /// @return The list of diagnostics in the collection.
-    public List<Diagnostic> getDiagnostics() { return diagnostics; }
+    /// Returns an immutable view of the diagnostics in the collection.
+    /// @return An immutable view of the diagnostics in the collection.
+    public List<Diagnostic> getDiagnostics() { return List.copyOf(diagnostics); }
 
     /// Checks if the collection has any diagnostics.
     /// @return `true` if the collection has any diagnostics, `false` otherwise.
