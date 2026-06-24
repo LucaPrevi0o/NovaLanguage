@@ -2,8 +2,10 @@ package parser;
 
 import org.junit.jupiter.api.Test;
 import lexer.Lexer;
+import error.diagnostic.ParseErrorsException;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
+import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 
 import java.util.List;
 
@@ -253,6 +255,58 @@ public class ClassParserTest {
             parse("public class Config { " +
                   "  public int maxSize = 100; " +
                   "}"));
+    }
+
+    // ─── Error recovery ──────────────────────────────────────────────────────
+
+    @Test
+    void testClassMemberRecoveryKeepsValidMembersAfterMissingSemicolon() {
+
+        var tokens = new Lexer(
+            "public class Broken { " +
+            "  public int before; " +
+            "  public int broken " +
+            "  public int after; " +
+            "} " +
+            "int top;"
+        ).tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the malformed member should produce an error");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered class body");
+
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, parsed.getFirst());
+        assertEquals(2, cls.getFields().length, "Valid class fields around the error should be retained");
+        assertEquals("before", cls.getFields()[0].getName());
+        assertEquals("after", cls.getFields()[1].getName());
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
+    }
+
+    @Test
+    void testClassMemberRecoveryHandlesUnknownTokenBeforeMember() {
+
+        var tokens = new Lexer(
+            "public class Broken { " +
+            "  @ " +
+            "  public int after; " +
+            "} " +
+            "int top;"
+        ).tokenize();
+        var parser = new Parser(tokens);
+
+        var ex = assertThrows(ParseErrorsException.class, parser::parse);
+        assertEquals(1, ex.getErrors().size(), "Only the unknown token should produce an error");
+
+        var parsed = parser.getParsedStatements();
+        assertEquals(2, parsed.size(), "Top-level parsing should continue after the recovered class body");
+
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, parsed.getFirst());
+        assertEquals(1, cls.getFields().length, "The valid class field after the unknown token should be retained");
+        assertEquals("after", cls.getFields()[0].getName());
+        assertInstanceOf(VariableDeclarationStatement.class, parsed.get(1));
     }
 
     // ─── Duplicate class members ──────────────────────────────────────────────

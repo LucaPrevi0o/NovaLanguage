@@ -1,7 +1,11 @@
 package parser.grammar;
 
+import error.diagnostic.ParseException;
+import lexer.Token;
+import lexer.token.TokenClass;
 import lexer.token.family.*;
 import lexer.token.family.literal.IdentifierLiteral;
+import lexer.token.type.LiteralToken;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
@@ -42,7 +46,7 @@ import java.util.ArrayList;
 /// @see ExpressionParser
 public class ClassParser extends ParserBase {
 
-    private DeclarationParser declarationParser;
+    private final DeclarationParser declarationParser;
 
     /// Constructs a new ClassParser with the given DeclarationParser.
     /// @param declarationParser The DeclarationParser to use for parsing types and other declarations within the class.
@@ -121,32 +125,21 @@ public class ClassParser extends ParserBase {
         var methods = new ArrayList<ClassMethodDeclaration>();
         var innerClasses = new ArrayList<ClassDeclarationStatement>();
 
-        while (!check(Delimiter.RBRACE) && isNotAtEnd()) {
+        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
 
-            var memberAccessModifier = parseAccessModifier();
+            parseClassMember(
+                className,
+                classToken.getLine(),
+                classToken.getColumn(),
+                fields,
+                constructors,
+                methods,
+                innerClasses
+            );
+        } catch (ParseException e) {
 
-            if (match(Keyword.CLASS)) {
-
-                innerClasses.add(parseClassDeclaration(memberAccessModifier));
-                continue;
-            }
-
-            if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
-
-                advance();  // consume constructor name
-                constructors.add(parseConstructor(classToken.getLine(), classToken.getColumn(), memberAccessModifier));
-                continue;
-            }
-
-            if (!declarationParser.isValidType(peek()))
-                throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
-
-            var type = declarationParser.parseType();
-            var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
-            var memberName = getLiteralValue(memberNameToken);
-
-            if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
-            else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+            state.report(e);
+            synchronizeClassMember(className);
         }
 
         consume(Delimiter.RBRACE, "Expect '}' after class body");
@@ -159,7 +152,88 @@ public class ClassParser extends ParserBase {
         return classDecl;
     }
 
-     /// Parses a class field declaration, which may optionally include an initializer.
+    private void parseClassMember(
+        String className,
+        int classLine,
+        int classColumn,
+        ArrayList<ClassFieldDeclaration> fields,
+        ArrayList<ClassConstructorDeclaration> constructors,
+        ArrayList<ClassMethodDeclaration> methods,
+        ArrayList<ClassDeclarationStatement> innerClasses
+    ) {
+
+        var memberAccessModifier = parseAccessModifier();
+
+        if (match(Keyword.CLASS)) {
+
+            innerClasses.add(parseClassDeclaration(memberAccessModifier));
+            return;
+        }
+
+        if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
+
+            advance();  // consume constructor name
+            constructors.add(parseConstructor(classLine, classColumn, memberAccessModifier));
+            return;
+        }
+
+        if (!declarationParser.isValidType(peek()))
+            throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
+
+        var type = declarationParser.parseType();
+        var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
+        var memberName = getLiteralValue(memberNameToken);
+
+        if (check(Delimiter.LPAREN)) methods.add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+        else fields.add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+    }
+
+    /// Synchronizes after a class-body member error without escaping the current class body.
+    private void synchronizeClassMember(String className) {
+
+        if (!isNotAtEnd() || currentTokenIs(Delimiter.RBRACE)) return;
+        if (currentTokenIs(Delimiter.SEMICOLON)) {
+
+            advance();
+            return;
+        }
+        if (isClassMemberRecoveryBoundary(peek(), className)) return;
+
+        advance();  // skip the offending token
+        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) {
+
+            if (previous().getType() == Delimiter.SEMICOLON) return;
+            if (isClassMemberRecoveryBoundary(peek(), className)) return;
+            advance();
+        }
+    }
+
+    private boolean isClassMemberRecoveryBoundary(Token token, String className) {
+
+        if (token == null) return false;
+
+        var type = token.getType();
+        return type == Keyword.CLASS ||
+               type == AccessModifier.PUBLIC ||
+               type == AccessModifier.PRIVATE ||
+               type == AccessModifier.PROTECTED ||
+               declarationParser.isValidType(token) ||
+               isConstructorName(token, className);
+    }
+
+    private boolean isConstructorName(Token token, String className) {
+
+        return token instanceof LiteralToken &&
+               token.getType() instanceof IdentifierLiteral &&
+               className.equals(getLiteralValue(token));
+    }
+
+    private boolean currentTokenIs(TokenClass type) {
+
+        return isNotAtEnd() && peek().getType() == type;
+    }
+
+    /// Parses a class field declaration, which may optionally include an initializer.
     ///
     /// Grammar rule:
     /// ```

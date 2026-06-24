@@ -79,12 +79,14 @@ Completed:
 - [x] Tighten assignment target parsing with explicit assignable-target checks.
 - [x] Add expression AST-shape tests for the updated parsing behavior.
 - [x] Split parser implementation packages into grammar parsers and shared parser support.
+- [x] Audit parser null-valued paths; current `null` uses represent optional syntax rather than parse-failure sentinels.
+- [x] Keep parser failure handling based on `ParseException` plus explicit recovery boundaries; do not introduce AST error nodes yet.
+- [x] Add class-body member recovery so malformed class members do not discard the whole class AST.
+- [x] Add regression tests for class-member token advancement and recovery.
 
 Remaining:
 
-- [ ] Audit parser methods that still return `null` after parse failures.
-- [ ] Decide whether those paths should throw `ParseException`, return an error node, or recover at a higher boundary.
-- [ ] Add tests specifically for token advancement and parser recovery bugs.
+- [ ] Review parser loops that call `check(...)` before entering local recovery guards.
 - [ ] Review class parsing against the previous working shape and current README grammar.
 - [ ] Keep grammar methods small enough that cursor movement is obvious from local code.
 
@@ -301,6 +303,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Audit parser methods that still encode failure with nullable values or ad-hoc recovery and decide the right boundary for `ParseException` versus error nodes.
+1. Review parser loops that call `check(...)` before entering local recovery guards, starting with block-level recovery.
 2. Decide how much of the remaining parser `TypeRegistry` behavior should be kept until Phase 5 introduces real type syntax nodes.
 3. Decide how far Phase 4 should go before Phase 5 introduces resolved semantic type symbols.

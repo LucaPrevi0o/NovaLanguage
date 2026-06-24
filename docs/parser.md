@@ -123,6 +123,8 @@ Recovery is especially important at:
 - block boundaries;
 - class-body member boundaries.
 
+The current parser recovery model is based on `ParseException` plus explicit recovery boundaries. It does not create AST error nodes yet; successfully recovered AST nodes are retained, and collected parser diagnostics are reported at the end of the parse run.
+
 A parser recovery change should usually include a regression test that proves valid code after the error is still parsed.
 
 ## What not to put in the parser

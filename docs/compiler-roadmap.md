@@ -43,13 +43,13 @@ Completed work includes:
 - assignment target parsing cleanup;
 - expression AST-shape tests;
 - package split between parser grammar and parser support;
-- partial recovery improvements.
+- top-level, block-level, and class-body recovery improvements;
+- a current decision to use `ParseException` plus explicit recovery boundaries instead of AST error nodes.
 
 Remaining work includes:
 
-- auditing parser methods that still return `null` after parse failures;
-- deciding between error nodes, exceptions, and higher-level recovery;
-- adding more tests for parser recovery and token advancement;
+- reviewing parser loops that inspect tokens before entering local recovery guards;
+- adding more focused tests for parser recovery and token advancement;
 - reviewing class parsing against current grammar expectations.
 
 ## Phase 3 - Diagnostics
