@@ -91,17 +91,13 @@ public class ClassParser extends ParserBase {
 
             var superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after '::'");
             var superClassName = getLiteralValue(superClassToken);
-            var superClass = typeRegistry.getReturnType(superClassName);
-            if (superClass == null) throw parseError("Superclass '" + superClassName + "' not found.", superClassToken);
-            superClasses.add(superClass);
+            superClasses.add(new ReturnType(new NonPrimitiveType(superClassName)));
 
             while (match(Delimiter.COMMA)) {
 
                 superClassToken = consume(new IdentifierLiteral(), "Expect superclass name after ','");
                 superClassName = getLiteralValue(superClassToken);
-                superClass = typeRegistry.getReturnType(superClassName);
-                if (superClass == null) throw parseError("Superclass '" + superClassName + "' not found.", superClassToken);
-                superClasses.add(superClass);
+                superClasses.add(new ReturnType(new NonPrimitiveType(superClassName)));
             }
         }
 

@@ -71,6 +71,24 @@ public class SemanticNameResolverTest {
     }
 
     @Test
+    void testReportsUndefinedSuperclassAfterParsing() {
+
+        var diagnostics = resolve("public class Orphan :: NoParent { }");
+
+        assertEquals(1, diagnostics.size());
+        assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
+        assertTrue(diagnostics.getFirst().getMessage().contains("Undefined superclass 'NoParent'"));
+    }
+
+    @Test
+    void testResolvesForwardSuperclassAfterDeclarationCollection() {
+
+        var diagnostics = resolve("public class Child :: Base { } public class Base { }");
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
     void testResolvesForEachElementInsideBody() {
 
         var diagnostics = resolve("int items; for (int elem : items) { elem; }");

@@ -156,7 +156,7 @@ Parser-owned semantic checks inventory:
 - [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for primitive and constructed class types.
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
-- [ ] Type/name resolution: `ClassParser` rejects unknown superclasses while parsing inheritance lists.
+- [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
 - [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
 - [ ] Type syntax/resolution coupling: `DeclarationParser.parseType()` requires class names to already be registered.

@@ -142,6 +142,13 @@ public final class NameResolver {
 
     private void resolveClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
+        for (var superClass : classDeclaration.getSuperClasses()) {
+
+            var superClassName = superClass.getTokenClass().token();
+            if (!hasVisibleClass(scope, superClassName))
+                report("Undefined superclass '" + superClassName + "'", classDeclaration);
+        }
+
         var classScope = childScope(scope, "class " + classDeclaration.getName(), classDeclaration);
 
         for (var field : classDeclaration.getFields()) resolveStatement(field, classScope);

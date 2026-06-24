@@ -175,10 +175,13 @@ public class ClassParserTest {
     }
 
     @Test
-    void testClassWithUndefinedSuperclassThrows() {
+    void testClassWithUndefinedSuperclassParsesSyntactically() {
 
-        var tokens = new Lexer("public class Orphan :: NoParent { }").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        var ast = parse("public class Orphan :: NoParent { }");
+        var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
+
+        assertEquals(1, cls.getSuperClasses().length);
+        assertEquals("NoParent", cls.getSuperClasses()[0].getTokenClass().token());
     }
 
     // ─── Generics ─────────────────────────────────────────────────────────────
