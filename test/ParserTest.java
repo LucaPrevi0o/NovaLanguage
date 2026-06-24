@@ -95,13 +95,15 @@ public class ParserTest {
     }
 
     @Test
-    void testDuplicateSymbolThrows() {
+    void testDuplicateSymbolParsesSyntactically() {
 
         var source = "int x; int x;";
         var lexer = new Lexer(source);
         var tokens = lexer.tokenize();
         var parser = new Parser(tokens);
-        assertThrows(RuntimeException.class, parser::parse, "Should throw RuntimeException for duplicate symbol");
+
+        var ast = assertDoesNotThrow(parser::parse, "Duplicate declarations should be handled by semantic analysis");
+        assertEquals(2, ast.size());
     }
 
     @Test

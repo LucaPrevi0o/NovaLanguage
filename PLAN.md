@@ -157,7 +157,7 @@ Parser-owned semantic checks inventory:
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
-- [ ] Declaration validation: `SymbolTable.register(...)` rejects duplicate declarations during parsing.
+- [x] Declaration validation: `SymbolTable.register(...)` no longer rejects duplicates; semantic duplicate validation reports them.
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
 - [ ] Type syntax/resolution coupling: `DeclarationParser.parseType()` requires class names to already be registered.
 - [ ] Scope construction coupling: declaration and class parsers build scopes and register symbols while parsing syntax.
@@ -166,7 +166,7 @@ Exit criteria:
 
 - [x] `unknownVar + 1;` parses syntactically, then fails semantic name resolution.
 - [x] `1 = 2;` parses syntactically, then fails l-value analysis.
-- [ ] Duplicate declarations become semantic diagnostics, not parser crashes.
+- [x] Duplicate declarations become semantic diagnostics, not parser crashes.
 
 ## Phase 5 - Introduce A Real Type Model
 

@@ -1,18 +1,9 @@
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticPhase;
 import lexer.Lexer;
-import lexer.token.ReturnType;
-import lexer.token.family.AccessModifier;
-import lexer.token.family.PrimitiveType;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
-import parser.ast.nodes.statement.ClassDeclarationStatement;
-import parser.ast.nodes.statement.declaration.FunctionParameter;
-import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
-import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
-import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import semantic.DuplicateDeclarationValidator;
 
 import java.util.List;
@@ -35,13 +26,7 @@ public class SemanticDuplicateDeclarationValidatorTest {
     @Test
     void testReportsDuplicateVariablesInSameScope() {
 
-        var intType = new ReturnType(PrimitiveType.INT);
-        var ast = List.<StatementNode>of(
-            new VariableDeclarationStatement(1, 1, intType, "x", null),
-            new VariableDeclarationStatement(2, 1, intType, "x", null)
-        );
-
-        var diagnostics = validate(ast);
+        var diagnostics = validate(parse("int x;\nint x;"));
 
         assertEquals(1, diagnostics.size());
         assertEquals(DiagnosticPhase.SEMANTIC, diagnostics.getFirst().getPhase());
@@ -60,24 +45,12 @@ public class SemanticDuplicateDeclarationValidatorTest {
     @Test
     void testReportsDuplicateFieldsInClassScope() {
 
-        var intType = new ReturnType(PrimitiveType.INT);
-        var ast = List.<StatementNode>of(new ClassDeclarationStatement(
-            1,
-            1,
-            "Box",
-            new ClassMethodDeclaration[0],
-            new ClassFieldDeclaration[] {
-                new ClassFieldDeclaration(2, 1, intType, "value", null, AccessModifier.PRIVATE),
-                new ClassFieldDeclaration(3, 1, intType, "value", null, AccessModifier.PRIVATE)
-            },
-            new ReturnType[0],
-            null,
-            new ClassDeclarationStatement[0],
-            AccessModifier.PUBLIC,
-            new ClassConstructorDeclaration[0]
-        ));
-
-        var diagnostics = validate(ast);
+        var diagnostics = validate(parse("""
+            public class Box {
+                private int value;
+                private int value;
+            }
+            """));
 
         assertEquals(1, diagnostics.size());
         assertEquals(3, diagnostics.getFirst().getLine());
@@ -87,30 +60,12 @@ public class SemanticDuplicateDeclarationValidatorTest {
     @Test
     void testAllowsMultipleConstructorsUntilSignatureValidationExists() {
 
-        var intType = new ReturnType(PrimitiveType.INT);
-        var ast = List.<StatementNode>of(new ClassDeclarationStatement(
-            1,
-            1,
-            "Box",
-            new ClassMethodDeclaration[0],
-            new ClassFieldDeclaration[0],
-            new ReturnType[0],
-            null,
-            new ClassDeclarationStatement[0],
-            AccessModifier.PUBLIC,
-            new ClassConstructorDeclaration[] {
-                new ClassConstructorDeclaration(2, 1, new FunctionParameter[0], null, AccessModifier.PUBLIC),
-                new ClassConstructorDeclaration(
-                    3,
-                    1,
-                    new FunctionParameter[] { new FunctionParameter(3, 9, "value", intType) },
-                    null,
-                    AccessModifier.PUBLIC
-                )
+        var diagnostics = validate(parse("""
+            public class Box {
+                public Box() { }
+                public Box(int value) { }
             }
-        ));
-
-        var diagnostics = validate(ast);
+            """));
 
         assertTrue(diagnostics.isEmpty());
     }

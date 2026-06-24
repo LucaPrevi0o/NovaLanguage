@@ -4,6 +4,7 @@ import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import semantic.DuplicateDeclarationValidator;
 
 import java.util.List;
 
@@ -101,21 +102,19 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testDuplicateVariableThrows() {
+    void testDuplicateVariableParsesSyntactically() {
 
-        var tokens = new Lexer("int x; int x;").tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> parse("int x; int x;"));
     }
 
     @Test
-    void testDuplicateVariableExceptionHasLocation() {
+    void testDuplicateVariableSemanticDiagnosticHasLocation() {
 
-        // The ParseException for a duplicate variable should carry line/column info.
-        var tokens = new Lexer("int x;\nint x;").tokenize();
-        var ex = assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
-        // The message (or a wrapped ParseException) should contain location info
-        assertTrue(ex.getMessage() != null && !ex.getMessage().isEmpty(),
-                "Exception should have a message");
+        var ast = parse("int x;\nint x;");
+        var diagnostics = new DuplicateDeclarationValidator().validate(ast);
+
+        assertEquals(1, diagnostics.size());
+        assertEquals(2, diagnostics.getFirst().getLine());
     }
 
     @Test

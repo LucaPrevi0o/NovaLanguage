@@ -264,11 +264,8 @@ public class ClassParserTest {
     // ─── Duplicate class members ──────────────────────────────────────────────
 
     @Test
-    void testDuplicateFieldThrows() {
+    void testDuplicateFieldParsesSyntactically() {
 
-        var tokens = new Lexer(
-            "public class Dup { public int x; public int x; }"
-        ).tokenize();
-        assertThrows(RuntimeException.class, () -> new Parser(tokens).parse());
+        assertDoesNotThrow(() -> parse("public class Dup { public int x; public int x; }"));
     }
 }
