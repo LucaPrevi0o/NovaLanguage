@@ -12,6 +12,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 
 API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com")
@@ -72,6 +73,16 @@ STATUS_ALIASES = {
     "done": "Done",
 }
 
+MANAGED_KIND_LABELS = {
+    "bug": ("bug", "d73a4a", "Detected functional problem."),
+    "feature": ("feature", "a2eeef", "New feature or request."),
+    "refactor": ("refactor", "1d76db", "Code restructuring without changing intended behavior."),
+    "design": ("design", "7b61ff", "Architecture or language/compiler design work."),
+    "research": ("research", "fbca04", "Research or investigation before implementation."),
+    "test": ("test", "f9d0c4", "Testing work or regression coverage."),
+    "docs": ("docs", "0075ca", "Documentation work."),
+}
+
 
 class ProjectAutomationError(RuntimeError):
     """Raised when project automation cannot complete safely."""
@@ -86,6 +97,7 @@ class Issue:
     title: str
     body: str
     url: str
+    labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -277,6 +289,7 @@ def get_issue(client: GitHubClient, repository: str, number: int) -> Issue:
         title=payload["title"],
         body=payload.get("body") or "",
         url=payload["html_url"],
+        labels=tuple(label["name"] for label in payload.get("labels", [])),
     )
 
 
@@ -445,6 +458,46 @@ def set_issue_status(client: GitHubClient, repository: str, issue_number: int, s
     print(f"Set #{issue_number} status to {status_name}")
 
 
+def ensure_label(client: GitHubClient, repository: str, label: str, color: str, description: str) -> None:
+    """Ensure a repository label exists."""
+
+    encoded_label = quote(label, safe="")
+    try:
+        client.rest("GET", f"/repos/{repository}/labels/{encoded_label}")
+        return
+    except ProjectAutomationError as error:
+        if "GitHub API 404" not in str(error):
+            raise
+
+    client.rest(
+        "POST",
+        f"/repos/{repository}/labels",
+        {
+            "name": label,
+            "color": color,
+            "description": description,
+        },
+    )
+    print(f"Created label '{label}'")
+
+
+def add_issue_label(client: GitHubClient, repository: str, issue_number: int, label: str) -> None:
+    """Add one label to an issue."""
+
+    client.rest("POST", f"/repos/{repository}/issues/{issue_number}/labels", {"labels": [label]})
+
+
+def remove_issue_label(client: GitHubClient, repository: str, issue_number: int, label: str) -> None:
+    """Remove one label from an issue."""
+
+    encoded_label = quote(label, safe="")
+    try:
+        client.rest("DELETE", f"/repos/{repository}/issues/{issue_number}/labels/{encoded_label}")
+    except ProjectAutomationError as error:
+        if "GitHub API 404" not in str(error):
+            raise
+
+
 def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
     """Sync one issue's metadata into Project fields."""
 
@@ -480,6 +533,65 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
     if not updated:
         print(f"::warning::No Project fields were updated for #{issue.number}")
     return updated
+
+
+def kind_label_from_metadata(metadata: dict[str, str]) -> str | None:
+    """Return the managed kind label represented by issue metadata."""
+
+    kind = metadata.get("Kind")
+    if not kind:
+        return None
+    kind_key = normalize_key(first_kind(kind))
+    label = MANAGED_KIND_LABELS.get(kind_key)
+    return label[0] if label else kind_key
+
+
+def sync_labels_for_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
+    """Sync one issue's managed kind label from its metadata block."""
+
+    issue = get_issue(client, repository, issue_number)
+    metadata = parse_metadata(issue.body)
+    if not metadata:
+        message = f"#{issue.number} has no '## {METADATA_HEADER}' block; skipping label sync"
+        if strict:
+            raise ProjectAutomationError(message)
+        print(f"::warning::{message}")
+        return False
+
+    target_label = kind_label_from_metadata(metadata)
+    if not target_label:
+        message = f"#{issue.number} has no Kind metadata; skipping label sync"
+        if strict:
+            raise ProjectAutomationError(message)
+        print(f"::warning::{message}")
+        return False
+
+    managed_labels = {entry[0] for entry in MANAGED_KIND_LABELS.values()}
+    if target_label not in managed_labels:
+        message = f"Kind '{target_label}' is not a managed label"
+        if strict:
+            raise ProjectAutomationError(message)
+        print(f"::warning::{message}")
+        return False
+
+    label_name, color, description = MANAGED_KIND_LABELS[target_label]
+    ensure_label(client, repository, label_name, color, description)
+
+    changed = False
+    current_labels = set(issue.labels)
+    for stale_label in sorted((current_labels & managed_labels) - {label_name}):
+        remove_issue_label(client, repository, issue.number, stale_label)
+        print(f"Removed stale managed label '{stale_label}' from #{issue.number}")
+        changed = True
+
+    if label_name not in current_labels:
+        add_issue_label(client, repository, issue.number, label_name)
+        print(f"Added label '{label_name}' to #{issue.number}")
+        changed = True
+
+    if not changed:
+        print(f"#{issue.number} already has managed label '{label_name}'")
+    return changed
 
 
 def issue_reference_numbers(repository: str, text: str) -> set[int]:
@@ -566,6 +678,32 @@ def sync_issue_command(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
+def sync_labels_command(args: argparse.Namespace) -> int:
+    """Run the sync-labels subcommand."""
+
+    client = GitHubClient(token_from_environment())
+
+    issue_numbers: list[int]
+    if args.all_open:
+        issue_numbers = list_open_issues(client, args.repo)
+    elif args.issue_number is not None:
+        issue_numbers = [args.issue_number]
+    else:
+        raise ProjectAutomationError("Provide --issue-number or --all-open")
+
+    failures = 0
+    for number in issue_numbers:
+        try:
+            sync_labels_for_issue(client, args.repo, number, args.strict)
+        except ProjectAutomationError as error:
+            failures += 1
+            print(f"::error::Failed to sync labels for #{number}: {error}")
+            if args.strict:
+                break
+
+    return 1 if failures else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
 
@@ -583,6 +721,13 @@ def build_parser() -> argparse.ArgumentParser:
     pr_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
     pr_parser.add_argument("--pr-number", type=int, required=True, help="Pull request number to inspect")
     pr_parser.set_defaults(func=sync_pr_status_command)
+
+    labels_parser = subparsers.add_parser("sync-labels", help="Sync managed issue labels from metadata")
+    labels_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
+    labels_parser.add_argument("--issue-number", type=int, help="Issue number to sync")
+    labels_parser.add_argument("--all-open", action="store_true", help="Sync labels for all open issues")
+    labels_parser.add_argument("--strict", action="store_true", help="Fail on missing or invalid issue metadata")
+    labels_parser.set_defaults(func=sync_labels_command)
 
     return parser
 

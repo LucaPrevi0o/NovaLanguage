@@ -73,7 +73,6 @@ Responsibilities:
 
 Additional workflows are tracked under issue #27:
 
-- issue label synchronization;
 - `PLAN.md` and Project drift checks.
 
 ## Pull request status sync
@@ -102,3 +101,34 @@ Rules:
 - non-draft pull requests move referenced issues to `In Review`;
 - merged pull requests move only closing-keyword issue references to `Done`;
 - the workflow updates Project status only and does not close issues directly.
+
+## Issue label sync
+
+Workflow: `.github/workflows/project-label-sync.yml`
+
+Script command:
+
+```bash
+python3 .github/scripts/project_automation.py sync-labels --repo LucaPrevi0o/NovaLanguage --issue-number 30 --strict
+```
+
+Triggers:
+
+- issue opened;
+- issue edited;
+- issue reopened;
+- issue transferred;
+- manual dispatch for one issue;
+- manual dispatch for every open issue.
+
+The workflow syncs only labels owned by the Project `Kind` field:
+
+- `bug`
+- `feature`
+- `refactor`
+- `design`
+- `research`
+- `test`
+- `docs`
+
+It may remove stale labels from that managed set when an issue's kind changes, but it does not remove unrelated labels that were added manually.
