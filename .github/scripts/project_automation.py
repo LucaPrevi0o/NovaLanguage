@@ -106,6 +106,18 @@ class Project:
     fields: dict[str, ProjectField]
 
 
+@dataclass(frozen=True)
+class PullRequest:
+    """GitHub pull request data needed by status automation."""
+
+    number: int
+    title: str
+    body: str
+    url: str
+    draft: bool
+    merged: bool
+
+
 class GitHubClient:
     """Small GitHub REST/GraphQL client backed by the workflow token."""
 
@@ -281,6 +293,20 @@ def list_open_issues(client: GitHubClient, repository: str) -> list[int]:
         page += 1
 
 
+def get_pull_request(client: GitHubClient, repository: str, number: int) -> PullRequest:
+    """Fetch one pull request through the REST API."""
+
+    payload = client.rest("GET", f"/repos/{repository}/pulls/{number}")
+    return PullRequest(
+        number=payload["number"],
+        title=payload["title"],
+        body=payload.get("body") or "",
+        url=payload["html_url"],
+        draft=payload.get("draft", False),
+        merged=payload.get("merged", False),
+    )
+
+
 def get_project(client: GitHubClient) -> Project:
     """Fetch the configured user-owned Project and its fields."""
 
@@ -403,6 +429,22 @@ def set_single_select_value(client: GitHubClient, project: Project, item_id: str
     )
 
 
+def set_issue_status(client: GitHubClient, repository: str, issue_number: int, status_name: str) -> None:
+    """Set the roadmap Project status for one issue."""
+
+    issue = get_issue(client, repository, issue_number)
+    project = get_project(client)
+    field = project.fields.get(STATUS_FIELD)
+    if field is None:
+        raise ProjectAutomationError(f"Project field '{STATUS_FIELD}' was not found")
+    option_id = field.options.get(status_name)
+    if option_id is None:
+        raise ProjectAutomationError(f"Project status option '{status_name}' was not found")
+    item_id = add_issue_to_project(client, project, issue)
+    set_single_select_value(client, project, item_id, field, option_id)
+    print(f"Set #{issue_number} status to {status_name}")
+
+
 def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
     """Sync one issue's metadata into Project fields."""
 
@@ -438,6 +480,64 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
     if not updated:
         print(f"::warning::No Project fields were updated for #{issue.number}")
     return updated
+
+
+def issue_reference_numbers(repository: str, text: str) -> set[int]:
+    """Extract same-repository issue references from text."""
+
+    owner, name = repository_parts(repository)
+    references: set[int] = set()
+
+    plain_pattern = re.compile(r"(?<![\w/])#(\d+)\b")
+    repo_pattern = re.compile(rf"(?<![\w/]){re.escape(owner)}/{re.escape(name)}#(\d+)\b", re.IGNORECASE)
+    url_pattern = re.compile(
+        rf"https://github\.com/{re.escape(owner)}/{re.escape(name)}/issues/(\d+)\b",
+        re.IGNORECASE,
+    )
+
+    for pattern in (plain_pattern, repo_pattern, url_pattern):
+        references.update(int(match.group(1)) for match in pattern.finditer(text or ""))
+
+    return references
+
+
+def closing_issue_reference_numbers(repository: str, text: str) -> set[int]:
+    """Extract issue references from lines that use GitHub closing keywords."""
+
+    closing_keywords = re.compile(r"\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\b", re.IGNORECASE)
+    references: set[int] = set()
+    for line in (text or "").splitlines():
+        for match in closing_keywords.finditer(line):
+            references.update(issue_reference_numbers(repository, line[match.end():]))
+    return references
+
+
+def sync_pr_status_command(args: argparse.Namespace) -> int:
+    """Run the sync-pr-status subcommand."""
+
+    client = GitHubClient(token_from_environment())
+    pull_request = get_pull_request(client, args.repo, args.pr_number)
+
+    if pull_request.draft:
+        print(f"PR #{pull_request.number} is a draft; not changing issue status")
+        return 0
+
+    if pull_request.merged:
+        targets = closing_issue_reference_numbers(args.repo, pull_request.body)
+        if not targets:
+            print(f"::warning::PR #{pull_request.number} was merged but has no closing issue references")
+            return 0
+        target_status = "Done"
+    else:
+        targets = issue_reference_numbers(args.repo, pull_request.body)
+        if not targets:
+            print(f"::warning::PR #{pull_request.number} has no issue references")
+            return 0
+        target_status = "In Review"
+
+    for issue_number in sorted(targets):
+        set_issue_status(client, args.repo, issue_number, target_status)
+    return 0
 
 
 def sync_issue_command(args: argparse.Namespace) -> int:
@@ -478,6 +578,11 @@ def build_parser() -> argparse.ArgumentParser:
     sync_parser.add_argument("--all-open", action="store_true", help="Sync all open issues")
     sync_parser.add_argument("--strict", action="store_true", help="Fail on missing or invalid issue metadata")
     sync_parser.set_defaults(func=sync_issue_command)
+
+    pr_parser = subparsers.add_parser("sync-pr-status", help="Sync Project issue status from pull request state")
+    pr_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
+    pr_parser.add_argument("--pr-number", type=int, required=True, help="Pull request number to inspect")
+    pr_parser.set_defaults(func=sync_pr_status_command)
 
     return parser
 

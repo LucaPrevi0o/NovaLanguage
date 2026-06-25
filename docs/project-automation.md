@@ -73,6 +73,32 @@ Responsibilities:
 
 Additional workflows are tracked under issue #27:
 
-- pull request driven Project status automation;
 - issue label synchronization;
 - `PLAN.md` and Project drift checks.
+
+## Pull request status sync
+
+Workflow: `.github/workflows/project-pr-status.yml`
+
+Script command:
+
+```bash
+python3 .github/scripts/project_automation.py sync-pr-status --repo LucaPrevi0o/NovaLanguage --pr-number 12
+```
+
+Triggers:
+
+- pull request opened;
+- pull request edited;
+- pull request reopened;
+- pull request marked ready for review;
+- pull request converted to draft;
+- pull request closed;
+- manual dispatch for one pull request.
+
+Rules:
+
+- draft pull requests do not change issue status;
+- non-draft pull requests move referenced issues to `In Review`;
+- merged pull requests move only closing-keyword issue references to `Done`;
+- the workflow updates Project status only and does not close issues directly.
