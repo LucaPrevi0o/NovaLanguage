@@ -1,9 +1,7 @@
 ---
 name: Compiler task
-description: Track a focused compiler feature, refactor, test, documentation, or cleanup task.
+about: Track a focused compiler task, refactor, test, documentation, or cleanup item.
 title: "task: "
-labels: []
-assignees: []
 ---
 
 ## Goal
@@ -51,9 +49,7 @@ Relevant docs:
 
 <!-- Record commands to run before opening or merging the PR. -->
 
-```bash
-./mvnw test
-```
+- [ ] `./mvnw test`
 
 ## Notes
 

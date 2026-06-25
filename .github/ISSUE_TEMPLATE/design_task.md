@@ -1,6 +1,6 @@
 ---
 name: Design task
-description: Capture a Nova language, compiler architecture, or roadmap design decision before implementation.
+about: Capture a Nova language, compiler architecture, or roadmap design decision before implementation.
 title: "design: "
 labels: [design]
 assignees: []

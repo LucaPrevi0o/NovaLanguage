@@ -1,6 +1,6 @@
 ---
 name: Bug report
-description: Report a compiler regression, incorrect diagnostic, or wrong Nova front-end behavior.
+about: Report a compiler regression, incorrect diagnostic, or wrong Nova front-end behavior.
 title: "bug: "
 labels: [bug]
 assignees: []
