@@ -15,7 +15,12 @@ import parser.ast.nodes.type.TypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
-import semantic.type.symbol.*;
+import semantic.type.symbol.ArrayTypeSymbol;
+import semantic.type.symbol.GenericParameterSymbol;
+import semantic.type.symbol.TypeSymbol;
+import semantic.type.symbol.ValueTypeSymbol;
+import semantic.type.symbol.UnknownTypeSymbol;
+import semantic.type.symbol.ClassTypeSymbol;
 
 import java.util.List;
 
