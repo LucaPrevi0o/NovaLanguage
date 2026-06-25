@@ -23,7 +23,7 @@ Project sync reads this block from issue bodies:
 ```markdown
 ## Project metadata
 
-- Phase: Phase 5 - Type model
+- Milestone: Phase 5 - Type model
 - Area: type-system / semantic-analysis
 - Kind: refactor
 - Priority: P1
@@ -33,11 +33,33 @@ Project sync reads this block from issue bodies:
 
 Supported synced fields:
 
-- `Phase`
+- `Milestone`
 - `Kind`
 - `Priority`
 - `Size`
 - `Suggested status`
+
+The workflow writes `Milestone` to the GitHub issue milestone. During the migration from the
+old Project `Phase` field, legacy `Phase` metadata is still accepted and mapped to the
+corresponding milestone.
+
+The legacy custom Project `Phase` field is not written by current automation. After this
+milestone-aware workflow is merged to the default branch, remove the old field with:
+
+```bash
+python3 .github/scripts/project_automation.py remove-legacy-phase-field --confirm
+```
+
+Managed milestone names:
+
+- `Project workflow`
+- `Phase 4 - Semantic analysis split`
+- `Phase 5 - Type model`
+- `Phase 6 - Multi-file project pipeline`
+- `Phase 7 - Standard library`
+- `Phase 8 - IR preparation`
+- `Phase 9 - Advanced features`
+- `Future development`
 
 The workflow maps short issue values such as `P1` into Project values such as `1 - Important next step`.
 
@@ -66,7 +88,10 @@ Responsibilities:
 
 - add the issue to the roadmap Project when missing;
 - parse the issue `Project metadata` block;
-- sync valid metadata into Project fields;
+- sync roadmap grouping into the issue milestone;
+- sync remaining valid metadata into Project fields;
+- leave the old custom Project `Phase` field untouched so it can be removed after the
+  migration is active on the default branch;
 - report missing or invalid metadata clearly.
 
 ## Planned workflow automation
@@ -152,9 +177,9 @@ Triggers:
 Checks:
 
 - `PLAN.md` and `README.md` should agree on the current focus phase;
-- the current focus phase should have at least one active Project item;
-- the current focus phase should normally have an `In Progress` Project item;
-- completed phases should not still have non-done P1 Project items;
+- the current focus milestone should have at least one active Project item;
+- the current focus milestone should normally have an `In Progress` Project item;
+- completed phase milestones should not still have non-done P1 Project items;
 - immediate next steps are loosely matched to open issues and reported as notices.
 
 Errors fail the workflow. Warnings are reported as GitHub annotations and can optionally be treated as failures through manual dispatch.
