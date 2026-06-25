@@ -71,9 +71,7 @@ Responsibilities:
 
 ## Planned workflow automation
 
-Additional workflows are tracked under issue #27:
-
-- `PLAN.md` and Project drift checks.
+Additional workflow automation is tracked under issue #27.
 
 ## Pull request status sync
 
@@ -132,3 +130,31 @@ The workflow syncs only labels owned by the Project `Kind` field:
 - `docs`
 
 It may remove stale labels from that managed set when an issue's kind changes, but it does not remove unrelated labels that were added manually.
+
+## Roadmap drift check
+
+Workflow: `.github/workflows/project-drift-check.yml`
+
+Script command:
+
+```bash
+python3 .github/scripts/project_automation.py check-plan-drift --repo LucaPrevi0o/NovaLanguage --plan PLAN.md --readme README.md
+```
+
+Triggers:
+
+- pull requests that change `PLAN.md`;
+- pull requests that change `README.md`;
+- pull requests that change Markdown docs;
+- pull requests that change Project automation scripts or workflows;
+- manual dispatch.
+
+Checks:
+
+- `PLAN.md` and `README.md` should agree on the current focus phase;
+- the current focus phase should have at least one active Project item;
+- the current focus phase should normally have an `In Progress` Project item;
+- completed phases should not still have non-done P1 Project items;
+- immediate next steps are loosely matched to open issues and reported as notices.
+
+Errors fail the workflow. Warnings are reported as GitHub annotations and can optionally be treated as failures through manual dispatch.

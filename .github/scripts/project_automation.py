@@ -11,6 +11,7 @@ import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
@@ -83,6 +84,25 @@ MANAGED_KIND_LABELS = {
     "docs": ("docs", "0075ca", "Documentation work."),
 }
 
+PHASE_NUMBER_TO_OPTION = {
+    4: "4 - Semantic analysis split",
+    5: "5 - Type model",
+    6: "6 - Multi-file project pipeline",
+    7: "7 - Standard library",
+    8: "8 - IR preparation",
+    9: "9 - Advanced features",
+}
+
+ACTIVE_STATUSES = {"Ready", "In Progress", "In Review"}
+DONE_STATUS = "Done"
+HIGH_PRIORITY = "1 - Important next step"
+
+STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "between", "by", "can", "from",
+    "has", "in", "into", "is", "it", "keep", "later", "of", "or", "should",
+    "that", "the", "to", "with", "work",
+}
+
 
 class ProjectAutomationError(RuntimeError):
     """Raised when project automation cannot complete safely."""
@@ -128,6 +148,17 @@ class PullRequest:
     url: str
     draft: bool
     merged: bool
+
+
+@dataclass(frozen=True)
+class ProjectItem:
+    """GitHub Project item data used by drift checks."""
+
+    number: int | None
+    title: str
+    url: str | None
+    state: str | None
+    fields: dict[str, str]
 
 
 class GitHubClient:
@@ -362,6 +393,82 @@ def get_project(client: GitHubClient) -> Project:
         fields[node["name"]] = ProjectField(node["id"], node["name"], options)
 
     return Project(project_data["id"], project_data["title"], fields)
+
+
+def list_project_items(client: GitHubClient) -> list[ProjectItem]:
+    """Return all issue items from the configured Project."""
+
+    items: list[ProjectItem] = []
+    cursor: str | None = None
+    while True:
+        data = client.graphql(
+            """
+            query($owner: String!, $number: Int!, $cursor: String) {
+              user(login: $owner) {
+                projectV2(number: $number) {
+                  items(first: 100, after: $cursor) {
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                    nodes {
+                      content {
+                        ... on Issue {
+                          number
+                          title
+                          state
+                          url
+                        }
+                      }
+                      fieldValues(first: 50) {
+                        nodes {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            name
+                            field {
+                              ... on ProjectV2FieldCommon {
+                                name
+                              }
+                            }
+                          }
+                          ... on ProjectV2ItemFieldTextValue {
+                            text
+                            field {
+                              ... on ProjectV2FieldCommon {
+                                name
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """,
+            {"owner": PROJECT_OWNER, "number": PROJECT_NUMBER, "cursor": cursor},
+        )
+        project_items = data["user"]["projectV2"]["items"]
+        for node in project_items["nodes"]:
+            content = node.get("content")
+            if not content:
+                continue
+            fields: dict[str, str] = {}
+            for value in node["fieldValues"]["nodes"]:
+                field = value.get("field")
+                if not field:
+                    continue
+                fields[field["name"]] = value.get("name") or value.get("text") or ""
+            items.append(ProjectItem(
+                number=content.get("number"),
+                title=content.get("title", ""),
+                url=content.get("url"),
+                state=content.get("state"),
+                fields=fields,
+            ))
+        if not project_items["pageInfo"]["hasNextPage"]:
+            return items
+        cursor = project_items["pageInfo"]["endCursor"]
 
 
 def project_item_id(client: GitHubClient, project: Project, issue: Issue) -> str | None:
@@ -704,6 +811,153 @@ def sync_labels_command(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
+def phase_number_from_text(text: str) -> int | None:
+    """Extract a roadmap phase number from text."""
+
+    match = re.search(r"\bPhase\s+(\d+)\b", text, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def current_focus_phase(plan_text: str) -> int | None:
+    """Return the phase number from PLAN.md current focus."""
+
+    match = re.search(r"^Current focus:\s*(.+)$", plan_text, re.MULTILINE)
+    return phase_number_from_text(match.group(1)) if match else None
+
+
+def readme_focus_phase(readme_text: str) -> int | None:
+    """Return the phase number from README current focus."""
+
+    match = re.search(r"^Current focus:\s*\*\*(.+?)\*\*\.", readme_text, re.MULTILINE)
+    return phase_number_from_text(match.group(1)) if match else None
+
+
+def phase_statuses(plan_text: str) -> dict[int, str]:
+    """Parse PLAN.md phase status table."""
+
+    statuses: dict[int, str] = {}
+    pattern = re.compile(r"^\|\s*(\d+)\.\s+[^|]+\|\s*([^|]+?)\s*\|", re.MULTILINE)
+    for match in pattern.finditer(plan_text):
+        statuses[int(match.group(1))] = match.group(2).strip()
+    return statuses
+
+
+def immediate_next_steps(plan_text: str) -> list[str]:
+    """Parse PLAN.md immediate next steps."""
+
+    match = re.search(r"^## Immediate Next Steps\s*(.+)$", plan_text, re.MULTILINE | re.DOTALL)
+    if not match:
+        return []
+    steps: list[str] = []
+    for line in match.group(1).splitlines():
+        step_match = re.match(r"^\d+\.\s+(.+?)\s*$", line)
+        if step_match:
+            steps.append(step_match.group(1))
+    return steps
+
+
+def terms(text: str) -> set[str]:
+    """Extract normalized search terms for loose issue matching."""
+
+    return {
+        token
+        for token in re.findall(r"[a-zA-Z][a-zA-Z0-9]+", text.lower())
+        if len(token) > 2 and token not in STOPWORDS
+    }
+
+
+def best_issue_match(step: str, items: list[ProjectItem]) -> ProjectItem | None:
+    """Find a likely issue for an immediate next step."""
+
+    step_terms = terms(step)
+    best_item: ProjectItem | None = None
+    best_score = 0
+    for item in items:
+        if item.state != "OPEN":
+            continue
+        score = len(step_terms & terms(item.title))
+        if score > best_score:
+            best_score = score
+            best_item = item
+    return best_item if best_score >= 2 else None
+
+
+def check_plan_drift_command(args: argparse.Namespace) -> int:
+    """Run the check-plan-drift subcommand."""
+
+    client = GitHubClient(token_from_environment())
+    plan_text = Path(args.plan).read_text(encoding="utf-8")
+    readme_text = Path(args.readme).read_text(encoding="utf-8") if args.readme else ""
+    items = list_project_items(client)
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    notices: list[str] = []
+
+    plan_focus = current_focus_phase(plan_text)
+    readme_focus = readme_focus_phase(readme_text) if readme_text else None
+    if plan_focus is None:
+        errors.append("PLAN.md does not declare a current focus phase")
+    if readme_text and readme_focus is None:
+        warnings.append("README.md does not declare a current focus phase")
+    if plan_focus is not None and readme_focus is not None and plan_focus != readme_focus:
+        errors.append(f"README current focus Phase {readme_focus} does not match PLAN.md Phase {plan_focus}")
+
+    if plan_focus is not None:
+        focus_option = PHASE_NUMBER_TO_OPTION.get(plan_focus)
+        active_focus_items = [
+            item for item in items
+            if item.fields.get(PHASE_FIELD) == focus_option and item.fields.get(STATUS_FIELD) in ACTIVE_STATUSES
+        ]
+        in_progress_focus_items = [
+            item for item in active_focus_items
+            if item.fields.get(STATUS_FIELD) == "In Progress"
+        ]
+        if not active_focus_items:
+            errors.append(f"No active Project item found for PLAN.md current focus Phase {plan_focus}")
+        elif not in_progress_focus_items:
+            warnings.append(f"PLAN.md current focus Phase {plan_focus} has active items but none marked In Progress")
+        else:
+            labels = ", ".join(f"#{item.number} {item.title}" for item in in_progress_focus_items)
+            notices.append(f"Current focus is represented by {labels}")
+
+    statuses = phase_statuses(plan_text)
+    for phase, status in statuses.items():
+        if status != "Complete":
+            continue
+        phase_option = PHASE_NUMBER_TO_OPTION.get(phase)
+        if not phase_option:
+            continue
+        stale_items = [
+            item for item in items
+            if item.fields.get(PHASE_FIELD) == phase_option
+            and item.fields.get(PRIORITY_FIELD) == HIGH_PRIORITY
+            and item.fields.get(STATUS_FIELD) != DONE_STATUS
+        ]
+        for item in stale_items:
+            warnings.append(f"Phase {phase} is complete in PLAN.md but #{item.number} is still non-done P1 work")
+
+    for step in immediate_next_steps(plan_text):
+        match = best_issue_match(step, items)
+        if match:
+            notices.append(f"Immediate step maps to #{match.number}: {match.title}")
+        else:
+            notices.append(f"No direct issue match found for immediate step: {step}")
+
+    for message in notices:
+        print(f"::notice::{message}")
+    for message in warnings:
+        print(f"::warning::{message}")
+    for message in errors:
+        print(f"::error::{message}")
+
+    if errors:
+        return 1
+    if warnings and args.fail_on_warning:
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
 
@@ -728,6 +982,13 @@ def build_parser() -> argparse.ArgumentParser:
     labels_parser.add_argument("--all-open", action="store_true", help="Sync labels for all open issues")
     labels_parser.add_argument("--strict", action="store_true", help="Fail on missing or invalid issue metadata")
     labels_parser.set_defaults(func=sync_labels_command)
+
+    drift_parser = subparsers.add_parser("check-plan-drift", help="Check PLAN.md and Project state alignment")
+    drift_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
+    drift_parser.add_argument("--plan", default="PLAN.md", help="Path to PLAN.md")
+    drift_parser.add_argument("--readme", default="README.md", help="Path to README.md")
+    drift_parser.add_argument("--fail-on-warning", action="store_true", help="Exit non-zero when warnings are found")
+    drift_parser.set_defaults(func=check_plan_drift_command)
 
     return parser
 
