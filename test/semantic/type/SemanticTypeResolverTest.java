@@ -31,7 +31,26 @@ public class SemanticTypeResolverTest {
     }
 
     @Test
-    void testResolvesPrimitiveArrayTypeSymbolFromDeclaredTypeSyntax() {
+    void testBuiltinValueTypesExposeSemanticDomains() {
+
+        var boolType = ValueTypeSymbol.builtin("bool");
+        var doubleType = ValueTypeSymbol.builtin("double");
+        var stringType = ValueTypeSymbol.builtin("string");
+        var voidType = ValueTypeSymbol.builtin("void");
+
+        assertEquals(TypeKind.VALUE, boolType.getKind());
+        assertEquals(ValueTypeDomain.BOOLEAN, boolType.domain());
+        assertFalse(boolType.isNumeric());
+
+        assertEquals(ValueTypeDomain.FLOATING_POINT, doubleType.domain());
+        assertTrue(doubleType.isNumeric());
+
+        assertEquals(ValueTypeDomain.TEXT, stringType.domain());
+        assertEquals(ValueTypeDomain.VOID, voidType.domain());
+    }
+
+    @Test
+    void testResolvesValueArrayTypeSymbolFromDeclaredTypeSyntax() {
 
         var ast = parse("int[3][] values;");
         var rootScope = scope(ast);
@@ -41,9 +60,13 @@ public class SemanticTypeResolverTest {
 
         assertTrue(resolution.diagnostics().isEmpty());
         var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
+        assertEquals(TypeKind.ARRAY, arrayType.getKind());
         assertEquals(2, arrayType.getDimensions());
-        assertInstanceOf(PrimitiveTypeSymbol.class, arrayType.getElementType());
-        assertEquals("int", arrayType.getElementType().getName());
+        var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.getElementType());
+        assertEquals(TypeKind.VALUE, elementType.getKind());
+        assertEquals(ValueTypeDomain.INTEGRAL, elementType.domain());
+        assertTrue(elementType.isNumeric());
+        assertEquals("int", elementType.getName());
     }
 
     @Test
@@ -57,6 +80,9 @@ public class SemanticTypeResolverTest {
 
         assertTrue(resolution.diagnostics().isEmpty());
         var classType = assertInstanceOf(ClassTypeSymbol.class, resolution.type());
+        assertEquals(TypeKind.CLASS, classType.getKind());
+        assertFalse(classType.isValueType());
+        assertTrue(classType.isClassType());
         assertEquals("Later", classType.getName());
         assertNotNull(classType.declaration());
     }
@@ -71,6 +97,8 @@ public class SemanticTypeResolverTest {
         var resolution = new TypeResolver().resolve(declaration.getDeclaredType(), declaration, rootScope);
 
         assertInstanceOf(UnknownTypeSymbol.class, resolution.type());
+        assertEquals(TypeKind.UNKNOWN, resolution.type().getKind());
+        assertFalse(resolution.type().isResolved());
         assertEquals(1, resolution.diagnostics().size());
         assertTrue(resolution.diagnostics().getFirst().message().contains("Undefined type 'Missing'"));
     }
@@ -88,6 +116,7 @@ public class SemanticTypeResolverTest {
 
         assertTrue(resolution.diagnostics().isEmpty());
         var genericType = assertInstanceOf(GenericParameterSymbol.class, resolution.type());
+        assertEquals(TypeKind.GENERIC_PARAMETER, genericType.getKind());
         assertEquals("T", genericType.getName());
     }
 

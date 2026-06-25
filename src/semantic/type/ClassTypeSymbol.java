@@ -9,4 +9,7 @@ public record ClassTypeSymbol(String name, SemanticDeclaration declaration) impl
 
     @Override
     public String getName() { return name; }
+
+    @Override
+    public TypeKind getKind() { return TypeKind.CLASS; }
 }

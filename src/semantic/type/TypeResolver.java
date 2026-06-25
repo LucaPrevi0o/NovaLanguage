@@ -81,7 +81,7 @@ public final class TypeResolver {
                 );
             }
             case GenericTypeSyntax genericType -> resolved(new GenericParameterSymbol(genericType.getName()));
-            case NamedTypeSyntax namedType when namedType.isPrimitive() -> resolved(new PrimitiveTypeSymbol(namedType.getName()));
+            case NamedTypeSyntax namedType when namedType.isPrimitive() -> resolved(ValueTypeSymbol.builtin(namedType.getName()));
             case NamedTypeSyntax namedType -> resolveNamedType(namedType, owner, scope, unresolvedLabel);
             case null -> new TypeResolution(null, List.of());
             default -> throw new IllegalArgumentException("Unsupported type syntax: " + syntax.getClass().getName());
@@ -113,7 +113,7 @@ public final class TypeResolver {
     private TypeResolution resolveReturnTypeBase(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
 
         var tokenClass = type.getTokenClass();
-        if (tokenClass instanceof PrimitiveType primitiveType) return resolved(new PrimitiveTypeSymbol(primitiveType.token()));
+        if (tokenClass instanceof PrimitiveType primitiveType) return resolved(ValueTypeSymbol.builtin(primitiveType.token()));
         if (tokenClass instanceof GenericParameterType genericParameter) return resolved(new GenericParameterSymbol(genericParameter.typeName()));
         if (tokenClass instanceof NonPrimitiveType(String typeName)) return resolveClassName(typeName, owner, scope, unresolvedLabel);
 

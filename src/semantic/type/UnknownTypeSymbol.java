@@ -8,5 +8,5 @@ public record UnknownTypeSymbol(String name) implements TypeSymbol {
     public String getName() { return name; }
 
     @Override
-    public boolean isResolved() { return false; }
+    public TypeKind getKind() { return TypeKind.UNKNOWN; }
 }

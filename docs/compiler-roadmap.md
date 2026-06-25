@@ -120,22 +120,25 @@ Remaining work includes:
 
 Status: **in progress**.
 
-The compiler still relies too much on lexer token classes as semantic type representation.
+The compiler still has transitional lexer-token fallback paths through `ReturnType`, but the
+resolved semantic type symbols now carry Nova-level type categories.
 
 Completed work:
 
 - parsed type syntax nodes for named, array, and generic-parameter type syntax;
 - parser-created `ReturnType` objects can carry their source `TypeSyntax`;
-- semantic type symbols for primitive, class, array, generic-parameter, and unknown types;
+- semantic type symbols for value, class, array, generic-parameter, and unknown types;
+- semantic type kinds that distinguish value/math types from class/object types;
 - name resolution resolves declared types through the semantic type resolver;
 - type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
 - `ReturnType` is now a source-syntax-first compatibility adapter for existing AST APIs;
-- the parser-side `TypeRegistry` adapter has been removed.
+- the parser-side `TypeRegistry` adapter has been removed;
+- built-in primitive-like declarations resolve to Nova value type symbols.
 
 Planned work:
 
-- separate primitive, class, array, and generic types at the semantic level;
-- model Nova classes and Nova mathematical/value types separately.
+- reduce remaining `ReturnType` fallback paths that still inspect lexer token classes;
+- expand checking for inheritance, overload rules, and richer call/member behavior.
 
 This phase is important before implementing advanced language features.
 

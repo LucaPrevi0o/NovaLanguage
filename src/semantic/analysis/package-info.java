@@ -24,6 +24,8 @@
 ///
 /// ## Current evolution
 ///
-/// Type checking is being migrated from parser-era `ReturnType` and token-class comparisons
-/// toward semantic type symbols in `semantic.type`.
+/// Type checking now compares semantic type symbols internally. Declarations still expose the
+/// transitional `ReturnType` adapter, but the checker resolves those adapters into
+/// `semantic.type` symbols before checking assignability, member access, calls, arrays, and
+/// condition expressions.
 package semantic.analysis;

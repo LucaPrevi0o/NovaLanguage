@@ -7,19 +7,20 @@
 ///
 /// ## Responsibilities
 ///
-/// - Represent primitive type symbols.
+/// - Represent Nova value/math type symbols, including built-in primitive-like values.
 /// - Represent class type symbols.
 /// - Represent array type symbols.
 /// - Represent generic-parameter type symbols.
 /// - Represent unknown types so diagnostics can continue after failed resolution.
+/// - Classify resolved symbols by high-level `TypeKind`.
 /// - Resolve parsed type syntax into semantic type symbols.
 ///
 /// ## Why this package matters
 ///
 /// The compiler is moving away from using lexer token classes as semantic type meaning. This
-/// package is the foundation for a real Nova type model, including future support for class
-/// types, mathematical/value-like Nova types, generics, overloads, and standard-library type
-/// declarations.
+/// package is the foundation for a real Nova type model: class types model object identity,
+/// value types model mathematical/value-like semantics, arrays preserve their element type, and
+/// generic parameters stay explicit until later specialization work can resolve them.
 ///
 /// ## Boundary
 ///

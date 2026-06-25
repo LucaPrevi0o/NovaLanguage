@@ -194,6 +194,7 @@ Known limitations include:
 - the type model still depends too heavily on lexer token classes;
 - parser-created `ReturnType` objects carry parsed type syntax, and semantic passes resolve that syntax into semantic type symbols before using legacy token metadata as a fallback;
 - type checking uses semantic type symbols internally, but declarations still expose `ReturnType` adapters;
+- semantic type symbols now distinguish Nova class/object types from Nova value/math types;
 - parser-side type registry metadata has been removed; declaration/class parsing preserves type spelling through `TypeSyntax`;
 - the compiler is still single-file oriented;
 - builtins and standard-library declarations are not yet modeled semantically or loaded through the same source pipeline as user code;

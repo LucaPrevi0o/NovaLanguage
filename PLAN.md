@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -16,7 +16,7 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Parsed type syntax nodes and semantic type symbols exist; `ReturnType` is a source-syntax-first compatibility adapter.                                  |
+| 5. Type model                 | In progress | Parsed type syntax nodes exist; semantic symbols now distinguish class, value, array, generic, and unknown type categories.                             |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
@@ -175,7 +175,7 @@ Parser-owned semantic checks inventory:
 - [x] Scope model: semantic scope construction creates global, class, function, constructor, block, switch, and loop scopes from the AST.
 - [x] Name resolution pass: unresolved expression identifiers and constructed class names produce semantic diagnostics.
 - [x] Duplicate validation pass: repeated non-constructor declarations in the same semantic scope produce semantic diagnostics.
-- [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for primitive and constructed class types.
+- [x] Type checking pass: initializer and assignment type mismatches produce semantic diagnostics for value and constructed class types.
 - [x] Type checking pass: identifier-based function calls validate argument count and argument types, and expose their declared return type to surrounding expressions.
 - [x] Type checking pass: array access validates integer indexes, rejects non-array targets, and exposes element types to surrounding expressions.
 - [x] Type checking pass: direct class field access and direct class method calls validate member existence, target type, argument count, and argument types.
@@ -206,13 +206,13 @@ Goal: stop using lexer token classes as the semantic type model.
 Tasks:
 
 - [x] Add parsed type syntax nodes, such as `TypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`.
-- [x] Add resolved semantic type symbols, such as `PrimitiveTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
+- [x] Add resolved semantic type symbols, such as `ValueTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
 - [x] Resolve declared type names through semantic type symbols during name resolution.
 - [x] Let parser-created `ReturnType` objects carry source `TypeSyntax` while downstream code still uses the temporary adapter.
 - [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
 - [x] Keep `ReturnType` as a source-syntax-first compatibility adapter while existing AST APIs still expose it.
 - [x] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
-- [ ] Model Nova classes and Nova types separately, matching the README design.
+- [x] Model Nova classes and Nova value/math types separately, matching the README design.
 
 Exit criteria:
 
@@ -314,6 +314,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Model Nova classes and Nova value/math types separately in the semantic type layer.
-2. Expand type checking across inheritance, overload rules, and richer call/member behavior.
-3. Decide whether AST declarations should expose `TypeSyntax` directly instead of the remaining `ReturnType` adapter.
+1. Expand type checking across inheritance, overload rules, and richer call/member behavior.
+2. Decide whether AST declarations should expose `TypeSyntax` directly instead of the remaining `ReturnType` adapter.
+3. Keep reducing semantic fallback paths that still read lexer token classes from `ReturnType`.

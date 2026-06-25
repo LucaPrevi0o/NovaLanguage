@@ -26,6 +26,9 @@ public final class ArrayTypeSymbol implements TypeSymbol {
         return name.toString();
     }
 
+    @Override
+    public TypeKind getKind() { return TypeKind.ARRAY; }
+
     /// Returns the array element type.
     /// @return The element type.
     public TypeSymbol getElementType() { return elementType; }

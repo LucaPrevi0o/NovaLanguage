@@ -44,10 +44,10 @@ import semantic.scope.SemanticScopeBuilder;
 import semantic.type.ArrayTypeSymbol;
 import semantic.type.ClassTypeSymbol;
 import semantic.type.GenericParameterSymbol;
-import semantic.type.PrimitiveTypeSymbol;
 import semantic.type.TypeResolution;
 import semantic.type.TypeResolver;
 import semantic.type.TypeSymbol;
+import semantic.type.ValueTypeSymbol;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,8 +55,8 @@ import java.util.List;
 /// Performs an initial semantic type check for declarations, assignments, and simple expressions.
 public final class TypeChecker {
 
-    private static final TypeSymbol BOOL_TYPE = new PrimitiveTypeSymbol("bool");
-    private static final TypeSymbol INT_TYPE = new PrimitiveTypeSymbol("int");
+    private static final TypeSymbol BOOL_TYPE = ValueTypeSymbol.builtin("bool");
+    private static final TypeSymbol INT_TYPE = ValueTypeSymbol.builtin("int");
 
     private final DiagnosticBag diagnostics = new DiagnosticBag();
     private final TypeResolver typeResolver = new TypeResolver();
@@ -214,10 +214,10 @@ public final class TypeChecker {
         return switch (expression) {
 
             case BoolLiteralExpression _ -> BOOL_TYPE;
-            case CharLiteralExpression _ -> new PrimitiveTypeSymbol("char");
-            case StringLiteralExpression _ -> new PrimitiveTypeSymbol("string");
+            case CharLiteralExpression _ -> ValueTypeSymbol.builtin("char");
+            case StringLiteralExpression _ -> ValueTypeSymbol.builtin("string");
             case NullLiteralExpression _ -> null;
-            case NumberLiteralExpression number -> new PrimitiveTypeSymbol(number.getTypeToken().getType().token());
+            case NumberLiteralExpression number -> ValueTypeSymbol.builtin(number.getTypeToken().getType().token());
             case IdentifierLiteralExpression identifier -> {
 
                 var declaration = firstVisible(scope, identifier.getName());
@@ -572,8 +572,8 @@ public final class TypeChecker {
             return leftArray.getDimensions() == rightArray.getDimensions() &&
                     sameType(leftArray.getElementType(), rightArray.getElementType());
 
-        if (left instanceof PrimitiveTypeSymbol leftPrimitive && right instanceof PrimitiveTypeSymbol rightPrimitive)
-            return leftPrimitive.getName().equals(rightPrimitive.getName());
+        if (left instanceof ValueTypeSymbol leftValue && right instanceof ValueTypeSymbol rightValue)
+            return leftValue.getName().equals(rightValue.getName());
 
         if (left instanceof ClassTypeSymbol leftClass && right instanceof ClassTypeSymbol rightClass)
             return leftClass.getName().equals(rightClass.getName());
