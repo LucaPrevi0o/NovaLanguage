@@ -10,7 +10,7 @@ title: "task: "
 
 ## Project metadata
 
-- Phase: Phase 5 - Type model
+- Milestone: Phase 5 - Type model
 - Area: type-system
 - Kind: refactor
 - Priority: P2

@@ -23,31 +23,42 @@ PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER", "4"))
 PROJECT_TITLE = os.environ.get("PROJECT_TITLE", "Nova - Development Roadmap")
 
 STATUS_FIELD = "Status"
-PHASE_FIELD = "Phase"
 KIND_FIELD = "Kind"
 PRIORITY_FIELD = "Priority"
 SIZE_FIELD = "Size"
+LEGACY_PHASE_FIELD = "Phase"
 
 METADATA_HEADER = "Project metadata"
 
 
-PHASE_ALIASES = {
+MILESTONE_ALIASES = {
     "project workflow": "Project workflow",
-    "phase 4 - semantic analysis split": "4 - Semantic analysis split",
-    "4 - semantic analysis split": "4 - Semantic analysis split",
-    "phase 5 - type model": "5 - Type model",
-    "5 - type model": "5 - Type model",
-    "phase 6 - multi-file project pipeline": "6 - Multi-file project pipeline",
-    "6 - multi-file project pipeline": "6 - Multi-file project pipeline",
-    "phase 7 - standard library as source": "7 - Standard library",
-    "phase 7 - standard library": "7 - Standard library",
-    "7 - standard library": "7 - Standard library",
-    "phase 8 - ir preparation": "8 - IR preparation",
-    "8 - ir preparation": "8 - IR preparation",
-    "phase 9 - advanced nova features": "9 - Advanced features",
-    "phase 9 - advanced features": "9 - Advanced features",
-    "9 - advanced features": "9 - Advanced features",
+    "phase 4 - semantic analysis split": "Phase 4 - Semantic analysis split",
+    "4 - semantic analysis split": "Phase 4 - Semantic analysis split",
+    "phase 5 - type model": "Phase 5 - Type model",
+    "5 - type model": "Phase 5 - Type model",
+    "phase 6 - multi-file project pipeline": "Phase 6 - Multi-file project pipeline",
+    "6 - multi-file project pipeline": "Phase 6 - Multi-file project pipeline",
+    "phase 7 - standard library as source": "Phase 7 - Standard library",
+    "phase 7 - standard library": "Phase 7 - Standard library",
+    "7 - standard library": "Phase 7 - Standard library",
+    "phase 8 - ir preparation": "Phase 8 - IR preparation",
+    "8 - ir preparation": "Phase 8 - IR preparation",
+    "phase 9 - advanced nova features": "Phase 9 - Advanced features",
+    "phase 9 - advanced features": "Phase 9 - Advanced features",
+    "9 - advanced features": "Phase 9 - Advanced features",
     "future development": "Future development",
+}
+
+MILESTONE_DESCRIPTIONS = {
+    "Project workflow": "Repository automation, issue tracking, documentation publishing, and project-management workflow work.",
+    "Phase 4 - Semantic analysis split": "Parser and semantic-analysis boundary work from Phase 4 of the Nova roadmap.",
+    "Phase 5 - Type model": "TypeSyntax, TypeSymbol, and type-model groundwork from Phase 5 of the Nova roadmap.",
+    "Phase 6 - Multi-file project pipeline": "Project-level compiler front-end pipeline work from Phase 6 of the Nova roadmap.",
+    "Phase 7 - Standard library": "Semantic standard-library and source-backed Core loading work from Phase 7 of the Nova roadmap.",
+    "Phase 8 - IR preparation": "Backend-neutral lowering and IR preparation work from Phase 8 of the Nova roadmap.",
+    "Phase 9 - Advanced features": "Deferred advanced Nova language features from Phase 9 of the Nova roadmap.",
+    "Future development": "Future-facing design and maintenance work that is not part of the current compiler phase.",
 }
 
 PRIORITY_ALIASES = {
@@ -84,13 +95,13 @@ MANAGED_KIND_LABELS = {
     "docs": ("docs", "0075ca", "Documentation work."),
 }
 
-PHASE_NUMBER_TO_OPTION = {
-    4: "4 - Semantic analysis split",
-    5: "5 - Type model",
-    6: "6 - Multi-file project pipeline",
-    7: "7 - Standard library",
-    8: "8 - IR preparation",
-    9: "9 - Advanced features",
+PHASE_NUMBER_TO_MILESTONE = {
+    4: "Phase 4 - Semantic analysis split",
+    5: "Phase 5 - Type model",
+    6: "Phase 6 - Multi-file project pipeline",
+    7: "Phase 7 - Standard library",
+    8: "Phase 8 - IR preparation",
+    9: "Phase 9 - Advanced features",
 }
 
 ACTIVE_STATUSES = {"Ready", "In Progress", "In Review"}
@@ -118,6 +129,7 @@ class Issue:
     body: str
     url: str
     labels: tuple[str, ...] = ()
+    milestone: str | None = None
 
 
 @dataclass(frozen=True)
@@ -158,6 +170,7 @@ class ProjectItem:
     title: str
     url: str | None
     state: str | None
+    milestone: str | None
     fields: dict[str, str]
 
 
@@ -276,10 +289,6 @@ def canonical_metadata(metadata: dict[str, str]) -> dict[str, str]:
 
     canonical: dict[str, str] = {}
 
-    phase = metadata.get("Phase")
-    if phase:
-        canonical[PHASE_FIELD] = PHASE_ALIASES.get(normalize_key(phase), phase.strip())
-
     kind = metadata.get("Kind")
     if kind:
         canonical[KIND_FIELD] = normalize_key(first_kind(kind))
@@ -297,6 +306,15 @@ def canonical_metadata(metadata: dict[str, str]) -> dict[str, str]:
         canonical[STATUS_FIELD] = STATUS_ALIASES.get(normalize_key(status), status.strip())
 
     return canonical
+
+
+def milestone_from_metadata(metadata: dict[str, str]) -> str | None:
+    """Return the issue milestone represented by metadata."""
+
+    milestone = metadata.get("Milestone") or metadata.get("Phase")
+    if not milestone:
+        return None
+    return MILESTONE_ALIASES.get(normalize_key(milestone), milestone.strip())
 
 
 def repository_parts(repository: str) -> tuple[str, str]:
@@ -321,6 +339,7 @@ def get_issue(client: GitHubClient, repository: str, number: int) -> Issue:
         body=payload.get("body") or "",
         url=payload["html_url"],
         labels=tuple(label["name"] for label in payload.get("labels", [])),
+        milestone=payload["milestone"]["title"] if payload.get("milestone") else None,
     )
 
 
@@ -349,6 +368,76 @@ def get_pull_request(client: GitHubClient, repository: str, number: int) -> Pull
         draft=payload.get("draft", False),
         merged=payload.get("merged", False),
     )
+
+
+def list_milestones(client: GitHubClient, repository: str) -> dict[str, int]:
+    """Return repository milestones keyed by title."""
+
+    milestones: dict[str, int] = {}
+    page = 1
+    while True:
+        payload = client.rest("GET", f"/repos/{repository}/milestones?state=all&per_page=100&page={page}")
+        if not payload:
+            return milestones
+        for milestone in payload:
+            milestones[milestone["title"]] = milestone["number"]
+        page += 1
+
+
+def ensure_milestone(client: GitHubClient, repository: str, title: str) -> int:
+    """Return a repository milestone number, creating known roadmap milestones when missing."""
+
+    milestones = list_milestones(client, repository)
+    existing = milestones.get(title)
+    if existing is not None:
+        return existing
+
+    description = MILESTONE_DESCRIPTIONS.get(title)
+    if description is None:
+        raise ProjectAutomationError(f"Milestone '{title}' was not found and is not a managed roadmap milestone")
+
+    payload = client.rest("POST", f"/repos/{repository}/milestones", {
+        "title": title,
+        "description": description,
+    })
+    print(f"Created milestone '{title}'")
+    return payload["number"]
+
+
+def set_issue_milestone(client: GitHubClient, repository: str, issue: Issue, milestone_title: str) -> bool:
+    """Set an issue milestone and return whether the issue changed."""
+
+    if issue.milestone == milestone_title:
+        print(f"#{issue.number} already has milestone '{milestone_title}'")
+        return False
+
+    milestone_number = ensure_milestone(client, repository, milestone_title)
+    client.rest("PATCH", f"/repos/{repository}/issues/{issue.number}", {"milestone": milestone_number})
+    print(f"Synced #{issue.number}: Milestone = {milestone_title}")
+    return True
+
+
+def remove_project_field(client: GitHubClient, field_name: str) -> bool:
+    """Remove one Project field and return whether it existed."""
+
+    project = get_project(client)
+    field = project.fields.get(field_name)
+    if field is None:
+        print(f"Project field '{field_name}' was not found; no cleanup needed")
+        return False
+
+    client.graphql(
+        """
+        mutation($fieldId: ID!) {
+          deleteProjectV2Field(input: {fieldId: $fieldId}) {
+            clientMutationId
+          }
+        }
+        """,
+        {"fieldId": field.id},
+    )
+    print(f"Removed Project field '{field_name}'")
+    return True
 
 
 def get_project(client: GitHubClient) -> Project:
@@ -418,6 +507,9 @@ def list_project_items(client: GitHubClient) -> list[ProjectItem]:
                           title
                           state
                           url
+                          milestone {
+                            title
+                          }
                         }
                       }
                       fieldValues(first: 50) {
@@ -464,6 +556,7 @@ def list_project_items(client: GitHubClient) -> list[ProjectItem]:
                 title=content.get("title", ""),
                 url=content.get("url"),
                 state=content.get("state"),
+                milestone=content["milestone"]["title"] if content.get("milestone") else None,
                 fields=fields,
             ))
         if not project_items["pageInfo"]["hasNextPage"]:
@@ -617,11 +710,21 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
         print(f"::warning::{message}")
         return False
 
+    milestone_title = milestone_from_metadata(metadata)
+    if not milestone_title:
+        message = f"#{issue.number} has no Milestone metadata; legacy Phase metadata is also absent"
+        if strict:
+            raise ProjectAutomationError(message)
+        print(f"::warning::{message}")
+
     canonical = canonical_metadata(metadata)
     project = get_project(client)
     item_id = add_issue_to_project(client, project, issue)
 
     updated = False
+    if milestone_title:
+        updated = set_issue_milestone(client, repository, issue, milestone_title)
+
     for field_name, option_name in canonical.items():
         field = project.fields.get(field_name)
         if field is None:
@@ -904,10 +1007,10 @@ def check_plan_drift_command(args: argparse.Namespace) -> int:
         errors.append(f"README current focus Phase {readme_focus} does not match PLAN.md Phase {plan_focus}")
 
     if plan_focus is not None:
-        focus_option = PHASE_NUMBER_TO_OPTION.get(plan_focus)
+        focus_milestone = PHASE_NUMBER_TO_MILESTONE.get(plan_focus)
         active_focus_items = [
             item for item in items
-            if item.fields.get(PHASE_FIELD) == focus_option and item.fields.get(STATUS_FIELD) in ACTIVE_STATUSES
+            if item.milestone == focus_milestone and item.fields.get(STATUS_FIELD) in ACTIVE_STATUSES
         ]
         in_progress_focus_items = [
             item for item in active_focus_items
@@ -925,12 +1028,12 @@ def check_plan_drift_command(args: argparse.Namespace) -> int:
     for phase, status in statuses.items():
         if status != "Complete":
             continue
-        phase_option = PHASE_NUMBER_TO_OPTION.get(phase)
-        if not phase_option:
+        phase_milestone = PHASE_NUMBER_TO_MILESTONE.get(phase)
+        if not phase_milestone:
             continue
         stale_items = [
             item for item in items
-            if item.fields.get(PHASE_FIELD) == phase_option
+            if item.milestone == phase_milestone
             and item.fields.get(PRIORITY_FIELD) == HIGH_PRIORITY
             and item.fields.get(STATUS_FIELD) != DONE_STATUS
         ]
@@ -958,13 +1061,27 @@ def check_plan_drift_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def remove_legacy_phase_field_command(args: argparse.Namespace) -> int:
+    """Run the remove-legacy-phase-field subcommand."""
+
+    if not args.confirm:
+        raise ProjectAutomationError(
+            "Refusing to remove the legacy Project Phase field without --confirm. "
+            "Run this only after milestone-aware automation is merged to the default branch."
+        )
+
+    client = GitHubClient(token_from_environment())
+    remove_project_field(client, LEGACY_PHASE_FIELD)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
 
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    sync_parser = subparsers.add_parser("sync-issue", help="Sync issue metadata into Project fields")
+    sync_parser = subparsers.add_parser("sync-issue", help="Sync issue metadata into milestones and Project fields")
     sync_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
     sync_parser.add_argument("--issue-number", type=int, help="Issue number to sync")
     sync_parser.add_argument("--all-open", action="store_true", help="Sync all open issues")
@@ -989,6 +1106,17 @@ def build_parser() -> argparse.ArgumentParser:
     drift_parser.add_argument("--readme", default="README.md", help="Path to README.md")
     drift_parser.add_argument("--fail-on-warning", action="store_true", help="Exit non-zero when warnings are found")
     drift_parser.set_defaults(func=check_plan_drift_command)
+
+    cleanup_parser = subparsers.add_parser(
+        "remove-legacy-phase-field",
+        help="Remove the legacy custom Project Phase field after milestone migration",
+    )
+    cleanup_parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Confirm that milestone-aware automation is already active on the default branch",
+    )
+    cleanup_parser.set_defaults(func=remove_legacy_phase_field_command)
 
     return parser
 

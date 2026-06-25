@@ -12,7 +12,7 @@ assignees: []
 
 ## Project metadata
 
-- Phase: Phase 5 - Type model
+- Milestone: Phase 5 - Type model
 - Area: diagnostics
 - Kind: bug
 - Priority: P1

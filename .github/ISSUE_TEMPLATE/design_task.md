@@ -12,7 +12,7 @@ assignees: []
 
 ## Project metadata
 
-- Phase: Future development
+- Milestone: Future development
 - Area: architecture
 - Kind: design
 - Priority: P2
