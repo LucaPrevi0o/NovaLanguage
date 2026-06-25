@@ -41,13 +41,13 @@ import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
-import semantic.type.ArrayTypeSymbol;
-import semantic.type.ClassTypeSymbol;
-import semantic.type.GenericParameterSymbol;
+import semantic.type.symbol.ArrayTypeSymbol;
+import semantic.type.symbol.ClassTypeSymbol;
+import semantic.type.symbol.GenericParameterSymbol;
 import semantic.type.TypeResolution;
 import semantic.type.TypeResolver;
-import semantic.type.TypeSymbol;
-import semantic.type.ValueTypeSymbol;
+import semantic.type.symbol.TypeSymbol;
+import semantic.type.symbol.ValueTypeSymbol;
 
 import java.util.Arrays;
 import java.util.List;
@@ -296,10 +296,10 @@ public final class TypeChecker {
             return null;
         }
 
-        if (arrayTypeSymbol.getDimensions() <= 1) return arrayTypeSymbol.getElementType();
+        if (arrayTypeSymbol.getDimensions() <= 1) return arrayTypeSymbol.elementType();
         return new ArrayTypeSymbol(
-            arrayTypeSymbol.getElementType(),
-            Arrays.copyOfRange(arrayTypeSymbol.getSizes(), 1, arrayTypeSymbol.getSizes().length)
+            arrayTypeSymbol.elementType(),
+            Arrays.copyOfRange(arrayTypeSymbol.sizes(), 1, arrayTypeSymbol.sizes().length)
         );
     }
 
@@ -570,7 +570,7 @@ public final class TypeChecker {
 
         if (left instanceof ArrayTypeSymbol leftArray && right instanceof ArrayTypeSymbol rightArray)
             return leftArray.getDimensions() == rightArray.getDimensions() &&
-                    sameType(leftArray.getElementType(), rightArray.getElementType());
+                    sameType(leftArray.elementType(), rightArray.elementType());
 
         if (left instanceof ValueTypeSymbol leftValue && right instanceof ValueTypeSymbol rightValue)
             return leftValue.getName().equals(rightValue.getName());

@@ -1,4 +1,6 @@
-package semantic.type;
+package semantic.type.symbol;
+
+import semantic.type.TypeKind;
 
 /// Resolved generic parameter type symbol.
 /// @param name The generic parameter name.

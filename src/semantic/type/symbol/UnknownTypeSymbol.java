@@ -1,4 +1,6 @@
-package semantic.type;
+package semantic.type.symbol;
+
+import semantic.type.TypeKind;
 
 /// Placeholder semantic type symbol used when type resolution fails.
 /// @param name The unresolved type name.

@@ -12,6 +12,7 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import semantic.scope.SemanticScope;
 import semantic.scope.SemanticScopeBuilder;
+import semantic.type.symbol.*;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class SemanticTypeResolverTest {
         var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
         assertEquals(TypeKind.ARRAY, arrayType.getKind());
         assertEquals(2, arrayType.getDimensions());
-        var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.getElementType());
+        var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.elementType());
         assertEquals(TypeKind.VALUE, elementType.getKind());
         assertEquals(ValueTypeDomain.INTEGRAL, elementType.domain());
         assertTrue(elementType.isNumeric());
@@ -133,7 +134,7 @@ public class SemanticTypeResolverTest {
 
         assertTrue(resolution.diagnostics().isEmpty());
         var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
-        var elementType = assertInstanceOf(GenericParameterSymbol.class, arrayType.getElementType());
+        var elementType = assertInstanceOf(GenericParameterSymbol.class, arrayType.elementType());
         assertEquals("T", elementType.getName());
     }
 

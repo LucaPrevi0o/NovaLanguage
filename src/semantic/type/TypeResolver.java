@@ -15,6 +15,7 @@ import parser.ast.nodes.type.TypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
+import semantic.type.symbol.*;
 
 import java.util.List;
 
@@ -110,16 +111,28 @@ public final class TypeResolver {
         );
     }
 
+    /// Resolves the base type of a ReturnType adapter, ignoring array dimensions.
+    /// @param type The ReturnType adapter to resolve.
+    /// @param owner The AST node that owns the type.
+    /// @param scope The semantic scope used for class lookup.
+    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
+    /// @return The resolved semantic type and any diagnostics.
     private TypeResolution resolveReturnTypeBase(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
 
         var tokenClass = type.getTokenClass();
         if (tokenClass instanceof PrimitiveType primitiveType) return resolved(ValueTypeSymbol.builtin(primitiveType.token()));
-        if (tokenClass instanceof GenericParameterType genericParameter) return resolved(new GenericParameterSymbol(genericParameter.typeName()));
+        if (tokenClass instanceof GenericParameterType(String name)) return resolved(new GenericParameterSymbol(name));
         if (tokenClass instanceof NonPrimitiveType(String typeName)) return resolveClassName(typeName, owner, scope, unresolvedLabel);
 
         return resolved(new UnknownTypeSymbol("<unknown>"));
     }
 
+    /// Resolves a named type syntax, checking for visible generic parameters before class declarations.
+    /// @param namedType The named type syntax to resolve.
+    /// @param owner The AST node that owns the named type.
+    /// @param scope The semantic scope used for class lookup.
+    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
+    /// @return The resolved semantic type and any diagnostics.
     private TypeResolution resolveNamedType(NamedTypeSyntax namedType, AstNode owner, SemanticScope scope, String unresolvedLabel) {
 
         var typeName = namedType.getName();
@@ -128,6 +141,10 @@ public final class TypeResolver {
         return resolveClassName(typeName, owner, scope, unresolvedLabel);
     }
 
+    /// Checks if a generic parameter with the given name is visible in the current semantic scope.
+    /// @param scope The semantic scope to check.
+    /// @param name The generic parameter name to check for visibility.
+    /// @return `true` if the generic parameter is visible, `false` otherwise.
     private boolean isVisibleGenericParameter(SemanticScope scope, String name) {
 
         var current = scope;
@@ -141,6 +158,9 @@ public final class TypeResolver {
         return false;
     }
 
+    /// Retrieves the name of the generic parameter declared in a class, if any.
+    /// @param classDeclaration The class declaration to inspect.
+    /// @return The generic parameter name, or an empty string if none is declared.
     private String genericParameterName(ClassDeclarationStatement classDeclaration) {
 
         var genericParameter = classDeclaration.getGenericClassParameter();
@@ -148,11 +168,14 @@ public final class TypeResolver {
         if (genericParameter.getSyntax() != null) return genericParameter.getSyntax().getName();
 
         var tokenClass = genericParameter.getTokenClass();
-        if (tokenClass instanceof GenericParameterType genericParameterType)
-            return genericParameterType.typeName();
+        if (tokenClass instanceof GenericParameterType(String typeName)) return typeName;
         return tokenClass != null ? tokenClass.token() : "";
     }
 
+    /// Finds a visible class declaration with the given name in the current semantic scope or its ancestors.
+    /// @param scope The semantic scope to search.
+    /// @param name The class name to look for.
+    /// @return The visible class declaration, or `null` if not found.
     private SemanticDeclaration visibleClass(SemanticScope scope, String name) {
 
         var current = scope;
@@ -165,5 +188,8 @@ public final class TypeResolver {
         return null;
     }
 
+    /// Creates a TypeResolution for a successfully resolved type symbol with no diagnostics.
+    /// @param symbol The resolved type symbol.
+    /// @return A TypeResolution containing the symbol and an empty diagnostics list.
     private TypeResolution resolved(TypeSymbol symbol) { return new TypeResolution(symbol, List.of()); }
 }

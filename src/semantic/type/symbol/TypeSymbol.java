@@ -1,4 +1,6 @@
-package semantic.type;
+package semantic.type.symbol;
+
+import semantic.type.TypeKind;
 
 /// A resolved semantic type used by semantic analysis after parsing type syntax.
 public sealed interface TypeSymbol permits ValueTypeSymbol, ClassTypeSymbol, GenericParameterSymbol, ArrayTypeSymbol, UnknownTypeSymbol {

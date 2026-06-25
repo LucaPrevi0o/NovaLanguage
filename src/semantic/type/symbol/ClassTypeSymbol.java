@@ -1,6 +1,7 @@
-package semantic.type;
+package semantic.type.symbol;
 
 import semantic.declaration.SemanticDeclaration;
+import semantic.type.TypeKind;
 
 /// Resolved class type symbol backed by a semantic class declaration.
 /// @param name The class type name.
