@@ -31,16 +31,10 @@ public record ArrayTypeSymbol(TypeSymbol elementType, ExpressionNode[] sizes) im
     @Override
     public TypeKind getKind() { return TypeKind.ARRAY; }
 
-    @Override
-    public TypeSymbol elementType() { return elementType; }
-
     /// Returns the number of array dimensions.
     ///
     /// @return The array dimension count.
     public int getDimensions() { return sizes.length; }
-
-    @Override
-    public ExpressionNode[] sizes() { return Arrays.copyOf(sizes, sizes.length); }
 
     @Override
     public boolean isResolved() { return elementType != null && elementType.isResolved(); }
