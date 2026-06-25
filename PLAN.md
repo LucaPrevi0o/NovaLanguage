@@ -6,6 +6,15 @@ This file tracks the current upgrade path for the Nova compiler front end. The g
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
 In this sense, the plan is a living document that can be updated as the project progresses - and every step should be addressed with a Git commit that is small enough to be reviewed and tested in isolation.
 
+## Instructions To Use
+
+- Keep this plan aligned with the actual implementation state before starting a new task and after completing one.
+- Keep documentation updated with each meaningful change, including `README.md`, the Markdown reference files in `docs/`, relevant `package-info.java` files, and this plan.
+- Use the GitHub Project and open issues as the source of truth for implementation workflow: select the issue that represents the current task, keep its metadata current, and let it guide the branch/commit scope.
+- If a new sub-task is required to complete an issue, create a dedicated sub-issue that references the parent issue before implementing it. This keeps the feature history explicit and makes it clear which steps were needed to complete the parent.
+- Keep commits narrow and issue-scoped. When a branch addresses multiple issues, split the commits so each commit has one clear responsibility.
+- Use dedicated pull requests for advanced language features. Each PR should focus on mastering the integration of one language property across syntax, AST shape, semantic analysis, diagnostics, tests, and documentation before moving to the next property.
+
 ## Current Status
 
 Current focus: Phase 5 - type model groundwork.
