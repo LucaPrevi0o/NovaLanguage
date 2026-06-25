@@ -3,7 +3,7 @@
 target
 
 # Local documentation build folders
-_site
+.site
 wiki-repo
 .wiki
 wiki

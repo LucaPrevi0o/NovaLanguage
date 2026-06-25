@@ -9,7 +9,7 @@ from pathlib import Path
 
 REPOSITORY = os.environ["GITHUB_REPOSITORY"]
 REPOSITORY_NAME = REPOSITORY.rsplit("/", 1)[-1]
-SITE_DIR = Path("_site")
+SITE_DIR = Path(".site")
 ASSET_DIR = SITE_DIR / "assets"
 
 
