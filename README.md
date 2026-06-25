@@ -68,6 +68,7 @@ Important documentation:
 - [`docs/ecosystem.md`](docs/ecosystem.md) - Nova ecosystem naming and package vocabulary
 - [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md) - roadmap explained in narrative form
 - [`docs/testing.md`](docs/testing.md) - test and CI notes
+- [`docs/project-automation.md`](docs/project-automation.md) - GitHub Project and issue automation notes
 - [`docs/contributing.md`](docs/contributing.md) - development rules for future changes
 
 ## Requirements
