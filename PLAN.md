@@ -25,7 +25,7 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, overload-aware duplicate validation, type checks, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish class, value, array, generic, and unknown type categories.                                   |
+| 5. Type model                 | In progress | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, and syntaxless `ReturnType` fallback is isolated.                     |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                                                |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
@@ -229,12 +229,14 @@ Tasks:
 - [x] Resolve semantic declaration types from `TypeSyntax` first, with `ReturnType` only as a compatibility fallback.
 - [x] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [x] Model Nova classes and Nova value/math types separately, matching the README design.
+- [x] Isolate syntaxless `ReturnType` fallback conversion in `semantic.type.ReturnTypeSyntaxBridge`.
 
 Exit criteria:
 
 - [x] Type names can be parsed before they are resolved.
 - [x] Forward and mutual references become possible.
-- [ ] Semantic types no longer depend on lexer token classes.
+- [x] Semantic analysis no longer reads lexer token classes outside the isolated `ReturnType` compatibility bridge.
+- [ ] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
 
 ## Phase 6 - Multi-File Project Pipeline
 
@@ -330,6 +332,5 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Keep reducing semantic fallback paths that still read lexer token classes from `ReturnType`.
-2. Audit whether declaration constructors should accept `TypeSyntax` directly instead of accepting `ReturnType` adapters.
-3. Keep advanced inheritance and overload rules scoped to later work: access control, conflict checks, override validation, generic specificity, and conversions.
+1. Audit whether declaration constructors should accept `TypeSyntax` directly instead of accepting `ReturnType` adapters.
+2. Keep advanced inheritance and overload rules scoped to later work: access control, conflict checks, override validation, generic specificity, and conversions.

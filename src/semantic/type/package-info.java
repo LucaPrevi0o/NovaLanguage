@@ -14,7 +14,7 @@
 /// - Represent unknown types so diagnostics can continue after failed resolution.
 /// - Classify resolved symbols by high-level `TypeKind`.
 /// - Resolve parsed type syntax into semantic type symbols.
-/// - Accept `ReturnType` adapters only as compatibility fallbacks when parsed syntax is absent.
+/// - Convert syntaxless `ReturnType` adapters into `TypeSyntax` only at the compatibility boundary.
 ///
 /// ## Why this package matters
 ///
@@ -27,5 +27,5 @@
 ///
 /// Parsed type syntax lives in `parser.ast.nodes.type`; resolved type meaning lives here.
 /// Semantic passes should pass parsed `TypeSyntax` to the resolver first and use legacy
-/// `ReturnType` metadata only for compatibility-only AST nodes.
+/// `ReturnType` metadata only through `ReturnTypeSyntaxBridge` for compatibility-only AST nodes.
 package semantic.type;

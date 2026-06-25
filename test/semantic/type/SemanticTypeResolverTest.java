@@ -3,6 +3,7 @@ package semantic.type;
 import lexer.Lexer;
 import lexer.token.ReturnType;
 import lexer.token.family.NonPrimitiveType;
+import lexer.token.family.PrimitiveType;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.ExpressionNode;
@@ -188,5 +189,31 @@ public class SemanticTypeResolverTest {
         assertTrue(resolution.diagnostics().isEmpty());
         var classType = assertInstanceOf(ClassTypeSymbol.class, resolution.type());
         assertEquals("Actual", classType.getName());
+    }
+
+    @Test
+    void testSyntaxlessReturnTypeFallbacksResolveThroughTypeSyntaxBridge() {
+
+        var ast = parse("public class Later { }");
+        var rootScope = scope(ast);
+        var resolver = new TypeResolver();
+
+        var valueResolution = resolver.resolve(new ReturnType(PrimitiveType.INT), ast.getFirst(), rootScope);
+        assertTrue(valueResolution.diagnostics().isEmpty());
+        var valueType = assertInstanceOf(ValueTypeSymbol.class, valueResolution.type());
+        assertEquals("int", valueType.getName());
+
+        var classResolution = resolver.resolve(new ReturnType(new NonPrimitiveType("Later")), ast.getFirst(), rootScope);
+        assertTrue(classResolution.diagnostics().isEmpty());
+        var classType = assertInstanceOf(ClassTypeSymbol.class, classResolution.type());
+        assertEquals("Later", classType.getName());
+
+        var arrayAdapter = new ReturnType(PrimitiveType.INT, new ExpressionNode[] { null }, null, null);
+        var arrayResolution = resolver.resolve(arrayAdapter, ast.getFirst(), rootScope);
+        assertTrue(arrayResolution.diagnostics().isEmpty());
+        var arrayType = assertInstanceOf(ArrayTypeSymbol.class, arrayResolution.type());
+        assertEquals(1, arrayType.getDimensions());
+        var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.elementType());
+        assertEquals("int", elementType.getName());
     }
 }

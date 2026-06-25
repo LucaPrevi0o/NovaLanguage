@@ -26,7 +26,8 @@
 /// ## Current evolution
 ///
 /// Type checking now compares semantic type symbols internally. Declarations still expose the
-/// transitional `ReturnType` adapter, but the checker resolves those adapters into
-/// `semantic.type` symbols before checking assignability, subtype compatibility, inherited
-/// member access, calls, arrays, overload selection, and condition expressions.
+/// transitional `ReturnType` adapter, but syntaxless adapter metadata is converted through
+/// `semantic.type.ReturnTypeSyntaxBridge` before the checker works with `semantic.type` symbols
+/// for assignability, subtype compatibility, inherited member access, calls, arrays, overload
+/// selection, and condition expressions.
 package semantic.analysis;
