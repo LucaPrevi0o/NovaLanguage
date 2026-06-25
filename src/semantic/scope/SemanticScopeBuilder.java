@@ -15,6 +15,7 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import parser.ast.nodes.type.TypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 
@@ -44,8 +45,8 @@ public final class SemanticScopeBuilder {
             case ClassDeclarationStatement classDeclaration -> collectClass(classDeclaration, scope);
             case ClassMethodDeclaration methodDeclaration -> collectFunction(methodDeclaration, scope, DeclarationKind.METHOD, "method " + methodDeclaration.getName());
             case FunctionDeclarationStatement functionDeclaration -> collectFunction(functionDeclaration, scope, DeclarationKind.FUNCTION, "function " + functionDeclaration.getName());
-            case ClassFieldDeclaration fieldDeclaration -> declare(scope, DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration);
-            case VariableDeclarationStatement variableDeclaration -> declare(scope, DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration);
+            case ClassFieldDeclaration fieldDeclaration -> declare(scope, DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration.getDeclaredTypeSyntax(), fieldDeclaration);
+            case VariableDeclarationStatement variableDeclaration -> declare(scope, DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration.getDeclaredTypeSyntax(), variableDeclaration);
             case BlockStatement block -> collectBlock(block, scope);
             case IfStatement ifStatement -> {
 
@@ -67,6 +68,7 @@ public final class SemanticScopeBuilder {
                         DeclarationKind.FOREACH_VARIABLE,
                         forEachStatement.getElementName(),
                         forEachStatement.getElementType(),
+                        forEachStatement.getElementTypeSyntax(),
                         forEachStatement
                 );
                 collectBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
@@ -87,7 +89,7 @@ public final class SemanticScopeBuilder {
     /// @param scope The semantic scope to add declarations to.
     private void collectClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
-        declare(scope, DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getReturnType(), classDeclaration);
+        declare(scope, DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getReturnType(), classDeclaration.getTypeSyntax(), classDeclaration);
         var classScope = scope.createChild("class " + classDeclaration.getName(), classDeclaration);
 
         for (var field : classDeclaration.getFields()) collectStatement(field, classScope);
@@ -103,10 +105,10 @@ public final class SemanticScopeBuilder {
     /// @param scopeName The name of the scope to create for the function body.
     private void collectFunction(FunctionDeclarationStatement functionDeclaration, SemanticScope scope, DeclarationKind kind, String scopeName) {
 
-        declare(scope, kind, functionDeclaration.getName(), functionDeclaration.getDeclaredType(), functionDeclaration);
+        declare(scope, kind, functionDeclaration.getName(), functionDeclaration.getDeclaredType(), functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration);
         var functionScope = scope.createChild(scopeName, functionDeclaration);
         for (var parameter : functionDeclaration.getParameters())
-            declare(functionScope, DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter);
+            declare(functionScope, DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter.getTypeSyntax(), parameter);
         collectFunctionBody(functionDeclaration.getBody(), functionScope);
     }
 
@@ -119,7 +121,7 @@ public final class SemanticScopeBuilder {
         declare(classScope, DeclarationKind.CONSTRUCTOR, classDeclaration.getName(), null, constructorDeclaration);
         var constructorScope = classScope.createChild("constructor " + classDeclaration.getName(), constructorDeclaration);
         for (var parameter : constructorDeclaration.getParameters())
-            declare(constructorScope, DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter);
+            declare(constructorScope, DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter.getTypeSyntax(), parameter);
         collectFunctionBody(constructorDeclaration.getBody(), constructorScope);
     }
 
@@ -158,7 +160,20 @@ public final class SemanticScopeBuilder {
     /// @param scope The semantic scope to add the declaration to.
     /// @param kind The kind of the declaration (e.g., `FUNCTION`, `VARIABLE`, `CLASS`, etc.).
     /// @param name The name of the declaration.
-    /// @param declaredType The return type of the declaration, or `null` if the declaration does not have a return type.
+    /// @param declaredType The ReturnType adapter for the declaration, or `null` if absent.
+    /// @param declaredTypeSyntax The parsed source type syntax for the declaration, or `null` if absent.
+    /// @param node The AST node that represents the declaration.
+    private void declare(SemanticScope scope, DeclarationKind kind, String name, ReturnType declaredType, TypeSyntax declaredTypeSyntax, AstNode node) {
+
+        var declaration = new SemanticDeclaration(kind, name, declaredType, declaredTypeSyntax, node, scope.getOwner());
+        scope.declare(declaration);
+    }
+
+    /// Declares a new semantic declaration without a source type and adds it to the provided scope.
+    /// @param scope The semantic scope to add the declaration to.
+    /// @param kind The declaration kind.
+    /// @param name The declaration name.
+    /// @param declaredType The ReturnType adapter for the declaration, or `null` if absent.
     /// @param node The AST node that represents the declaration.
     private void declare(SemanticScope scope, DeclarationKind kind, String name, ReturnType declaredType, AstNode node) {
 

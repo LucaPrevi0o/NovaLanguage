@@ -19,5 +19,6 @@
 ///
 /// Statement nodes preserve program structure. Semantic passes decide whether declarations are
 /// duplicated, returns are valid, control-transfer statements are in valid contexts, and
-/// statement-level type rules are satisfied.
+/// statement-level type rules are satisfied. Declaration-style statement nodes expose parsed
+/// `TypeSyntax` where the source contains a declared type, but they do not resolve that type.
 package parser.ast.nodes.statement;

@@ -36,6 +36,7 @@ import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
+import parser.ast.nodes.type.TypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
@@ -202,7 +203,7 @@ public final class TypeChecker {
     private void checkInitializer(VariableDeclarationStatement declaration, SemanticScope scope) {
 
         var valueType = inferExpression(declaration.getInitialValue(), scope);
-        var targetType = resolveDeclaredType(declaration.getDeclaredType(), declaration, scope);
+        var targetType = resolveDeclaredType(declaration.getDeclaredTypeSyntax(), declaration.getDeclaredType(), declaration, scope);
         if (!isAssignable(targetType, valueType, scope))
             reportTypeMismatch(targetType, valueType, declaration.getInitialValue());
     }
@@ -222,7 +223,7 @@ public final class TypeChecker {
             case IdentifierLiteralExpression identifier -> {
 
                 var declaration = firstVisible(scope, identifier.getName());
-                yield declaration != null ? resolveDeclaredType(declaration.declaredType(), declaration.node(), scope) : null;
+                yield declaration != null ? resolveDeclaredType(declaration.declaredTypeSyntax(), declaration.declaredType(), declaration.node(), scope) : null;
             }
             case ObjectCreationExpression objectCreation -> {
 
@@ -262,7 +263,7 @@ public final class TypeChecker {
             case MemberAccessExpression memberAccess -> {
 
                 var member = resolveMemberAccess(memberAccess, scope);
-                yield member != null ? resolveDeclaredType(member.declaredType(), member.node(), scope) : null;
+                yield member != null ? resolveDeclaredType(member.declaredTypeSyntax(), member.declaredType(), member.node(), scope) : null;
             }
             case ArrayAccessExpression arrayAccess -> inferArrayAccess(arrayAccess, scope);
             case null, default -> null;
@@ -338,15 +339,17 @@ public final class TypeChecker {
 
         for (var field : classDeclaration.getFields())
             if (field.getName().equals(memberName))
-                members.add(declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field));
+                members.add(declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field.getDeclaredTypeSyntax(), field));
 
         for (var method : classDeclaration.getMethods())
             if (method.getName().equals(memberName))
-                members.add(declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method));
+                members.add(declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method.getDeclaredTypeSyntax(), method));
 
-        for (var superClass : classDeclaration.getSuperClasses()) {
+        var superClassTypes = classDeclaration.getSuperClasses();
+        var superClassSyntaxes = classDeclaration.getSuperClassSyntaxes();
+        for (var i = 0; i < superClassTypes.length; i++) {
 
-            var resolution = typeResolver.resolve(superClass, classDeclaration, scope, "superclass");
+            var resolution = typeResolver.resolve(superClassSyntaxes[i], superClassTypes[i], classDeclaration, scope, "superclass");
             report(resolution);
             if (resolution.type() instanceof ClassTypeSymbol superClassType)
                 collectClassMembers(classDeclaration(superClassType, scope), memberName, scope, members, visitedClasses);
@@ -367,10 +370,11 @@ public final class TypeChecker {
     /// @param kind The kind of the declaration (e.g., field, method).
     /// @param name The name of the declaration.
     /// @param declaredType The declared type of the declaration.
+    /// @param declaredTypeSyntax The parsed source type syntax for the declaration.
     /// @param node The AST node corresponding to the declaration.
     /// @return A new semantic declaration.
-    private SemanticDeclaration declaration(DeclarationKind kind, String name, ReturnType declaredType, AstNode node) {
-        return new SemanticDeclaration(kind, name, declaredType, node, null);
+    private SemanticDeclaration declaration(DeclarationKind kind, String name, ReturnType declaredType, TypeSyntax declaredTypeSyntax, AstNode node) {
+        return new SemanticDeclaration(kind, name, declaredType, declaredTypeSyntax, node, null);
     }
 
     /// Infers the type of a function or method call expression and checks for type errors in the arguments.
@@ -400,7 +404,7 @@ public final class TypeChecker {
             var callable = selectCallableOverload(identifier.getName(), callables, argumentTypes, call, callableKind(callables.getFirst()), scope);
             if (callable == null) return null;
 
-            return resolveDeclaredType(callable.declaredType(), callable.node(), scope);
+            return resolveDeclaredType(callable.declaredTypeSyntax(), callable.declaredType(), callable.node(), scope);
         }
 
         if (call.getCallee() instanceof MemberAccessExpression memberAccess) {
@@ -422,7 +426,7 @@ public final class TypeChecker {
 
             var member = selectCallableOverload(memberAccess.getMemberName(), methods, argumentTypes, call, callableKind(methods.getFirst()), scope);
             if (member == null) return null;
-            return resolveDeclaredType(member.declaredType(), member.node(), scope);
+            return resolveDeclaredType(member.declaredTypeSyntax(), member.declaredType(), member.node(), scope);
         }
 
         return inferExpression(call.getCallee(), scope);
@@ -470,7 +474,7 @@ public final class TypeChecker {
     /// @param callableKind A string representing the kind of callable (e.g., "function" or "method") for error reporting.
     private void checkArgument(FunctionDeclarationStatement functionDeclaration, FunctionParameter parameter, TypeSymbol argumentType, ExpressionNode argument, int argumentNumber, String callableKind, SemanticScope scope) {
 
-        var parameterType = resolveDeclaredType(parameter.getType(), parameter, scope);
+        var parameterType = resolveDeclaredType(parameter.getTypeSyntax(), parameter.getType(), parameter, scope);
         if (isAssignable(parameterType, argumentType, scope)) return;
         diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
@@ -612,7 +616,7 @@ public final class TypeChecker {
         var score = 0;
         for (var i = 0; i < parameters.length; i++) {
 
-            var parameterType = resolveDeclaredType(parameters[i].getType(), parameters[i], scope);
+            var parameterType = resolveDeclaredType(parameters[i].getTypeSyntax(), parameters[i].getType(), parameters[i], scope);
             var argumentScore = assignabilityScore(parameterType, argumentTypes[i], scope);
             if (argumentScore < 0) return -1;
             score += argumentScore;
@@ -711,9 +715,11 @@ public final class TypeChecker {
         if (classDeclaration == null || !visitedClasses.add(classDeclaration)) return -1;
 
         var bestDistance = -1;
-        for (var superClass : classDeclaration.getSuperClasses()) {
+        var superClassTypes = classDeclaration.getSuperClasses();
+        var superClassSyntaxes = classDeclaration.getSuperClassSyntaxes();
+        for (var i = 0; i < superClassTypes.length; i++) {
 
-            var resolution = typeResolver.resolve(superClass, classDeclaration, scope, "superclass");
+            var resolution = typeResolver.resolve(superClassSyntaxes[i], superClassTypes[i], classDeclaration, scope, "superclass");
             report(resolution);
             if (!(resolution.type() instanceof ClassTypeSymbol superClassType)) continue;
 
@@ -846,14 +852,15 @@ public final class TypeChecker {
         return type != null ? type.getName() : "<unknown>";
     }
 
-    /// Resolves a declared ReturnType adapter to a semantic type symbol for type checking.
-    /// @param type The declared ReturnType adapter.
+    /// Resolves declared type syntax to a semantic type symbol for type checking.
+    /// @param typeSyntax The parsed source type syntax.
+    /// @param type The declared ReturnType adapter fallback.
     /// @param owner The AST node that owns the declaration.
     /// @param scope The semantic scope to resolve from.
     /// @return The resolved semantic type, or {@code null} if the type is absent.
-    private TypeSymbol resolveDeclaredType(ReturnType type, AstNode owner, SemanticScope scope) {
+    private TypeSymbol resolveDeclaredType(TypeSyntax typeSyntax, ReturnType type, AstNode owner, SemanticScope scope) {
 
-        var resolution = typeResolver.resolve(type, owner, scope);
+        var resolution = typeResolver.resolve(typeSyntax, type, owner, scope);
         report(resolution);
         return resolution.type();
     }

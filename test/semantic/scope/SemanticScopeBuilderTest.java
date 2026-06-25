@@ -4,6 +4,7 @@ import lexer.Lexer;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.type.ArrayTypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 
@@ -85,6 +86,17 @@ public class SemanticScopeBuilderTest {
         var bodyScope = forScope.getChildren().getFirst();
         assertEquals("block", bodyScope.getName());
         assertNames(bodyScope.findLocal("body"), "body");
+    }
+
+    @Test
+    void testScopeDeclarationsPreserveParsedTypeSyntax() {
+
+        var root = build("int[3] values;");
+        var declaration = only(root.findLocal("values"), DeclarationKind.VARIABLE);
+
+        var syntax = assertInstanceOf(ArrayTypeSyntax.class, declaration.declaredTypeSyntax());
+        assertEquals("int", syntax.getName());
+        assertEquals(1, syntax.getSizes().length);
     }
 
     private void assertNames(List<SemanticDeclaration> declarations, String... names) {

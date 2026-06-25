@@ -9,6 +9,8 @@ import lexer.token.family.AccessModifier;
 import lexer.token.family.NonPrimitiveType;
 import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.nodes.type.NamedTypeSyntax;
+import parser.ast.nodes.type.TypeSyntax;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,16 +68,39 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     /// @return An array of ReturnType objects representing the superclasses that the class extends or implements.
     public ReturnType[] getSuperClasses() { return superClasses; }
 
+    /// Returns the parsed source type syntax for each declared superclass.
+    /// @return An array of parsed superclass type syntax nodes, with {@code null} for compatibility-only entries.
+    public TypeSyntax[] getSuperClassSyntaxes() {
+
+        if (superClasses == null) return new TypeSyntax[0];
+        var syntaxes = new TypeSyntax[superClasses.length];
+        for (var i = 0; i < superClasses.length; i++)
+            syntaxes[i] = superClasses[i] != null ? superClasses[i].getSyntax() : null;
+        return syntaxes;
+    }
+
     /// Returns the generic parameter of the class, if any.
     /// @return A ReturnType object representing the generic parameter of the class, or null if the class does not have a generic parameter.
     public ReturnType getGenericClassParameter() { return genericClassParameter; }
+
+    /// Returns the parsed source type syntax for this class's generic parameter, when available.
+    /// @return The generic parameter syntax, or {@code null} if none is declared.
+    public TypeSyntax getGenericClassParameterSyntax() {
+        return genericClassParameter != null ? genericClassParameter.getSyntax() : null;
+    }
 
     /// Returns the inner classes declared within the class.
     /// @return An array of ClassDeclarationStatement objects representing the inner classes declared within the class.
     public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
 
     /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
-    /// This ReturnType remains the parser-side metadata adapter until class metadata is represented semantically.
+    /// @return A source-level type syntax node representing this class name.
+    public TypeSyntax getTypeSyntax() {
+        return new NamedTypeSyntax(getLine(), getColumn(), getName(), false);
+    }
+
+    /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
+    /// This ReturnType remains a compatibility adapter for older AST/printer callers.
     /// @return A ReturnType representing the type of this class.
     public ReturnType getReturnType() {
 
@@ -83,7 +108,8 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
             new NonPrimitiveType(this.getName()),
             new ExpressionNode[0],
             superClasses,
-            genericClassParameter
+            genericClassParameter,
+            getTypeSyntax()
         );
     }
 

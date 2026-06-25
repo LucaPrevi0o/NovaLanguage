@@ -148,7 +148,7 @@ The parser now builds AST nodes and parser diagnostics. It does not register var
 
 Semantic declaration collection and semantic scope construction are the source of truth for lexical visibility and language meaning.
 
-Declaration and class parsing build parsed type syntax nodes, then adapt them to `ReturnType` only for the existing AST APIs. There is no parser-side type registry. Semantic type symbols now exist, name resolution plus type checking use them internally, and the semantic type resolver reads preserved `TypeSyntax` before legacy `ReturnType` token metadata. The semantic type layer now distinguishes Nova class/object types from Nova value/math types through explicit type kinds. The current type checker uses those symbols for assignment compatibility, superclass-chain subtype checks, inherited member lookup, and basic overload selection.
+Declaration and class parsing build parsed type syntax nodes. Declaration AST nodes now expose that `TypeSyntax` directly, while `ReturnType` remains as a compatibility adapter for older AST/printer callers and syntaxless manually constructed nodes. There is no parser-side type registry. Semantic declarations preserve parsed type syntax, name resolution plus type checking resolve that syntax before using any adapter fallback, and the semantic type resolver reads `TypeSyntax` before legacy `ReturnType` token metadata. The semantic type layer now distinguishes Nova class/object types from Nova value/math types through explicit type kinds. The current type checker uses those symbols for assignment compatibility, superclass-chain subtype checks, inherited member lookup, and basic overload selection.
 
 ## Future architecture
 

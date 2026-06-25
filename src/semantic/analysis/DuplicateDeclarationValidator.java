@@ -4,9 +4,12 @@ import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.FunctionParameter;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import parser.ast.nodes.type.ArrayTypeSyntax;
+import parser.ast.nodes.type.TypeSyntax;
 import semantic.declaration.DeclarationKind;
 import semantic.declaration.SemanticDeclaration;
 import semantic.scope.SemanticScope;
@@ -136,9 +139,39 @@ public final class DuplicateDeclarationValidator {
         for (var i = 0; i < parameters.length; i++) {
 
             if (i > 0) signature.append(", ");
-            signature.append(buildTypeStringWithSizes(parameters[i].getType()));
+            signature.append(parameterTypeSignature(parameters[i]));
         }
         return signature.append(')').toString();
+    }
+
+    /// Builds a parameter type signature from source syntax, falling back to the compatibility adapter when needed.
+    /// @param parameter The function or constructor parameter.
+    /// @return A stable parameter type signature.
+    private String parameterTypeSignature(FunctionParameter parameter) {
+
+        var syntax = parameter.getTypeSyntax();
+        return syntax != null ? typeSyntaxSignature(syntax) : buildTypeStringWithSizes(parameter.getType());
+    }
+
+    /// Builds a type signature from parsed type syntax.
+    /// @param syntax The parsed type syntax.
+    /// @return A stable type signature.
+    private String typeSyntaxSignature(TypeSyntax syntax) {
+
+        if (syntax instanceof ArrayTypeSyntax arrayType) {
+
+            var signature = new StringBuilder(typeSyntaxSignature(arrayType.getElementType()));
+            for (var size : arrayType.getSizes()) {
+
+                signature.append("[");
+                if (size instanceof NumberLiteralExpression number) signature.append(number.getValue());
+                else if (size != null) signature.append(size);
+                signature.append("]");
+            }
+            return signature.toString();
+        }
+
+        return syntax != null ? syntax.getName() : "null";
     }
 
     /// Reports a diagnostic for a duplicate declaration.

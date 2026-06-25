@@ -26,8 +26,8 @@ import java.util.List;
 
 /// Resolves parsed type syntax and temporary ReturnType adapters into semantic type symbols.
 ///
-/// Parser-created ReturnType adapters are source-syntax-first: when a ReturnType carries
-/// TypeSyntax, the syntax is resolved before legacy token-class metadata is considered.
+/// Parsed TypeSyntax is the preferred input. ReturnType adapters are accepted as compatibility
+/// fallbacks, and adapter metadata is consulted only when parsed syntax is unavailable.
 public final class TypeResolver {
 
     /// Resolves a ReturnType adapter as a normal declared type.
@@ -38,6 +38,31 @@ public final class TypeResolver {
     public TypeResolution resolve(ReturnType type, AstNode owner, SemanticScope scope) {
 
         return resolve(type, owner, scope, "type");
+    }
+
+    /// Resolves source type syntax with a ReturnType adapter as a compatibility fallback.
+    /// @param syntax The parsed type syntax, or {@code null} when unavailable.
+    /// @param fallbackType The ReturnType adapter to use only when syntax is unavailable.
+    /// @param owner The AST node that owns the type.
+    /// @param scope The semantic scope used for class lookup.
+    /// @return The resolved semantic type and any diagnostics.
+    public TypeResolution resolve(TypeSyntax syntax, ReturnType fallbackType, AstNode owner, SemanticScope scope) {
+
+        return resolve(syntax, fallbackType, owner, scope, "type");
+    }
+
+    /// Resolves source type syntax with a ReturnType adapter as a compatibility fallback.
+    /// @param syntax The parsed type syntax, or {@code null} when unavailable.
+    /// @param fallbackType The ReturnType adapter to use only when syntax is unavailable.
+    /// @param owner The AST node that owns the type.
+    /// @param scope The semantic scope used for class lookup.
+    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
+    /// @return The resolved semantic type and any diagnostics.
+    public TypeResolution resolve(TypeSyntax syntax, ReturnType fallbackType, AstNode owner, SemanticScope scope, String unresolvedLabel) {
+
+        return syntax != null
+                ? resolve(syntax, owner, scope, unresolvedLabel)
+                : resolve(fallbackType, owner, scope, unresolvedLabel);
     }
 
     /// Resolves a ReturnType adapter with a custom unresolved-name label.
@@ -169,8 +194,9 @@ public final class TypeResolver {
     private String genericParameterName(ClassDeclarationStatement classDeclaration) {
 
         var genericParameter = classDeclaration.getGenericClassParameter();
+        var genericParameterSyntax = classDeclaration.getGenericClassParameterSyntax();
+        if (genericParameterSyntax != null) return genericParameterSyntax.getName();
         if (genericParameter == null) return "";
-        if (genericParameter.getSyntax() != null) return genericParameter.getSyntax().getName();
 
         var tokenClass = genericParameter.getTokenClass();
         if (tokenClass instanceof GenericParameterType(String typeName)) return typeName;

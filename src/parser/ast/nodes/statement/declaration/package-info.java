@@ -15,6 +15,7 @@
 ///
 /// ## Layer boundary
 ///
-/// Declaration AST nodes may carry names and declared type syntax, but they do not determine
+/// Declaration AST nodes carry names and parsed declared `TypeSyntax` where available. They keep
+/// temporary `ReturnType` compatibility getters for older callers, but they do not determine
 /// duplicate validity, type existence, visibility, or overload compatibility.
 package parser.ast.nodes.statement.declaration;

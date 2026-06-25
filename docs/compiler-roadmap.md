@@ -131,18 +131,20 @@ Completed work:
 
 - parsed type syntax nodes for named, array, and generic-parameter type syntax;
 - parser-created `ReturnType` objects can carry their source `TypeSyntax`;
+- declaration AST nodes expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters;
+- semantic declarations preserve both parsed `TypeSyntax` and the temporary `ReturnType` adapter;
 - semantic type symbols for value, class, array, generic-parameter, and unknown types;
 - semantic type kinds that distinguish value/math types from class/object types;
 - name resolution resolves declared types through the semantic type resolver;
 - type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
-- `ReturnType` is now a source-syntax-first compatibility adapter for existing AST APIs;
+- `ReturnType` is now a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs;
 - the parser-side `TypeRegistry` adapter has been removed;
 - built-in primitive-like declarations resolve to Nova value type symbols.
 
 Planned work:
 
 - reduce remaining `ReturnType` fallback paths that still inspect lexer token classes;
-- decide whether AST declarations should expose parsed `TypeSyntax` directly instead of relying on the `ReturnType` compatibility adapter;
+- audit whether declaration constructors should accept parsed `TypeSyntax` directly instead of accepting `ReturnType` adapters;
 - continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
 
 This phase is important before implementing advanced language features.

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
+import parser.ast.nodes.type.ArrayTypeSyntax;
+import parser.ast.nodes.type.NamedTypeSyntax;
 
 import java.util.List;
 
@@ -83,6 +85,23 @@ public class SemanticDeclarationCollectorTest {
 
         assertEquals(2, collection.byName("x").size());
         assertEquals(2, collection.byKind(DeclarationKind.VARIABLE).size());
+    }
+
+    @Test
+    void testCollectorPreservesParsedTypeSyntaxOnSemanticDeclarations() {
+
+        var collection = collect("""
+            Later[3] value;
+            public class Later { }
+            """);
+
+        var variable = only(collection.byKind(DeclarationKind.VARIABLE), "value");
+        var arraySyntax = assertInstanceOf(ArrayTypeSyntax.class, variable.declaredTypeSyntax());
+        assertEquals("Later", arraySyntax.getName());
+
+        var classDeclaration = only(collection.byKind(DeclarationKind.CLASS), "Later");
+        var classSyntax = assertInstanceOf(NamedTypeSyntax.class, classDeclaration.declaredTypeSyntax());
+        assertEquals("Later", classSyntax.getName());
     }
 
     private void assertNames(List<SemanticDeclaration> declarations, String... names) {

@@ -3,6 +3,7 @@ package parser.ast.nodes.statement.declaration;
 import parser.ast.Printable;
 import parser.ast.nodes.Symbol;
 import lexer.token.ReturnType;
+import parser.ast.nodes.type.TypeSyntax;
 import printer.AstPrinter;
 
 import java.util.List;
@@ -26,6 +27,10 @@ public class FunctionParameter extends Symbol implements Printable {
     /// Returns the return type of the parameter.
     /// @return The return type of the parameter.
     public ReturnType getType() { return type; }
+
+    /// Returns the parsed source type syntax for this parameter, when available.
+    /// @return The parsed type syntax, or {@code null} for compatibility-only parameters.
+    public TypeSyntax getTypeSyntax() { return type != null ? type.getSyntax() : null; }
 
     @Override
     public String toPrintString() { return "FunctionParameter [line " + getLine() + "]"; }

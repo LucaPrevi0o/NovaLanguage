@@ -2,6 +2,7 @@ package parser.ast.nodes.statement;
 
 import parser.ast.nodes.Symbol;
 import lexer.token.ReturnType;
+import parser.ast.nodes.type.TypeSyntax;
 
 /// Represents a declaration statement in the abstract syntax tree (AST), which can be a variable declaration, function declaration, or object declaration.
 public abstract class DeclarationStatement extends Symbol {
@@ -22,4 +23,8 @@ public abstract class DeclarationStatement extends Symbol {
     /// Returns the return type of the declaration.
     /// @return The return type of the declaration.
     public ReturnType getDeclaredType() { return type; }
+
+    /// Returns the parsed source type syntax for this declaration, when available.
+    /// @return The parsed type syntax, or {@code null} for compatibility-only declarations.
+    public TypeSyntax getDeclaredTypeSyntax() { return type != null ? type.getSyntax() : null; }
 }

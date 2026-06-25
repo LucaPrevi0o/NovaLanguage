@@ -199,8 +199,9 @@ The current semantic architecture is still transitional.
 Known limitations include:
 
 - the type model still depends too heavily on lexer token classes;
-- parser-created `ReturnType` objects carry parsed type syntax, and semantic passes resolve that syntax into semantic type symbols before using legacy token metadata as a fallback;
-- type checking uses semantic type symbols internally, but declarations still expose `ReturnType` adapters;
+- declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly, while `ReturnType` remains as a compatibility adapter;
+- semantic passes resolve parsed type syntax into semantic type symbols before using legacy token metadata as a fallback;
+- type checking uses semantic type symbols internally, but declaration constructors still accept `ReturnType` adapters;
 - semantic type symbols now distinguish Nova class/object types from Nova value/math types;
 - parser-side type registry metadata has been removed; declaration/class parsing preserves type spelling through `TypeSyntax`;
 - basic inheritance checks support subtype assignment and inherited member lookup, but access control, inherited-field conflicts, override compatibility, abstract/final behavior, and generic specificity are not implemented yet;

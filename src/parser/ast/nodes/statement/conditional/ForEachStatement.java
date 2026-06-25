@@ -5,6 +5,7 @@ import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ConditionalStatement;
 import lexer.token.ReturnType;
+import parser.ast.nodes.type.TypeSyntax;
 
 import java.util.List;
 
@@ -36,6 +37,10 @@ public class ForEachStatement extends ConditionalStatement implements Printable 
     /// Returns the declared element type of the loop variable.
     /// @return The element type.
     public ReturnType getElementType() { return elementType; }
+
+    /// Returns the parsed source type syntax for the loop variable, when available.
+    /// @return The parsed element type syntax, or {@code null} for compatibility-only statements.
+    public TypeSyntax getElementTypeSyntax() { return elementType != null ? elementType.getSyntax() : null; }
 
     /// Returns the name of the loop variable.
     /// @return The element name.
