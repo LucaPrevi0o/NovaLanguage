@@ -124,8 +124,10 @@ Remaining work includes:
 
 Status: **in progress**.
 
-The compiler still has transitional lexer-token fallback paths through `ReturnType`, but the
-resolved semantic type symbols now carry Nova-level type categories.
+Parser-created declarations preserve source `TypeSyntax`, and semantic type symbols carry
+Nova-level type categories. Syntaxless `ReturnType` compatibility fallbacks are isolated behind
+`semantic.type.ReturnTypeSyntaxBridge` until declaration constructors can be migrated fully to
+parsed type syntax.
 
 Completed work:
 
@@ -138,13 +140,14 @@ Completed work:
 - name resolution resolves declared types through the semantic type resolver;
 - type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
 - `ReturnType` is now a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs;
+- syntaxless `ReturnType` fallback conversion is isolated in `ReturnTypeSyntaxBridge`;
 - the parser-side `TypeRegistry` adapter has been removed;
 - built-in primitive-like declarations resolve to Nova value type symbols.
 
 Planned work:
 
-- reduce remaining `ReturnType` fallback paths that still inspect lexer token classes;
 - audit whether declaration constructors should accept parsed `TypeSyntax` directly instead of accepting `ReturnType` adapters;
+- remove the compatibility bridge once AST construction no longer needs syntaxless adapters;
 - continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
 
 This phase is important before implementing advanced language features.

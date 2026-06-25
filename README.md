@@ -24,6 +24,7 @@ Implemented or partially implemented today:
 - Duplicate declaration validation, including overload-signature duplicate checks
 - Parser-side type-registry metadata removal
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
+- Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
 - Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
 - Return checking
 - L-value checking
@@ -33,8 +34,7 @@ Implemented or partially implemented today:
 
 Not implemented yet:
 
-- A complete semantic type model independent from lexer token classes
-- Declaration AST constructors that no longer need temporary `ReturnType` adapters
+- Full removal of temporary `ReturnType` adapters from declaration AST construction and printer compatibility paths
 - Multi-file project compilation
 - Semantic standard-library declarations
 - Standard library loading from Nova source files

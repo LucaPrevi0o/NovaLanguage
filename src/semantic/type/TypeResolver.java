@@ -3,9 +3,6 @@ package semantic.type;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticPhase;
 import lexer.token.ReturnType;
-import lexer.token.family.GenericParameterType;
-import lexer.token.family.NonPrimitiveType;
-import lexer.token.family.PrimitiveType;
 import parser.ast.AstNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.type.ArrayTypeSyntax;
@@ -27,7 +24,7 @@ import java.util.List;
 /// Resolves parsed type syntax and temporary ReturnType adapters into semantic type symbols.
 ///
 /// Parsed TypeSyntax is the preferred input. ReturnType adapters are accepted as compatibility
-/// fallbacks, and adapter metadata is consulted only when parsed syntax is unavailable.
+/// fallbacks, and syntaxless adapter metadata is converted through `ReturnTypeSyntaxBridge`.
 public final class TypeResolver {
 
     /// Resolves a ReturnType adapter as a normal declared type.
@@ -74,13 +71,8 @@ public final class TypeResolver {
     public TypeResolution resolve(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
 
         if (type == null) return new TypeResolution(null, List.of());
-        if (type.getSyntax() != null) return resolve(type.getSyntax(), owner, scope, unresolvedLabel);
-
-        var baseResolution = resolveReturnTypeBase(type, owner, scope, unresolvedLabel);
-        var symbol = baseResolution.type();
-        if (type.getSizes().length > 0)
-            symbol = new ArrayTypeSymbol(symbol, type.getSizes());
-        return new TypeResolution(symbol, baseResolution.diagnostics());
+        var syntax = ReturnTypeSyntaxBridge.toTypeSyntax(type);
+        return syntax != null ? resolve(syntax, owner, scope, unresolvedLabel) : resolved(new UnknownTypeSymbol("<unknown>"));
     }
 
     /// Resolves source-level type syntax as a normal declared type.
@@ -141,22 +133,6 @@ public final class TypeResolver {
         );
     }
 
-    /// Resolves the base type of a ReturnType adapter, ignoring array dimensions.
-    /// @param type The ReturnType adapter to resolve.
-    /// @param owner The AST node that owns the type.
-    /// @param scope The semantic scope used for class lookup.
-    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
-    /// @return The resolved semantic type and any diagnostics.
-    private TypeResolution resolveReturnTypeBase(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
-
-        var tokenClass = type.getTokenClass();
-        if (tokenClass instanceof PrimitiveType primitiveType) return resolved(ValueTypeSymbol.builtin(primitiveType.token()));
-        if (tokenClass instanceof GenericParameterType(String name)) return resolved(new GenericParameterSymbol(name));
-        if (tokenClass instanceof NonPrimitiveType(String typeName)) return resolveClassName(typeName, owner, scope, unresolvedLabel);
-
-        return resolved(new UnknownTypeSymbol("<unknown>"));
-    }
-
     /// Resolves a named type syntax, checking for visible generic parameters before class declarations.
     /// @param namedType The named type syntax to resolve.
     /// @param owner The AST node that owns the named type.
@@ -196,11 +172,7 @@ public final class TypeResolver {
         var genericParameter = classDeclaration.getGenericClassParameter();
         var genericParameterSyntax = classDeclaration.getGenericClassParameterSyntax();
         if (genericParameterSyntax != null) return genericParameterSyntax.getName();
-        if (genericParameter == null) return "";
-
-        var tokenClass = genericParameter.getTokenClass();
-        if (tokenClass instanceof GenericParameterType(String typeName)) return typeName;
-        return tokenClass != null ? tokenClass.token() : "";
+        return ReturnTypeSyntaxBridge.genericParameterName(genericParameter);
     }
 
     /// Finds a visible class declaration with the given name in the current semantic scope or its ancestors.

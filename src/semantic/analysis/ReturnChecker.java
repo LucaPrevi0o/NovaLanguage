@@ -4,7 +4,6 @@ import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
 import lexer.token.ReturnType;
-import lexer.token.family.PrimitiveType;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.type.TypeSyntax;
 import parser.ast.nodes.StatementNode;
@@ -18,6 +17,7 @@ import parser.ast.nodes.statement.conditional.SwitchStatement;
 import parser.ast.nodes.statement.conditional.WhileStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
+import semantic.type.ReturnTypeSyntaxBridge;
 
 import java.util.List;
 
@@ -175,9 +175,8 @@ public final class ReturnChecker {
     /// @return `true` if the return type is void; otherwise, `false`.
     private boolean isVoid(TypeSyntax returnType, ReturnType fallbackType) {
 
-        if (returnType instanceof NamedTypeSyntax namedType)
-            return namedType.isPrimitive() && "void".equals(namedType.getName());
-        return fallbackType != null && fallbackType.getTokenClass() == PrimitiveType.VOID;
+        var syntax = returnType != null ? returnType : ReturnTypeSyntaxBridge.toTypeSyntax(fallbackType);
+        return ReturnTypeSyntaxBridge.isVoid(syntax);
     }
 
     /// Represents the context of a return statement, including the name of the enclosing function or constructor, its return type, and whether it is a constructor.
