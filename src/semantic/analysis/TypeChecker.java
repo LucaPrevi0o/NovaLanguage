@@ -49,8 +49,11 @@ import semantic.type.TypeResolver;
 import semantic.type.symbol.TypeSymbol;
 import semantic.type.symbol.ValueTypeSymbol;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /// Performs an initial semantic type check for declarations, assignments, and simple expressions.
 public final class TypeChecker {
@@ -201,7 +204,7 @@ public final class TypeChecker {
 
         var valueType = inferExpression(declaration.getInitialValue(), scope);
         var targetType = resolveDeclaredType(declaration.getDeclaredType(), declaration, scope);
-        if (!isAssignable(targetType, valueType))
+        if (!isAssignable(targetType, valueType, scope))
             reportTypeMismatch(targetType, valueType, declaration.getInitialValue());
     }
 
@@ -232,7 +235,7 @@ public final class TypeChecker {
 
                 var targetType = inferExpression(assignment.getTarget(), scope);
                 var valueType = inferExpression(assignment.getValue(), scope);
-                if (!isAssignable(targetType, valueType))
+                if (!isAssignable(targetType, valueType, scope))
                     reportTypeMismatch(targetType, valueType, assignment.getValue());
                 yield targetType;
             }
@@ -309,50 +312,57 @@ public final class TypeChecker {
     /// @return The semantic declaration corresponding to the member access, or `null` if the member could not be resolved or if there was a type error.
     private SemanticDeclaration resolveMemberAccess(MemberAccessExpression memberAccess, SemanticScope scope) {
 
-        var objectType = inferExpression(memberAccess.getObject(), scope);
-        if (objectType == null) return null;
-
-        if (!(objectType instanceof ClassTypeSymbol classType)) {
-
-            diagnostics.report(Diagnostic.error(
-                DiagnosticPhase.SEMANTIC,
-                "Cannot access member '" + memberAccess.getMemberName() + "' on non-class type " + typeName(objectType),
-                memberAccess.getLine(),
-                memberAccess.getColumn()
-            ));
-            return null;
-        }
-
-        var classDeclaration = classType.declaration().getNode() instanceof ClassDeclarationStatement declaration
-                ? declaration
-                : visibleClass(scope, classType.getName());
-        if (classDeclaration == null) return null;
-
-        var member = classMember(classDeclaration, memberAccess.getMemberName());
-        if (member != null) return member;
-
-        diagnostics.report(Diagnostic.error(
-            DiagnosticPhase.SEMANTIC,
-            "Undefined member '" + memberAccess.getMemberName() + "' on type '" + classDeclaration.getName() + "'",
-            memberAccess.getLine(),
-            memberAccess.getColumn()
-        ));
-        return null;
+        var members = resolveMemberCandidates(memberAccess, scope);
+        return members.isEmpty() ? null : preferredMember(members);
     }
 
-    /// Resolves a member name within a class declaration to its corresponding semantic declaration.
+    /// Resolves a member name within a class declaration and its superclasses.
     /// @param classDeclaration The class declaration to search for the member.
     /// @param memberName The name of the member to resolve.
-    /// @return The semantic declaration corresponding to the member, or `null` if the member could not be found.
-    private SemanticDeclaration classMember(ClassDeclarationStatement classDeclaration, String memberName) {
+    /// @param scope The semantic scope used for superclass resolution.
+    /// @return The semantic declarations corresponding to the member, or an empty list if none were found.
+    private List<SemanticDeclaration> classMembers(ClassDeclarationStatement classDeclaration, String memberName, SemanticScope scope) {
+
+        var members = new ArrayList<SemanticDeclaration>();
+        collectClassMembers(classDeclaration, memberName, scope, members, new HashSet<>());
+        return List.copyOf(members);
+    }
+
+    /// Collects matching direct and inherited class members. Direct members are collected before inherited members.
+    /// @param classDeclaration The class declaration currently being searched.
+    /// @param memberName The member name to collect.
+    /// @param scope The semantic scope used for superclass resolution.
+    /// @param members The collected members.
+    /// @param visitedClasses The class declarations already visited while traversing inheritance.
+    private void collectClassMembers(ClassDeclarationStatement classDeclaration, String memberName, SemanticScope scope, List<SemanticDeclaration> members, Set<ClassDeclarationStatement> visitedClasses) {
+
+        if (classDeclaration == null || !visitedClasses.add(classDeclaration)) return;
 
         for (var field : classDeclaration.getFields())
-            if (field.getName().equals(memberName)) return declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field);
+            if (field.getName().equals(memberName))
+                members.add(declaration(DeclarationKind.FIELD, field.getName(), field.getDeclaredType(), field));
 
         for (var method : classDeclaration.getMethods())
-            if (method.getName().equals(memberName)) return declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method);
+            if (method.getName().equals(memberName))
+                members.add(declaration(DeclarationKind.METHOD, method.getName(), method.getDeclaredType(), method));
 
-        return null;
+        for (var superClass : classDeclaration.getSuperClasses()) {
+
+            var resolution = typeResolver.resolve(superClass, classDeclaration, scope, "superclass");
+            report(resolution);
+            if (resolution.type() instanceof ClassTypeSymbol superClassType)
+                collectClassMembers(classDeclaration(superClassType, scope), memberName, scope, members, visitedClasses);
+        }
+    }
+
+    /// Selects the declaration to expose for non-call member access.
+    /// @param members Matching member declarations.
+    /// @return The preferred field or method declaration.
+    private SemanticDeclaration preferredMember(List<SemanticDeclaration> members) {
+
+        for (var member : members)
+            if (member.getKind() == DeclarationKind.FIELD) return member;
+        return members.getFirst();
     }
 
     /// Creates a new semantic declaration with the specified kind, name, declared type, and AST node.
@@ -377,8 +387,8 @@ public final class TypeChecker {
             var declarations = firstVisibleDeclarations(scope, identifier.getName());
             if (declarations.isEmpty()) return null;
 
-            var callable = firstCallable(declarations);
-            if (callable == null) {
+            var callables = callableDeclarations(declarations);
+            if (callables.isEmpty()) {
 
                 diagnostics.report(Diagnostic.error(
                     DiagnosticPhase.SEMANTIC,
@@ -389,30 +399,31 @@ public final class TypeChecker {
                 return null;
             }
 
-            if (callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
-                checkCallArguments(call, functionDeclaration, argumentTypes, callableKind(callable), scope);
+            var callable = selectCallableOverload(identifier.getName(), callables, argumentTypes, call, callableKind(callables.getFirst()), scope);
+            if (callable == null) return null;
 
             return resolveDeclaredType(callable.getDeclaredType(), callable.getNode(), scope);
         }
 
         if (call.getCallee() instanceof MemberAccessExpression memberAccess) {
 
-            var member = resolveMemberAccess(memberAccess, scope);
-            if (member == null) return null;
+            var members = resolveMemberCandidates(memberAccess, scope);
+            if (members.isEmpty()) return null;
 
-            if (member.getKind() != DeclarationKind.METHOD) {
+            var methods = methodDeclarations(members);
+            if (methods.isEmpty()) {
 
                 diagnostics.report(Diagnostic.error(
                     DiagnosticPhase.SEMANTIC,
-                    "Cannot call non-function member '" + member.getName() + "'",
+                    "Cannot call non-function member '" + members.getFirst().getName() + "'",
                     call.getLine(),
                     call.getColumn()
                 ));
                 return null;
             }
 
-            if (member.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
-                checkCallArguments(call, functionDeclaration, argumentTypes, callableKind(member), scope);
+            var member = selectCallableOverload(memberAccess.getMemberName(), methods, argumentTypes, call, callableKind(methods.getFirst()), scope);
+            if (member == null) return null;
             return resolveDeclaredType(member.getDeclaredType(), member.getNode(), scope);
         }
 
@@ -462,7 +473,7 @@ public final class TypeChecker {
     private void checkArgument(FunctionDeclarationStatement functionDeclaration, FunctionParameter parameter, TypeSymbol argumentType, ExpressionNode argument, int argumentNumber, String callableKind, SemanticScope scope) {
 
         var parameterType = resolveDeclaredType(parameter.getType(), parameter, scope);
-        if (isAssignable(parameterType, argumentType)) return;
+        if (isAssignable(parameterType, argumentType, scope)) return;
         diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Argument " + argumentNumber + " for " + callableKind.toLowerCase() + " '" + functionDeclaration.getName() +
@@ -514,14 +525,115 @@ public final class TypeChecker {
         return List.of();
     }
 
-    /// Finds the first callable semantic declaration (function or method) in a list of declarations.
+    /// Filters callable semantic declarations from a list of declarations.
     /// @param declarations The list of semantic declarations to search.
-    /// @return The first callable semantic declaration found, or `null` if no callable declarations are found.
-    private SemanticDeclaration firstCallable(List<SemanticDeclaration> declarations) {
+    /// @return The callable semantic declarations found.
+    private List<SemanticDeclaration> callableDeclarations(List<SemanticDeclaration> declarations) {
 
+        var callables = new ArrayList<SemanticDeclaration>();
         for (var declaration : declarations)
-            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD) return declaration;
+            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD)
+                callables.add(declaration);
+        return List.copyOf(callables);
+    }
+
+    /// Filters method declarations from a list of class members.
+    /// @param declarations The class members to filter.
+    /// @return The method declarations found.
+    private List<SemanticDeclaration> methodDeclarations(List<SemanticDeclaration> declarations) {
+
+        var methods = new ArrayList<SemanticDeclaration>();
+        for (var declaration : declarations)
+            if (declaration.getKind() == DeclarationKind.METHOD) methods.add(declaration);
+        return List.copyOf(methods);
+    }
+
+    /// Selects the best overload for a function or method call.
+    /// @param name The callable name.
+    /// @param callables Candidate function or method declarations.
+    /// @param argumentTypes Inferred argument types.
+    /// @param call The call expression.
+    /// @param callableKind The user-facing callable kind.
+    /// @param scope The semantic scope used for parameter type resolution.
+    /// @return The selected callable declaration, or `null` if no unambiguous overload matches.
+    private SemanticDeclaration selectCallableOverload(String name, List<SemanticDeclaration> callables, TypeSymbol[] argumentTypes, CallExpression call, String callableKind, SemanticScope scope) {
+
+        if (callables.size() == 1) {
+
+            var callable = callables.getFirst();
+            if (callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
+                checkCallArguments(call, functionDeclaration, argumentTypes, callableKind, scope);
+            return callable;
+        }
+
+        var bestScore = Integer.MAX_VALUE;
+        var matches = new ArrayList<SemanticDeclaration>();
+        for (var callable : callables) {
+
+            if (!(callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)) continue;
+            var score = overloadScore(functionDeclaration, argumentTypes, scope);
+            if (score < 0) continue;
+            if (score < bestScore) {
+
+                bestScore = score;
+                matches.clear();
+            }
+            if (score == bestScore) matches.add(callable);
+        }
+
+        if (matches.size() == 1) return matches.getFirst();
+
+        var callableLabel = callableKind.toLowerCase();
+        if (matches.size() > 1)
+            diagnostics.report(Diagnostic.error(
+                DiagnosticPhase.SEMANTIC,
+                "Ambiguous " + callableLabel + " call '" + name + "' for argument types " + argumentTypesText(argumentTypes),
+                call.getLine(),
+                call.getColumn()
+            ));
+        else diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "No matching overload for " + callableLabel + " '" + name + "' with argument types " + argumentTypesText(argumentTypes),
+            call.getLine(),
+            call.getColumn()
+        ));
+
         return null;
+    }
+
+    /// Scores a candidate overload. Lower scores are more specific; `-1` means no match.
+    /// @param functionDeclaration The candidate function or method.
+    /// @param argumentTypes Inferred argument types.
+    /// @param scope The semantic scope used for parameter type resolution.
+    /// @return The overload score, or `-1` if arguments are incompatible.
+    private int overloadScore(FunctionDeclarationStatement functionDeclaration, TypeSymbol[] argumentTypes, SemanticScope scope) {
+
+        var parameters = functionDeclaration.getParameters();
+        if (parameters.length != argumentTypes.length) return -1;
+
+        var score = 0;
+        for (var i = 0; i < parameters.length; i++) {
+
+            var parameterType = resolveDeclaredType(parameters[i].getType(), parameters[i], scope);
+            var argumentScore = assignabilityScore(parameterType, argumentTypes[i], scope);
+            if (argumentScore < 0) return -1;
+            score += argumentScore;
+        }
+        return score;
+    }
+
+    /// Formats argument types for overload diagnostics.
+    /// @param argumentTypes Inferred argument types.
+    /// @return A parenthesized argument type list.
+    private String argumentTypesText(TypeSymbol[] argumentTypes) {
+
+        var text = new StringBuilder("(");
+        for (var i = 0; i < argumentTypes.length; i++) {
+
+            if (i > 0) text.append(", ");
+            text.append(typeName(argumentTypes[i]));
+        }
+        return text.append(')').toString();
     }
 
     /// Returns a string representing the kind of callable (function or method) for error reporting.
@@ -552,11 +664,84 @@ public final class TypeChecker {
     /// Checks if a value type can be assigned to a target type, considering nullability and type compatibility.
     /// @param targetType The target type to assign to.
     /// @param valueType The value type to assign from.
+    /// @param scope The semantic scope used for inheritance checks.
     /// @return `true` if the value type can be assigned to the target type, `false` otherwise.
-    private boolean isAssignable(TypeSymbol targetType, TypeSymbol valueType) {
-        return targetType == null || valueType == null ||
-                !targetType.isResolved() || !valueType.isResolved() ||
-                sameType(targetType, valueType);
+    private boolean isAssignable(TypeSymbol targetType, TypeSymbol valueType, SemanticScope scope) {
+        return assignabilityScore(targetType, valueType, scope) >= 0;
+    }
+
+    /// Scores assignability between two semantic types. Lower scores are more specific; `-1` means incompatible.
+    /// @param targetType The target type to assign to.
+    /// @param valueType The value type to assign from.
+    /// @param scope The semantic scope used for inheritance checks.
+    /// @return The assignability score, or `-1` if the value cannot be assigned to the target.
+    private int assignabilityScore(TypeSymbol targetType, TypeSymbol valueType, SemanticScope scope) {
+
+        if (targetType == null || valueType == null) return 0;
+        if (!targetType.isResolved() || !valueType.isResolved()) return 0;
+        if (sameType(targetType, valueType)) return 0;
+
+        if (targetType instanceof ClassTypeSymbol targetClass && valueType instanceof ClassTypeSymbol valueClass) {
+
+            var distance = inheritanceDistance(valueClass, targetClass.getName(), scope);
+            if (distance >= 0) return distance;
+        }
+
+        return -1;
+    }
+
+    /// Calculates the inheritance distance from a concrete class type to a target superclass name.
+    /// @param valueClass The concrete class type.
+    /// @param targetClassName The target superclass name.
+    /// @param scope The semantic scope used for superclass resolution.
+    /// @return The inheritance distance, or `-1` if the target is not inherited.
+    private int inheritanceDistance(ClassTypeSymbol valueClass, String targetClassName, SemanticScope scope) {
+
+        var classDeclaration = classDeclaration(valueClass, scope);
+        return inheritanceDistance(classDeclaration, targetClassName, scope, new HashSet<>(), 1);
+    }
+
+    /// Calculates the inheritance distance from a class declaration to a target superclass name.
+    /// @param classDeclaration The class declaration being inspected.
+    /// @param targetClassName The target superclass name.
+    /// @param scope The semantic scope used for superclass resolution.
+    /// @param visitedClasses The class declarations already visited while traversing inheritance.
+    /// @param distance The current inheritance distance.
+    /// @return The inheritance distance, or `-1` if the target is not inherited.
+    private int inheritanceDistance(ClassDeclarationStatement classDeclaration, String targetClassName, SemanticScope scope, Set<ClassDeclarationStatement> visitedClasses, int distance) {
+
+        if (classDeclaration == null || !visitedClasses.add(classDeclaration)) return -1;
+
+        var bestDistance = -1;
+        for (var superClass : classDeclaration.getSuperClasses()) {
+
+            var resolution = typeResolver.resolve(superClass, classDeclaration, scope, "superclass");
+            report(resolution);
+            if (!(resolution.type() instanceof ClassTypeSymbol superClassType)) continue;
+
+            if (superClassType.getName().equals(targetClassName)) bestDistance = bestDistance(bestDistance, distance);
+            else {
+
+                var inheritedDistance = inheritanceDistance(
+                    classDeclaration(superClassType, scope),
+                    targetClassName,
+                    scope,
+                    visitedClasses,
+                    distance + 1
+                );
+                if (inheritedDistance >= 0) bestDistance = bestDistance(bestDistance, inheritedDistance);
+            }
+        }
+
+        return bestDistance;
+    }
+
+    /// Returns the shortest known inheritance distance.
+    /// @param currentBest The current best distance, or `-1` if none is known.
+    /// @param candidate A candidate distance.
+    /// @return The shortest known distance.
+    private int bestDistance(int currentBest, int candidate) {
+        return currentBest < 0 ? candidate : Math.min(currentBest, candidate);
     }
 
     /// Checks if two semantic types are the same.
@@ -594,6 +779,53 @@ public final class TypeChecker {
         for (var child : scope.getChildren())
             if (child.getOwner() == owner && child.getName().equals(name)) return child;
         return scope;
+    }
+
+    /// Finds the class declaration represented by a class type symbol.
+    /// @param classType The class type symbol.
+    /// @param scope The semantic scope used as a fallback lookup context.
+    /// @return The class declaration, or `null` if it cannot be found.
+    private ClassDeclarationStatement classDeclaration(ClassTypeSymbol classType, SemanticScope scope) {
+
+        if (classType.declaration() != null &&
+            classType.declaration().getNode() instanceof ClassDeclarationStatement declaration)
+            return declaration;
+        return visibleClass(scope, classType.getName());
+    }
+
+    /// Resolves member candidates for a member access expression and reports target/member diagnostics.
+    /// @param memberAccess The member access expression to resolve.
+    /// @param scope The semantic scope used for lookup.
+    /// @return Matching direct or inherited member declarations.
+    private List<SemanticDeclaration> resolveMemberCandidates(MemberAccessExpression memberAccess, SemanticScope scope) {
+
+        var objectType = inferExpression(memberAccess.getObject(), scope);
+        if (objectType == null) return List.of();
+
+        if (!(objectType instanceof ClassTypeSymbol classType)) {
+
+            diagnostics.report(Diagnostic.error(
+                DiagnosticPhase.SEMANTIC,
+                "Cannot access member '" + memberAccess.getMemberName() + "' on non-class type " + typeName(objectType),
+                memberAccess.getLine(),
+                memberAccess.getColumn()
+            ));
+            return List.of();
+        }
+
+        var classDeclaration = classDeclaration(classType, scope);
+        if (classDeclaration == null) return List.of();
+
+        var members = classMembers(classDeclaration, memberAccess.getMemberName(), scope);
+        if (!members.isEmpty()) return members;
+
+        diagnostics.report(Diagnostic.error(
+            DiagnosticPhase.SEMANTIC,
+            "Undefined member '" + memberAccess.getMemberName() + "' on type '" + classDeclaration.getName() + "'",
+            memberAccess.getLine(),
+            memberAccess.getColumn()
+        ));
+        return List.of();
     }
 
     /// Reports a type mismatch error when a value type cannot be assigned to a target type.

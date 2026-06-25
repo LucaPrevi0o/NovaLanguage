@@ -85,6 +85,8 @@ Useful cases:
 - invalid assignment targets;
 - type mismatches;
 - invalid function-call arguments;
+- overload selection and no-match diagnostics;
+- subtype assignment and inherited member access;
 - invalid array access;
 - invalid return statements;
 - invalid `break` and `continue` placement.

@@ -15,7 +15,7 @@ Current focus: Phase 5 - type model groundwork.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
-| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, duplicate validation, return/l-value checks, and loop-control checks exist. |
+| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, overload-aware duplicate validation, type checks, return/l-value checks, and loop-control checks exist. |
 | 5. Type model                 | In progress | Parsed type syntax nodes exist; semantic symbols now distinguish class, value, array, generic, and unknown type categories.                             |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
@@ -160,7 +160,7 @@ Tasks:
 - [x] Add name resolution.
 - [x] Add duplicate declaration validation.
 - [x] Add initial assignment and initializer type checking.
-- [ ] Expand type checking across calls, member access, arrays, inheritance, and overload rules.
+- [x] Expand type checking across calls, member access, arrays, inheritance, and overload rules.
 - [x] Add return checking.
 - [x] Add l-value checking.
 - [x] Add `break`/`continue` context checking.
@@ -179,6 +179,10 @@ Parser-owned semantic checks inventory:
 - [x] Type checking pass: identifier-based function calls validate argument count and argument types, and expose their declared return type to surrounding expressions.
 - [x] Type checking pass: array access validates integer indexes, rejects non-array targets, and exposes element types to surrounding expressions.
 - [x] Type checking pass: direct class field access and direct class method calls validate member existence, target type, argument count, and argument types.
+- [x] Type checking pass: class subtype assignment and argument compatibility follow resolved superclass chains.
+- [x] Type checking pass: inherited class fields and methods are visible to member access and method-call analysis.
+- [x] Type checking pass: function and method overload calls select the best parameter-type match and report no-match or ambiguity diagnostics.
+- [x] Duplicate validation pass: function, method, and constructor overloads are grouped by parameter signature, while repeated signatures remain semantic diagnostics.
 - [x] Return checking pass: invalid return placement, value presence, and simple missing-return cases produce semantic diagnostics.
 - [x] Loop-control checking pass: invalid `break` and `continue` placement produces semantic diagnostics.
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
@@ -296,7 +300,7 @@ Goal: add ambitious language features only after the core front-end pipeline is 
 
 Tasks:
 
-- [ ] Method overloading by signature.
+- [ ] Advanced overload and override rules.
 - [ ] Access control.
 - [ ] Inheritance conflict checks.
 - [ ] Generics.
@@ -314,6 +318,6 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Expand type checking across inheritance, overload rules, and richer call/member behavior.
-2. Decide whether AST declarations should expose `TypeSyntax` directly instead of the remaining `ReturnType` adapter.
-3. Keep reducing semantic fallback paths that still read lexer token classes from `ReturnType`.
+1. Decide whether AST declarations should expose `TypeSyntax` directly instead of the remaining `ReturnType` adapter.
+2. Keep reducing semantic fallback paths that still read lexer token classes from `ReturnType`.
+3. Keep advanced inheritance and overload rules scoped to later work: access control, conflict checks, override validation, generic specificity, and conversions.

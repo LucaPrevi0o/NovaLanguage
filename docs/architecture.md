@@ -88,6 +88,9 @@ Current semantic responsibilities include, or are being moved toward:
 - unknown type/name diagnostics;
 - duplicate declaration validation;
 - initial type checking;
+- class subtype assignment and argument compatibility;
+- basic overload selection for functions and methods;
+- inherited class member lookup;
 - l-value validation;
 - return checking;
 - loop-control checking.
@@ -95,8 +98,8 @@ Current semantic responsibilities include, or are being moved toward:
 Future responsibilities include:
 
 - complete type checking;
-- inheritance validation;
-- overload resolution;
+- inheritance conflict and override validation;
+- advanced overload resolution for generics and conversions;
 - access-control checks;
 - generic constraints;
 - standard-library integration through source declarations.
@@ -145,7 +148,7 @@ The parser now builds AST nodes and parser diagnostics. It does not register var
 
 Semantic declaration collection and semantic scope construction are the source of truth for lexical visibility and language meaning.
 
-Declaration and class parsing build parsed type syntax nodes, then adapt them to `ReturnType` only for the existing AST APIs. There is no parser-side type registry. Semantic type symbols now exist, name resolution plus type checking use them internally, and the semantic type resolver reads preserved `TypeSyntax` before legacy `ReturnType` token metadata. The semantic type layer now distinguishes Nova class/object types from Nova value/math types through explicit type kinds.
+Declaration and class parsing build parsed type syntax nodes, then adapt them to `ReturnType` only for the existing AST APIs. There is no parser-side type registry. Semantic type symbols now exist, name resolution plus type checking use them internally, and the semantic type resolver reads preserved `TypeSyntax` before legacy `ReturnType` token metadata. The semantic type layer now distinguishes Nova class/object types from Nova value/math types through explicit type kinds. The current type checker uses those symbols for assignment compatibility, superclass-chain subtype checks, inherited member lookup, and basic overload selection.
 
 ## Future architecture
 

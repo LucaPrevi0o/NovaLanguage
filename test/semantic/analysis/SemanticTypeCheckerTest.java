@@ -285,4 +285,128 @@ public class SemanticTypeCheckerTest {
         assertTrue(diagnostics.getFirst().message().contains("Argument 1"));
         assertTrue(diagnostics.getFirst().message().contains("expects bool but got int"));
     }
+
+    @Test
+    void testAcceptsSubtypeAssignmentToSuperclass() {
+
+        var diagnostics = check("""
+            public class Base { }
+            public class Child :: Base { }
+            Base value = new Child();
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsSuperclassAssignmentToSubtypeMismatch() {
+
+        var diagnostics = check("""
+            public class Base { }
+            public class Child :: Base { }
+            Child value = new Base();
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("cannot assign Base to Child"));
+    }
+
+    @Test
+    void testAcceptsInheritedClassFieldAccess() {
+
+        var diagnostics = check("""
+            public class Base { public int value; }
+            public class Child :: Base { }
+            Child child;
+            int value = child.value;
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testAcceptsInheritedClassMethodCall() {
+
+        var diagnostics = check("""
+            public class Base { public int get() { return 1; } }
+            public class Child :: Base { }
+            Child child;
+            int value = child.get();
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testSelectsFunctionOverloadByArgumentTypes() {
+
+        var diagnostics = check("""
+            int choose(int value) { return value; }
+            bool choose(bool value) { return value; }
+            bool result = choose(true);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsNoMatchingFunctionOverload() {
+
+        var diagnostics = check("""
+            int choose(int value) { return value; }
+            int choose(bool value) { return 1; }
+            int result = choose("text");
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("No matching overload for function 'choose'"));
+        assertTrue(diagnostics.getFirst().message().contains("(string)"));
+    }
+
+    @Test
+    void testPrefersExactFunctionOverloadOverInheritedAssignableOverload() {
+
+        var diagnostics = check("""
+            public class Base { }
+            public class Child :: Base { }
+            int choose(Base value) { return 1; }
+            bool choose(Child value) { return true; }
+            Child child;
+            bool result = choose(child);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsAmbiguousFunctionOverloadAcrossMultipleParents() {
+
+        var diagnostics = check("""
+            public class Left { }
+            public class Right { }
+            public class Child :: Left, Right { }
+            int choose(Left value) { return 1; }
+            int choose(Right value) { return 2; }
+            Child child;
+            int result = choose(child);
+            """);
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("Ambiguous function call 'choose'"));
+    }
+
+    @Test
+    void testSelectsMethodOverloadByArgumentTypes() {
+
+        var diagnostics = check("""
+            public class Box {
+                public int get(int value) { return value; }
+                public bool get(bool value) { return value; }
+            }
+            Box box;
+            bool result = box.get(true);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
 }

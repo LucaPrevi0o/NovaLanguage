@@ -103,6 +103,10 @@ Completed or partially completed work includes:
 - function-call checks for argument count and argument types;
 - array access validation;
 - direct class field and method checks;
+- class subtype assignment and argument compatibility through resolved superclass chains;
+- inherited class field and method lookup;
+- basic function and method overload selection with no-match and ambiguity diagnostics;
+- duplicate validation for repeated overload signatures while allowing distinct function, method, and constructor signatures;
 - return checking;
 - l-value checking;
 - `break` / `continue` context checking;
@@ -113,8 +117,8 @@ Completed or partially completed work includes:
 
 Remaining work includes:
 
-- expanding type checking across inheritance, overloads, arrays, member access, and calls;
-- keeping parser-generated ASTs simple and complete.
+- keeping parser-generated ASTs simple and complete;
+- deferring advanced semantic rules, such as access control, override compatibility, inherited-member conflicts, and generic overload specificity, until the type model boundary is cleaner.
 
 ## Phase 5 - Real type model
 
@@ -138,7 +142,8 @@ Completed work:
 Planned work:
 
 - reduce remaining `ReturnType` fallback paths that still inspect lexer token classes;
-- expand checking for inheritance, overload rules, and richer call/member behavior.
+- decide whether AST declarations should expose parsed `TypeSyntax` directly instead of relying on the `ReturnType` compatibility adapter;
+- continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
 
 This phase is important before implementing advanced language features.
 
@@ -208,7 +213,7 @@ Ambitious language features should wait until the core front-end pipeline is sta
 
 Planned work includes:
 
-- method overloading by signature;
+- advanced overload and override rules;
 - access control;
 - inheritance conflict checks;
 - generics;

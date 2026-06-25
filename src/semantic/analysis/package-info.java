@@ -9,9 +9,10 @@
 /// ## Responsibilities
 ///
 /// - Resolve names against semantic scopes.
-/// - Validate duplicate declarations.
-/// - Check initializer and assignment compatibility.
-/// - Validate function, method, member, and array-access expressions where currently supported.
+/// - Validate duplicate declarations, including overload signatures for functions, methods, and constructors.
+/// - Check initializer and assignment compatibility, including class subtype compatibility through superclass chains.
+/// - Validate function and method calls, direct or inherited member access, and array-access expressions where currently supported.
+/// - Select basic function and method overloads by argument count and semantic argument types.
 /// - Check l-value validity for assignments.
 /// - Check return statements against function and method context.
 /// - Check `break` and `continue` placement.
@@ -26,6 +27,6 @@
 ///
 /// Type checking now compares semantic type symbols internally. Declarations still expose the
 /// transitional `ReturnType` adapter, but the checker resolves those adapters into
-/// `semantic.type` symbols before checking assignability, member access, calls, arrays, and
-/// condition expressions.
+/// `semantic.type` symbols before checking assignability, subtype compatibility, inherited
+/// member access, calls, arrays, overload selection, and condition expressions.
 package semantic.analysis;

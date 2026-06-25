@@ -59,7 +59,59 @@ public class SemanticDuplicateDeclarationValidatorTest {
     }
 
     @Test
-    void testAllowsMultipleConstructorsUntilSignatureValidationExists() {
+    void testAllowsFunctionOverloadsWithDifferentParameterTypes() {
+
+        var diagnostics = validate(parse("""
+            int choose(int value) { return value; }
+            bool choose(bool value) { return value; }
+            """));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsDuplicateFunctionSignature() {
+
+        var diagnostics = validate(parse("""
+            int choose(int value) { return value; }
+            bool choose(int other) { return true; }
+            """));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals(2, diagnostics.getFirst().line());
+        assertTrue(diagnostics.getFirst().message().contains("Duplicate declaration 'choose'"));
+    }
+
+    @Test
+    void testAllowsMethodOverloadsWithDifferentParameterTypes() {
+
+        var diagnostics = validate(parse("""
+            public class Box {
+                public int get(int value) { return value; }
+                public bool get(bool value) { return value; }
+            }
+            """));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsDuplicateMethodSignature() {
+
+        var diagnostics = validate(parse("""
+            public class Box {
+                public int get(int value) { return value; }
+                public bool get(int other) { return true; }
+            }
+            """));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals(3, diagnostics.getFirst().line());
+        assertTrue(diagnostics.getFirst().message().contains("Duplicate declaration 'get'"));
+    }
+
+    @Test
+    void testAllowsConstructorOverloadsWithDifferentParameterTypes() {
 
         var diagnostics = validate(parse("""
             public class Box {
@@ -69,5 +121,19 @@ public class SemanticDuplicateDeclarationValidatorTest {
             """));
 
         assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testReportsDuplicateConstructorSignature() {
+
+        var diagnostics = validate(parse("""
+            public class Box {
+                public Box(int value) { }
+                public Box(int other) { }
+            }
+            """));
+
+        assertEquals(1, diagnostics.size());
+        assertTrue(diagnostics.getFirst().message().contains("Duplicate declaration 'Box'"));
     }
 }

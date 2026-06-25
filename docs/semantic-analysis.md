@@ -116,11 +116,13 @@ class A {}
 
 The parser should not crash or reject these while parsing. It should build the AST and allow semantic analysis to report the duplicate declaration.
 
+Functions, methods, and constructors are overloadable by parameter signature. Declarations with the same name but different parameter type lists are allowed; declarations with the same name and the same parameter type list are duplicate declarations. Return type alone does not create a distinct overload.
+
 ## Type checking
 
 Type checking is currently partial and should be expanded carefully.
 
-Currently implemented or planned checks include:
+Currently implemented checks include:
 
 - initializer compatibility;
 - assignment compatibility;
@@ -128,15 +130,20 @@ Currently implemented or planned checks include:
 - array access checks;
 - direct class field access;
 - direct class method calls;
+- class subtype assignment and argument compatibility through superclass chains;
+- inherited class field and method lookup;
+- basic function and method overload selection by argument count and semantic argument types;
+- no-match and ambiguous-overload diagnostics;
 - return value checks.
 
 Future checks should include:
 
-- inheritance-aware compatibility;
-- overload resolution;
-- generic constraints;
+- inheritance conflict checks;
+- override compatibility;
 - access modifiers;
-- user-defined Nova types;
+- generic constraints;
+- generic-aware overload specificity;
+- user-defined Nova value types;
 - operator overload resolution.
 
 ## L-value checking
@@ -196,6 +203,7 @@ Known limitations include:
 - type checking uses semantic type symbols internally, but declarations still expose `ReturnType` adapters;
 - semantic type symbols now distinguish Nova class/object types from Nova value/math types;
 - parser-side type registry metadata has been removed; declaration/class parsing preserves type spelling through `TypeSyntax`;
+- basic inheritance checks support subtype assignment and inherited member lookup, but access control, inherited-field conflicts, override compatibility, abstract/final behavior, and generic specificity are not implemented yet;
 - the compiler is still single-file oriented;
 - builtins and standard-library declarations are not yet modeled semantically or loaded through the same source pipeline as user code;
 - advanced features such as full generics, lambdas, and monomorphization are deliberately deferred.
