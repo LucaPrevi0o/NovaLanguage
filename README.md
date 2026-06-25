@@ -8,35 +8,40 @@ This repository currently focuses on the **compiler front end**: reading Nova so
 
 The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 
-Current focus: **Phase 4 - semantic analysis split**.
+Current focus: **Phase 5 - type model groundwork**.
+
+Phase 4 is still tracked as in progress because the parser-generated AST still needs a final simplicity/completeness cleanup, but the main parser/semantic split is already in place.
 
 Implemented or partially implemented today:
 
 - Lexical analysis
 - Recursive-descent parsing
-- AST construction
-- Parser recovery and structured diagnostics
+- AST construction with parsed type-syntax preservation
+- Parser recovery and structured lexer/parser diagnostics
 - Semantic declaration collection
 - Semantic scope construction
 - Name resolution
-- Duplicate declaration validation
-- Initial type checking for variables, assignments, calls, arrays, and direct class members
+- Duplicate declaration validation, including overload-signature duplicate checks
+- Parser-side type-registry metadata removal
+- Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
+- Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
 - Return checking
 - L-value checking
 - `break` / `continue` context checking
 - JUnit tests grouped by compiler layer
-- GitHub Actions test automation
+- GitHub Actions Java CI, documentation checks, Wiki mirroring, and Javadoc/GitHub Pages publishing
 
 Not implemented yet:
 
 - A complete semantic type model independent from lexer token classes
+- Declaration AST constructors that no longer need temporary `ReturnType` adapters
 - Multi-file project compilation
 - Semantic standard-library declarations
 - Standard library loading from Nova source files
 - IR generation
 - Optimization
 - Native/backend code generation
-- Advanced Nova features such as full generics, lambdas, variadic generics, monomorphization, access-control checks, and operator-overloadable Nova types
+- Advanced Nova features such as full generics, lambdas, variadic generics, monomorphization, access-control checks, override validation, inherited-member conflict checks, generic overload specificity, and operator-overloadable Nova types
 - Ecosystem tools such as Pulsar, Orbit, Nebula, and Quark package resolution
 
 For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md).
@@ -86,7 +91,9 @@ On Windows:
 .\mvnw.cmd test
 ```
 
-The GitHub Actions workflow runs the test suite automatically on pushed branches and pull requests targeting `main`. It also checks local Markdown documentation links.
+The Java CI workflow runs the test suite automatically on pushes to `main`, pull requests targeting `main`, and manual dispatch. It tests with Temurin JDK 24 and 26, uploads Surefire reports, publishes a JUnit report, and checks local Markdown documentation links.
+
+A separate documentation workflow mirrors Markdown files from `docs/` into the GitHub Wiki and publishes generated Javadocs to GitHub Pages when documentation, source, build, or publishing files change on `main`.
 
 ## What Nova is intended to become
 
