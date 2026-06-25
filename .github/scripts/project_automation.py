@@ -1126,7 +1126,7 @@ def main() -> int:
 
     parser = build_parser()
     args = parser.parse_args()
-    if not args.repo:
+    if hasattr(args, "repo") and not args.repo:
         parser.error("--repo is required when GITHUB_REPOSITORY is not set")
     try:
         return args.func(args)
