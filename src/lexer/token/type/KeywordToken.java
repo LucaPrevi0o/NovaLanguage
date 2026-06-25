@@ -1,7 +1,6 @@
 package lexer.token.type;
 
 import lexer.Token;
-import lexer.token.TokenClass;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.Keyword;
 

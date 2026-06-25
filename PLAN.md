@@ -10,17 +10,17 @@ In this sense, the plan is a living document that can be updated as the project 
 
 Current focus: Phase 5 - type model groundwork.
 
-| Phase                         | Status      | Summary                                                                                                                                                 |
-|-------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                      |
-| 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                     |
-| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                          |
+| Phase                         | Status      | Summary                                                                                                                                                                             |
+|-------------------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                                                  |
+| 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
+| 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, overload-aware duplicate validation, type checks, return/l-value checks, and loop-control checks exist. |
-| 5. Type model                 | In progress | Parsed type syntax nodes exist; semantic symbols now distinguish class, value, array, generic, and unknown type categories.                             |
-| 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                    |
-| 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                              |
-| 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                          |
-| 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                  |
+| 5. Type model                 | In progress | Parsed type syntax nodes exist; semantic symbols now distinguish class, value, array, generic, and unknown type categories.                                                         |
+| 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                                                |
+| 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
+| 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
+| 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                                              |
 
 ## Working Rules
 

@@ -12,14 +12,14 @@ The intent is to make the ecosystem memorable while keeping names attached to cl
 
 ## Core names
 
-| Name | Intended role | Status |
-|------|---------------|--------|
-| **Nova** | The programming language | Design and compiler front-end in progress |
-| **Pulsar** | The Nova compiler | Current Java front-end is the beginning of this tool |
-| **Orbit** | Package manager and dependency tool | Planned |
-| **Nebula** | Community package registry used by Orbit | Planned |
-| **Quark** | A standalone Nova artifact/package | Planned vocabulary |
-| **Core** | Standard base package | Planned |
+| Name       | Intended role                            | Status                                               |
+|------------|------------------------------------------|------------------------------------------------------|
+| **Nova**   | The programming language                 | Design and compiler front-end in progress            |
+| **Pulsar** | The Nova compiler                        | Current Java front-end is the beginning of this tool |
+| **Orbit**  | Package manager and dependency tool      | Planned                                              |
+| **Nebula** | Community package registry used by Orbit | Planned                                              |
+| **Quark**  | A standalone Nova artifact/package       | Planned vocabulary                                   |
+| **Core**   | Standard base package                    | Planned                                              |
 
 A typical future dependency flow should read naturally as:
 
@@ -124,14 +124,14 @@ Actual CLI design is not finalized.
 
 Nova's standard library is expected to be split into a small base package plus optional on-demand packages.
 
-| Name | Intended area |
-|------|---------------|
-| **Core** | Base language/runtime package and fundamental declarations |
-| **Solar** | Math and numeric utilities |
-| **Pulse** | Event-driven programming, I/O, and asynchronous interaction |
-| **Spectrum** | Graphics, rendering, and GPU-oriented utilities |
-| **Echo** | Audio utilities |
-| **Atlas** | Data structures and collections |
+| Name         | Intended area                                               |
+|--------------|-------------------------------------------------------------|
+| **Core**     | Base language/runtime package and fundamental declarations  |
+| **Solar**    | Math and numeric utilities                                  |
+| **Pulse**    | Event-driven programming, I/O, and asynchronous interaction |
+| **Spectrum** | Graphics, rendering, and GPU-oriented utilities             |
+| **Echo**     | Audio utilities                                             |
+| **Atlas**    | Data structures and collections                             |
 
 The standard library should not be treated as one monolithic dependency forever. The intended model is:
 
@@ -229,16 +229,16 @@ Some collection fundamentals may live in Core at first, but Atlas should be the 
 
 The following areas still need names. These are placeholders for future design discussions, not reserved decisions.
 
-| Area | Possible role |
-|------|---------------|
-| Build/workspace metadata | Project manifests, lockfiles, workspaces |
-| Test framework | Compile-time test discovery and generated test registry |
-| Documentation generator | Nova API documentation generation |
-| Formatter | Source formatting tool |
-| Linter/static analyzer | Style and correctness checks beyond compilation |
-| Language server | Editor integration and IDE features |
-| Formatter/package publishing profile | Release automation and package publishing |
-| Native runtime support | Low-level runtime helpers, if needed |
+| Area                                 | Possible role                                           |
+|--------------------------------------|---------------------------------------------------------|
+| Build/workspace metadata             | Project manifests, lockfiles, workspaces                |
+| Test framework                       | Compile-time test discovery and generated test registry |
+| Documentation generator              | Nova API documentation generation                       |
+| Formatter                            | Source formatting tool                                  |
+| Linter/static analyzer               | Style and correctness checks beyond compilation         |
+| Language server                      | Editor integration and IDE features                     |
+| Formatter/package publishing profile | Release automation and package publishing               |
+| Native runtime support               | Low-level runtime helpers, if needed                    |
 
 When adding new names, prefer names that:
 

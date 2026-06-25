@@ -20,7 +20,6 @@ import parser.ast.nodes.expression.access.MemberAccessExpression;
 import parser.ast.nodes.expression.literal.BoolLiteralExpression;
 import parser.ast.nodes.expression.literal.CharLiteralExpression;
 import parser.ast.nodes.expression.literal.IdentifierLiteralExpression;
-import parser.ast.nodes.expression.literal.NullLiteralExpression;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
 import parser.ast.nodes.expression.literal.StringLiteralExpression;
 import parser.ast.nodes.statement.BlockStatement;
@@ -219,12 +218,11 @@ public final class TypeChecker {
             case BoolLiteralExpression _ -> BOOL_TYPE;
             case CharLiteralExpression _ -> ValueTypeSymbol.builtin("char");
             case StringLiteralExpression _ -> ValueTypeSymbol.builtin("string");
-            case NullLiteralExpression _ -> null;
             case NumberLiteralExpression number -> ValueTypeSymbol.builtin(number.getTypeToken().getType().token());
             case IdentifierLiteralExpression identifier -> {
 
                 var declaration = firstVisible(scope, identifier.getName());
-                yield declaration != null ? resolveDeclaredType(declaration.getDeclaredType(), declaration.getNode(), scope) : null;
+                yield declaration != null ? resolveDeclaredType(declaration.declaredType(), declaration.node(), scope) : null;
             }
             case ObjectCreationExpression objectCreation -> {
 
@@ -264,7 +262,7 @@ public final class TypeChecker {
             case MemberAccessExpression memberAccess -> {
 
                 var member = resolveMemberAccess(memberAccess, scope);
-                yield member != null ? resolveDeclaredType(member.getDeclaredType(), member.getNode(), scope) : null;
+                yield member != null ? resolveDeclaredType(member.declaredType(), member.node(), scope) : null;
             }
             case ArrayAccessExpression arrayAccess -> inferArrayAccess(arrayAccess, scope);
             case null, default -> null;
@@ -361,7 +359,7 @@ public final class TypeChecker {
     private SemanticDeclaration preferredMember(List<SemanticDeclaration> members) {
 
         for (var member : members)
-            if (member.getKind() == DeclarationKind.FIELD) return member;
+            if (member.kind() == DeclarationKind.FIELD) return member;
         return members.getFirst();
     }
 
@@ -402,7 +400,7 @@ public final class TypeChecker {
             var callable = selectCallableOverload(identifier.getName(), callables, argumentTypes, call, callableKind(callables.getFirst()), scope);
             if (callable == null) return null;
 
-            return resolveDeclaredType(callable.getDeclaredType(), callable.getNode(), scope);
+            return resolveDeclaredType(callable.declaredType(), callable.node(), scope);
         }
 
         if (call.getCallee() instanceof MemberAccessExpression memberAccess) {
@@ -415,7 +413,7 @@ public final class TypeChecker {
 
                 diagnostics.report(Diagnostic.error(
                     DiagnosticPhase.SEMANTIC,
-                    "Cannot call non-function member '" + members.getFirst().getName() + "'",
+                    "Cannot call non-function member '" + members.getFirst().name() + "'",
                     call.getLine(),
                     call.getColumn()
                 ));
@@ -424,7 +422,7 @@ public final class TypeChecker {
 
             var member = selectCallableOverload(memberAccess.getMemberName(), methods, argumentTypes, call, callableKind(methods.getFirst()), scope);
             if (member == null) return null;
-            return resolveDeclaredType(member.getDeclaredType(), member.getNode(), scope);
+            return resolveDeclaredType(member.declaredType(), member.node(), scope);
         }
 
         return inferExpression(call.getCallee(), scope);
@@ -532,7 +530,7 @@ public final class TypeChecker {
 
         var callables = new ArrayList<SemanticDeclaration>();
         for (var declaration : declarations)
-            if (declaration.getKind() == DeclarationKind.FUNCTION || declaration.getKind() == DeclarationKind.METHOD)
+            if (declaration.kind() == DeclarationKind.FUNCTION || declaration.kind() == DeclarationKind.METHOD)
                 callables.add(declaration);
         return List.copyOf(callables);
     }
@@ -544,7 +542,7 @@ public final class TypeChecker {
 
         var methods = new ArrayList<SemanticDeclaration>();
         for (var declaration : declarations)
-            if (declaration.getKind() == DeclarationKind.METHOD) methods.add(declaration);
+            if (declaration.kind() == DeclarationKind.METHOD) methods.add(declaration);
         return List.copyOf(methods);
     }
 
@@ -561,7 +559,7 @@ public final class TypeChecker {
         if (callables.size() == 1) {
 
             var callable = callables.getFirst();
-            if (callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
+            if (callable.node() instanceof FunctionDeclarationStatement functionDeclaration)
                 checkCallArguments(call, functionDeclaration, argumentTypes, callableKind, scope);
             return callable;
         }
@@ -570,7 +568,7 @@ public final class TypeChecker {
         var matches = new ArrayList<SemanticDeclaration>();
         for (var callable : callables) {
 
-            if (!(callable.getNode() instanceof FunctionDeclarationStatement functionDeclaration)) continue;
+            if (!(callable.node() instanceof FunctionDeclarationStatement functionDeclaration)) continue;
             var score = overloadScore(functionDeclaration, argumentTypes, scope);
             if (score < 0) continue;
             if (score < bestScore) {
@@ -640,7 +638,7 @@ public final class TypeChecker {
     /// @param declaration The semantic declaration to check.
     /// @return A string representing the kind of callable ("Function" or "Method").
     private String callableKind(SemanticDeclaration declaration) {
-        return declaration.getKind() == DeclarationKind.METHOD ? "Method" : "Function";
+        return declaration.kind() == DeclarationKind.METHOD ? "Method" : "Function";
     }
 
     /// Finds the first visible class declaration with the specified name in the given scope and its parent scopes.
@@ -653,8 +651,8 @@ public final class TypeChecker {
         while (current != null) {
 
             for (var declaration : current.findLocal(name))
-                if (declaration.getKind() == DeclarationKind.CLASS &&
-                    declaration.getNode() instanceof ClassDeclarationStatement classDeclaration)
+                if (declaration.kind() == DeclarationKind.CLASS &&
+                    declaration.node() instanceof ClassDeclarationStatement classDeclaration)
                     return classDeclaration;
             current = current.getParent();
         }
@@ -753,20 +751,18 @@ public final class TypeChecker {
         if (left == null || right == null) return false;
         if (!left.isResolved() || !right.isResolved()) return false;
 
-        if (left instanceof ArrayTypeSymbol leftArray && right instanceof ArrayTypeSymbol rightArray)
-            return leftArray.getDimensions() == rightArray.getDimensions() &&
-                    sameType(leftArray.elementType(), rightArray.elementType());
+        return switch (left) {
 
-        if (left instanceof ValueTypeSymbol leftValue && right instanceof ValueTypeSymbol rightValue)
-            return leftValue.getName().equals(rightValue.getName());
-
-        if (left instanceof ClassTypeSymbol leftClass && right instanceof ClassTypeSymbol rightClass)
-            return leftClass.getName().equals(rightClass.getName());
-
-        if (left instanceof GenericParameterSymbol leftGeneric && right instanceof GenericParameterSymbol rightGeneric)
-            return leftGeneric.getName().equals(rightGeneric.getName());
-
-        return false;
+            case ArrayTypeSymbol leftArray when right instanceof ArrayTypeSymbol rightArray ->
+                    leftArray.getDimensions() == rightArray.getDimensions() && sameType(leftArray.elementType(), rightArray.elementType());
+            case ValueTypeSymbol leftValue when right instanceof ValueTypeSymbol rightValue ->
+                    leftValue.getName().equals(rightValue.getName());
+            case ClassTypeSymbol leftClass when right instanceof ClassTypeSymbol rightClass ->
+                    leftClass.getName().equals(rightClass.getName());
+            case GenericParameterSymbol leftGeneric when right instanceof GenericParameterSymbol rightGeneric ->
+                    leftGeneric.getName().equals(rightGeneric.getName());
+            default -> false;
+        };
     }
 
     /// Creates a child semantic scope with the specified name and owner node, or returns the current scope if no matching child scope is found.
@@ -788,7 +784,7 @@ public final class TypeChecker {
     private ClassDeclarationStatement classDeclaration(ClassTypeSymbol classType, SemanticScope scope) {
 
         if (classType.declaration() != null &&
-            classType.declaration().getNode() instanceof ClassDeclarationStatement declaration)
+            classType.declaration().node() instanceof ClassDeclarationStatement declaration)
             return declaration;
         return visibleClass(scope, classType.getName());
     }

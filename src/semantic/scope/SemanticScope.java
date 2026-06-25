@@ -47,7 +47,7 @@ public final class SemanticScope {
 
         if (declaration == null) return;
         declarations.add(declaration);
-        declarationsByName.computeIfAbsent(declaration.getName(), ignored -> new ArrayList<>()).add(declaration);
+        declarationsByName.computeIfAbsent(declaration.name(), ignored -> new ArrayList<>()).add(declaration);
     }
 
     /// Returns the name of the scope.

@@ -31,7 +31,7 @@ public class SemanticScopeBuilderTest {
 
         assertNames(root.findLocal("global"), "global");
         var main = only(root.findLocal("main"), DeclarationKind.FUNCTION);
-        var mainScope = root.childOwnedBy(main.getNode()).orElseThrow();
+        var mainScope = root.childOwnedBy(main.node()).orElseThrow();
 
         assertNames(mainScope.findLocal("arg"), "arg");
         assertNames(mainScope.findLocal("local"), "local");
@@ -55,19 +55,19 @@ public class SemanticScopeBuilderTest {
             """);
 
         var box = only(root.findLocal("Box"), DeclarationKind.CLASS);
-        var boxScope = root.childOwnedBy(box.getNode()).orElseThrow();
+        var boxScope = root.childOwnedBy(box.node()).orElseThrow();
 
         assertNames(boxScope.findLocal("value"), "value");
         assertNames(boxScope.findLocal("get"), "get");
         assertNames(boxScope.findLocal("Box"), "Box");
 
         var method = only(boxScope.findLocal("get"), DeclarationKind.METHOD);
-        var methodScope = boxScope.childOwnedBy(method.getNode()).orElseThrow();
+        var methodScope = boxScope.childOwnedBy(method.node()).orElseThrow();
         assertNames(methodScope.findLocal("fallback"), "fallback");
         assertNames(methodScope.findLocal("local"), "local");
 
         var constructor = only(boxScope.findLocal("Box"), DeclarationKind.CONSTRUCTOR);
-        var constructorScope = boxScope.childOwnedBy(constructor.getNode()).orElseThrow();
+        var constructorScope = boxScope.childOwnedBy(constructor.node()).orElseThrow();
         assertNames(constructorScope.findLocal("value"), "value");
         assertNames(constructorScope.findLocal("constructed"), "constructed");
     }
@@ -88,12 +88,12 @@ public class SemanticScopeBuilderTest {
     }
 
     private void assertNames(List<SemanticDeclaration> declarations, String... names) {
-        assertEquals(List.of(names), declarations.stream().map(SemanticDeclaration::getName).toList());
+        assertEquals(List.of(names), declarations.stream().map(SemanticDeclaration::name).toList());
     }
 
     private SemanticDeclaration only(List<SemanticDeclaration> declarations, DeclarationKind kind) {
         return declarations.stream()
-            .filter(declaration -> declaration.getKind() == kind)
+            .filter(declaration -> declaration.kind() == kind)
             .findFirst()
             .orElseThrow();
     }

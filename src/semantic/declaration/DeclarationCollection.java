@@ -25,7 +25,7 @@ public final class DeclarationCollection {
 
         var matches = new ArrayList<SemanticDeclaration>();
         for (var declaration : declarations)
-            if (declaration.getName().equals(name)) matches.add(declaration);
+            if (declaration.name().equals(name)) matches.add(declaration);
         return List.copyOf(matches);
     }
 
@@ -36,7 +36,7 @@ public final class DeclarationCollection {
 
         var matches = new ArrayList<SemanticDeclaration>();
         for (var declaration : declarations)
-            if (declaration.getKind() == kind) matches.add(declaration);
+            if (declaration.kind() == kind) matches.add(declaration);
         return List.copyOf(matches);
     }
 }

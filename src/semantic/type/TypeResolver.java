@@ -187,7 +187,7 @@ public final class TypeResolver {
         while (current != null) {
 
             for (var declaration : current.findLocal(name))
-                if (declaration.getKind() == DeclarationKind.CLASS) return declaration;
+                if (declaration.kind() == DeclarationKind.CLASS) return declaration;
             current = current.getParent();
         }
         return null;

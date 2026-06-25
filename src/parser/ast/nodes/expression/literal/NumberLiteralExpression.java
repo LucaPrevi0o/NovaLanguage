@@ -2,7 +2,6 @@ package parser.ast.nodes.expression.literal;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
-import lexer.token.family.PrimitiveType;
 import lexer.token.type.TypeToken;
 
 import java.util.List;

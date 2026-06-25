@@ -64,7 +64,7 @@ public final class DuplicateDeclarationValidator {
 
         var groups = new LinkedHashMap<String, List<SemanticDeclaration>>();
         for (var declaration : declarations)
-            groups.computeIfAbsent(declaration.getName(), ignored -> new ArrayList<>()).add(declaration);
+            groups.computeIfAbsent(declaration.name(), ignored -> new ArrayList<>()).add(declaration);
         return groups;
     }
 
@@ -90,9 +90,9 @@ public final class DuplicateDeclarationValidator {
     /// @param declaration The declaration to inspect.
     /// @return `true` for functions, methods, and constructors.
     private boolean isOverloadable(SemanticDeclaration declaration) {
-        return declaration.getKind() == DeclarationKind.FUNCTION ||
-                declaration.getKind() == DeclarationKind.METHOD ||
-                declaration.getKind() == DeclarationKind.CONSTRUCTOR;
+        return declaration.kind() == DeclarationKind.FUNCTION ||
+                declaration.kind() == DeclarationKind.METHOD ||
+                declaration.kind() == DeclarationKind.CONSTRUCTOR;
     }
 
     /// Validates function, method, and constructor declarations that share a name by parameter signature.
@@ -112,7 +112,7 @@ public final class DuplicateDeclarationValidator {
     /// @param declaration The overloadable declaration.
     /// @return A signature string used for duplicate detection.
     private String overloadSignature(SemanticDeclaration declaration) {
-        return declaration.getName() + parameterSignature(parameters(declaration));
+        return declaration.name() + parameterSignature(parameters(declaration));
     }
 
     /// Retrieves parameters from an overloadable declaration.
@@ -120,9 +120,9 @@ public final class DuplicateDeclarationValidator {
     /// @return The declaration parameters, or an empty array if unavailable.
     private FunctionParameter[] parameters(SemanticDeclaration declaration) {
 
-        if (declaration.getNode() instanceof FunctionDeclarationStatement functionDeclaration)
+        if (declaration.node() instanceof FunctionDeclarationStatement functionDeclaration)
             return functionDeclaration.getParameters();
-        if (declaration.getNode() instanceof ClassConstructorDeclaration constructorDeclaration)
+        if (declaration.node() instanceof ClassConstructorDeclaration constructorDeclaration)
             return constructorDeclaration.getParameters();
         return new FunctionParameter[0];
     }
@@ -147,7 +147,7 @@ public final class DuplicateDeclarationValidator {
 
         diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
-            "Duplicate declaration '" + declaration.getName() + "'",
+            "Duplicate declaration '" + declaration.name() + "'",
             declaration.getLine(),
             declaration.getColumn()
         ));

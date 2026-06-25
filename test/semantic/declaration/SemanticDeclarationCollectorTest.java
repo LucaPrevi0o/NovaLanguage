@@ -65,9 +65,9 @@ public class SemanticDeclarationCollectorTest {
         var constructor = collection.byKind(DeclarationKind.CONSTRUCTOR).getFirst();
         var constructorParameter = only(collection.byKind(DeclarationKind.PARAMETER), "value");
 
-        assertSame(box.getNode(), field.getOwner());
-        assertSame(box.getNode(), constructor.getOwner());
-        assertSame(constructor.getNode(), constructorParameter.getOwner());
+        assertSame(box.node(), field.owner());
+        assertSame(box.node(), constructor.owner());
+        assertSame(constructor.node(), constructorParameter.owner());
     }
 
     @Test
@@ -86,12 +86,12 @@ public class SemanticDeclarationCollectorTest {
     }
 
     private void assertNames(List<SemanticDeclaration> declarations, String... names) {
-        assertEquals(List.of(names), declarations.stream().map(SemanticDeclaration::getName).toList());
+        assertEquals(List.of(names), declarations.stream().map(SemanticDeclaration::name).toList());
     }
 
     private SemanticDeclaration only(List<SemanticDeclaration> declarations, String name) {
         return declarations.stream()
-            .filter(declaration -> declaration.getName().equals(name))
+            .filter(declaration -> declaration.name().equals(name))
             .findFirst()
             .orElseThrow();
     }
