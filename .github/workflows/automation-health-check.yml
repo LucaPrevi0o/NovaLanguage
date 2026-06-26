@@ -1,0 +1,42 @@
+name: Check automation health
+
+on:
+  pull_request:
+    paths:
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - "docs/automation-health-check.md"
+      - "docs/documentation-publishing.md"
+      - "docs/issue-forms.md"
+      - "docs/project-automation.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automation-health-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-automation-health:
+    name: Check automation health
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check workflow and script wiring
+        run: python3 .github/scripts/automation_health.py
+
+      - name: Check shared issue-form fields
+        run: python3 .github/scripts/issue_forms.py --check
+
+      - name: Check native metadata helper
+        run: |
+          python3 .github/scripts/issue_metadata.py \
+            --issue-number 0 \
+            --labels refactor \
+            --milestone "Nova MVP compiler"
