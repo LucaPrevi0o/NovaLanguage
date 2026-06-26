@@ -1,5 +1,5 @@
 name: Compiler task
-description: Track a focused compiler task, refactor, test, documentation, or cleanup item.
+description: Track a focused compiler task, test, documentation, or cleanup item.
 title: "task: "
 labels:
   - refactor
@@ -18,9 +18,8 @@ body:
       label: Milestone
       description: Choose the deliverable or feature track this issue belongs to.
       options:
-        - Nova MVP compiler
-        - Future development
         - Project workflow
+        - Nova MVP compiler
         - Advanced overload and override rules
         - Access control
         - Inheritance conflict checks
@@ -31,14 +30,15 @@ body:
         - Lambdas
         - Variadic generics
         - Monomorphization
-      default: 0
+        - Future development
+      default: 1
     validations:
       required: true
   - type: checkboxes
     id: labels
     attributes:
       label: Labels
-      description: Select the managed labels that describe this issue. The managed labels describe the type of work, not the design decision itself. For example, a design decision about generics may be labeled as "research" or "refactor" depending on the nature of the work.
+      description: Select the managed labels that describe this issue. Managed labels describe the type of work, not the milestone or design area.
       options:
         - label: bug
         - label: feature
@@ -51,7 +51,7 @@ body:
     id: priority
     attributes:
       label: Priority
-      description: Select the priority of this design task. The priority is used to order the design tasks in the roadmap.
+      description: Select the priority used by the roadmap Project.
       options:
         - 0 - Blocks progress
         - 1 - Important next step
@@ -64,7 +64,7 @@ body:
     id: size
     attributes:
       label: Size
-      description: Select the size of this design task. The size is used to order the design tasks in the roadmap.
+      description: Select the expected implementation and review size.
       options:
         - XS
         - S
@@ -78,7 +78,7 @@ body:
     id: suggested-status
     attributes:
       label: Suggested status
-      description: Select the suggested status of this design task. The status is used to order the design tasks in the roadmap.
+      description: Select the initial roadmap status to write into the Project.
       options:
         - Backlog
         - Ready
