@@ -1,0 +1,138 @@
+name: Refactoring task
+description: Track a behavior-preserving code, test, workflow, or documentation restructuring.
+title: "refactor: "
+labels:
+  - refactor
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the behavior-preserving improvement this issue should complete.
+      placeholder: State the refactor target in one or two concrete sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      description: Choose the deliverable or feature track this issue belongs to.
+      options:
+        - Project workflow
+        - Nova MVP compiler
+        - Advanced overload and override rules
+        - Access control
+        - Inheritance conflict checks
+        - Generics
+        - Bounded generics
+        - Class parameters
+        - Operator-overloadable Nova types
+        - Lambdas
+        - Variadic generics
+        - Monomorphization
+        - Future development
+      default: 1
+    validations:
+      required: true
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Labels
+      description: Select the managed labels that describe this issue. Managed labels describe the type of work, not the milestone or design area.
+      options:
+        - label: bug
+        - label: feature
+        - label: refactor
+        - label: design
+        - label: research
+        - label: test
+        - label: docs
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority used by the roadmap Project.
+      options:
+        - 0 - Blocks progress
+        - 1 - Important next step
+        - 2 - Possible next focus
+        - 3 - Later addition
+      default: 2
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      description: Select the expected implementation and review size.
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+      default: 1
+    validations:
+      required: true
+  - type: dropdown
+    id: suggested-status
+    attributes:
+      label: Suggested status
+      description: Select the initial roadmap status to write into the Project.
+      options:
+        - Backlog
+        - Ready
+        - In Progress
+        - Blocked
+        - In Review
+        - Done
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Explain what duplication, coupling, unclear ownership, or maintenance cost this refactor removes.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        - [ ] Keep externally visible behavior unchanged.
+        - [ ] Preserve or improve focused test coverage.
+        - [ ] Update docs or package comments when ownership or workflow changes.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: List behavior changes that should not be included in this refactor.
+      placeholder: |
+        - ...
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] The refactor is behavior-preserving or explicitly documents any unavoidable observable change.
+        - [ ] Tests are unchanged, moved, or added to protect the refactored behavior.
+        - [ ] Relevant documentation is updated when ownership or workflow changes.
+        - [ ] `./mvnw test` passes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Record commands to run before opening or merging the PR.
+      value: |
+        - [ ] `./mvnw test`
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add links to related issues, PRs, docs, or suspected files.
