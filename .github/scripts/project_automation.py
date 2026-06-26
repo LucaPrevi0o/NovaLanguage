@@ -189,6 +189,7 @@ class Issue:
     title: str
     body: str
     url: str
+    state: str
     labels: tuple[str, ...] = ()
     milestone: str | None = None
 
@@ -227,11 +228,22 @@ class PullRequest:
 class ProjectItem:
     """GitHub Project item data used by drift checks."""
 
+    id: str
     number: int | None
     title: str
     url: str | None
     state: str | None
     milestone: str | None
+    archived: bool
+    fields: dict[str, str]
+
+
+@dataclass(frozen=True)
+class ProjectIssueItem:
+    """One issue's item in the configured GitHub Project."""
+
+    id: str
+    archived: bool
     fields: dict[str, str]
 
 
@@ -467,22 +479,35 @@ def get_issue(client: GitHubClient, repository: str, number: int) -> Issue:
         title=payload["title"],
         body=payload.get("body") or "",
         url=payload["html_url"],
+        state=payload["state"],
         labels=tuple(label["name"] for label in payload.get("labels", [])),
         milestone=payload["milestone"]["title"] if payload.get("milestone") else None,
     )
 
 
-def list_open_issues(client: GitHubClient, repository: str) -> list[int]:
-    """Return all open issue numbers for a repository."""
+def list_issues_by_state(client: GitHubClient, repository: str, state: str) -> list[int]:
+    """Return issue numbers for one repository state."""
 
     numbers: list[int] = []
     page = 1
     while True:
-        payload = client.rest("GET", f"/repos/{repository}/issues?state=open&per_page=100&page={page}")
+        payload = client.rest("GET", f"/repos/{repository}/issues?state={state}&per_page=100&page={page}")
         if not payload:
             return numbers
         numbers.extend(issue["number"] for issue in payload if "pull_request" not in issue)
         page += 1
+
+
+def list_open_issues(client: GitHubClient, repository: str) -> list[int]:
+    """Return all open issue numbers for a repository."""
+
+    return list_issues_by_state(client, repository, "open")
+
+
+def list_closed_issues(client: GitHubClient, repository: str) -> list[int]:
+    """Return all closed issue numbers for a repository."""
+
+    return list_issues_by_state(client, repository, "closed")
 
 
 def get_pull_request(client: GitHubClient, repository: str, number: int) -> PullRequest:
@@ -630,6 +655,8 @@ def list_project_items(client: GitHubClient) -> list[ProjectItem]:
                       endCursor
                     }
                     nodes {
+                      id
+                      isArchived
                       content {
                         ... on Issue {
                           number
@@ -681,11 +708,13 @@ def list_project_items(client: GitHubClient) -> list[ProjectItem]:
                     continue
                 fields[field["name"]] = value.get("name") or value.get("text") or ""
             items.append(ProjectItem(
+                id=node["id"],
                 number=content.get("number"),
                 title=content.get("title", ""),
                 url=content.get("url"),
                 state=content.get("state"),
                 milestone=content["milestone"]["title"] if content.get("milestone") else None,
+                archived=node["isArchived"],
                 fields=fields,
             ))
         if not project_items["pageInfo"]["hasNextPage"]:
@@ -693,20 +722,41 @@ def list_project_items(client: GitHubClient) -> list[ProjectItem]:
         cursor = project_items["pageInfo"]["endCursor"]
 
 
-def project_item_id(client: GitHubClient, project: Project, issue: Issue) -> str | None:
-    """Return the Project item ID for an issue, if it is already in the Project."""
+def project_issue_item(client: GitHubClient, project: Project, issue: Issue) -> ProjectIssueItem | None:
+    """Return the Project item for an issue, including archived items."""
 
     data = client.graphql(
         """
         query($issueId: ID!) {
           node(id: $issueId) {
             ... on Issue {
-              projectItems(first: 50) {
+              projectItems(first: 50, includeArchived: true) {
                 nodes {
                   id
+                  isArchived
                   project {
                     id
                     title
+                  }
+                  fieldValues(first: 50) {
+                    nodes {
+                      ... on ProjectV2ItemFieldSingleSelectValue {
+                        name
+                        field {
+                          ... on ProjectV2FieldCommon {
+                            name
+                          }
+                        }
+                      }
+                      ... on ProjectV2ItemFieldTextValue {
+                        text
+                        field {
+                          ... on ProjectV2FieldCommon {
+                            name
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -718,8 +768,21 @@ def project_item_id(client: GitHubClient, project: Project, issue: Issue) -> str
     )
     for node in data["node"]["projectItems"]["nodes"]:
         if node["project"]["id"] == project.id:
-            return node["id"]
+            fields: dict[str, str] = {}
+            for value in node["fieldValues"]["nodes"]:
+                field = value.get("field")
+                if not field:
+                    continue
+                fields[field["name"]] = value.get("name") or value.get("text") or ""
+            return ProjectIssueItem(id=node["id"], archived=node["isArchived"], fields=fields)
     return None
+
+
+def project_item_id(client: GitHubClient, project: Project, issue: Issue) -> str | None:
+    """Return the Project item ID for an issue, if it is already in the Project."""
+
+    item = project_issue_item(client, project, issue)
+    return item.id if item else None
 
 
 def add_issue_to_project(client: GitHubClient, project: Project, issue: Issue) -> str:
@@ -742,6 +805,40 @@ def add_issue_to_project(client: GitHubClient, project: Project, issue: Issue) -
         {"projectId": project.id, "contentId": issue.node_id},
     )
     return data["addProjectV2ItemById"]["item"]["id"]
+
+
+def archive_project_item(client: GitHubClient, project: Project, item_id: str) -> None:
+    """Archive one Project item."""
+
+    client.graphql(
+        """
+        mutation($projectId: ID!, $itemId: ID!) {
+          archiveProjectV2Item(input: {projectId: $projectId, itemId: $itemId}) {
+            item {
+              id
+            }
+          }
+        }
+        """,
+        {"projectId": project.id, "itemId": item_id},
+    )
+
+
+def unarchive_project_item(client: GitHubClient, project: Project, item_id: str) -> None:
+    """Unarchive one Project item."""
+
+    client.graphql(
+        """
+        mutation($projectId: ID!, $itemId: ID!) {
+          unarchiveProjectV2Item(input: {projectId: $projectId, itemId: $itemId}) {
+            item {
+              id
+            }
+          }
+        }
+        """,
+        {"projectId": project.id, "itemId": item_id},
+    )
 
 
 def set_single_select_value(client: GitHubClient, project: Project, item_id: str, field: ProjectField, option_id: str) -> None:
@@ -785,6 +882,49 @@ def set_issue_status(client: GitHubClient, repository: str, issue_number: int, s
     item_id = add_issue_to_project(client, project, issue)
     set_single_select_value(client, project, item_id, field, option_id)
     print(f"Set #{issue_number} status to {status_name}")
+
+
+def sync_issue_archive(client: GitHubClient, repository: str, issue_number: int) -> bool:
+    """Sync one issue's archived Project state from its open/closed state."""
+
+    issue = get_issue(client, repository, issue_number)
+    project = get_project(client)
+    item = project_issue_item(client, project, issue)
+
+    if item is None:
+        if issue.state == "open":
+            add_issue_to_project(client, project, issue)
+            print(f"Added open #{issue.number} to Project; it is visible by default")
+            return True
+        print(f"::warning::Closed #{issue.number} is not in the Project; cannot archive it")
+        return False
+
+    if issue.state == "closed":
+        status = item.fields.get(STATUS_FIELD)
+        if status != DONE_STATUS:
+            visible_status = status or "unset"
+            print(
+                f"::warning::Closed #{issue.number} has Project status '{visible_status}', "
+                f"not '{DONE_STATUS}'; not archiving"
+            )
+            return False
+        if item.archived:
+            print(f"#{issue.number} is already archived")
+            return False
+        archive_project_item(client, project, item.id)
+        print(f"Archived #{issue.number} from Project")
+        return True
+
+    if issue.state == "open":
+        if not item.archived:
+            print(f"#{issue.number} is already visible in Project")
+            return False
+        unarchive_project_item(client, project, item.id)
+        print(f"Unarchived #{issue.number} in Project")
+        return True
+
+    print(f"::warning::Issue #{issue.number} has unsupported state '{issue.state}'; not changing archive state")
+    return False
 
 
 def ensure_label(client: GitHubClient, repository: str, label: str, color: str, description: str) -> None:
@@ -1010,6 +1150,8 @@ def sync_pr_status_command(args: argparse.Namespace) -> int:
 
     for issue_number in sorted(targets):
         set_issue_status(client, args.repo, issue_number, target_status)
+        if target_status == DONE_STATUS:
+            sync_issue_archive(client, args.repo, issue_number)
     return 0
 
 
@@ -1035,6 +1177,33 @@ def sync_issue_command(args: argparse.Namespace) -> int:
             print(f"::error::Failed to sync #{number}: {error}")
             if args.strict:
                 break
+
+    return 1 if failures else 0
+
+
+def sync_issue_archive_command(args: argparse.Namespace) -> int:
+    """Run the sync-issue-archive subcommand."""
+
+    client = GitHubClient(token_from_environment())
+
+    issue_numbers: list[int]
+    selected_modes = sum(1 for selected in (args.issue_number is not None, args.all_open, args.all_closed) if selected)
+    if selected_modes != 1:
+        raise ProjectAutomationError("Provide exactly one of --issue-number, --all-open, or --all-closed")
+    if args.issue_number is not None:
+        issue_numbers = [args.issue_number]
+    elif args.all_open:
+        issue_numbers = list_open_issues(client, args.repo)
+    else:
+        issue_numbers = list_closed_issues(client, args.repo)
+
+    failures = 0
+    for number in issue_numbers:
+        try:
+            sync_issue_archive(client, args.repo, number)
+        except ProjectAutomationError as error:
+            failures += 1
+            print(f"::error::Failed to sync archive state for #{number}: {error}")
 
     return 1 if failures else 0
 
@@ -1269,6 +1438,16 @@ def build_parser() -> argparse.ArgumentParser:
     labels_parser.add_argument("--all-open", action="store_true", help="Sync labels for all open issues")
     labels_parser.add_argument("--strict", action="store_true", help="Fail on missing or invalid issue metadata")
     labels_parser.set_defaults(func=sync_labels_command)
+
+    archive_parser = subparsers.add_parser(
+        "sync-issue-archive",
+        help="Archive closed Done issues and unarchive open issues in the Project",
+    )
+    archive_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
+    archive_parser.add_argument("--issue-number", type=int, help="Issue number to sync")
+    archive_parser.add_argument("--all-open", action="store_true", help="Sync archive state for all open issues")
+    archive_parser.add_argument("--all-closed", action="store_true", help="Sync archive state for all closed issues")
+    archive_parser.set_defaults(func=sync_issue_archive_command)
 
     drift_parser = subparsers.add_parser("check-plan-drift", help="Check PLAN.md and Project state alignment")
     drift_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")

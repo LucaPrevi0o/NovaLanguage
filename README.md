@@ -33,7 +33,7 @@ Implemented or partially implemented today:
 - L-value checking
 - `break` / `continue` context checking
 - JUnit tests grouped by compiler layer
-- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, YAML issue forms, deliverable-based Project milestone automation, and label-based issue-kind automation
+- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, YAML issue forms, deliverable-based Project milestone automation, label-based issue-kind automation, and issue archive-state automation
 
 Not implemented yet:
 
@@ -97,7 +97,7 @@ On Windows:
 
 The Java CI workflow runs the test suite automatically on pushes to `main`, pull requests targeting `main`, and manual dispatch. It tests with Temurin JDK 24 and 26, uploads Surefire reports, publishes a JUnit report, and checks local Markdown documentation links.
 
-A separate documentation workflow mirrors Markdown files from `docs/` into the GitHub Wiki and publishes generated Javadocs to GitHub Pages when documentation, source, build, or publishing files change on `main`.
+A separate documentation workflow mirrors Markdown files from `docs/` into the GitHub Wiki and publishes generated Javadocs to GitHub Pages when documentation, source, build, or publishing files change on `main`. Project automation workflows keep issue milestones, managed labels, PR-derived status, and archive visibility aligned with the roadmap Project.
 
 ## What Nova is intended to become
 

@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-06-25
+Last updated: 2026-06-26
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -53,6 +53,7 @@ Status: Current.
 - [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
 - [x] GitHub issue milestones now own roadmap grouping for Project automation; Phase 1-8 work is tracked under `Nova MVP compiler`, Phase 9 work uses dedicated advanced-feature milestones, and custom Project `Phase`/`Kind` duplicates are removed in favor of milestones and labels.
 - [x] GitHub issue creation uses YAML issue forms so metadata is selected through structured fields before automation syncs milestones, labels, and Project fields.
+- [x] Closed issues marked `Done` can be archived from the roadmap Project, while reopened/open issues can be made visible again without changing their historical status.
 
 ## Phase 1 - Restore Build Health
 
