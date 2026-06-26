@@ -148,9 +148,11 @@ Responsibilities:
   represent kind metadata;
 - report missing or invalid metadata clearly.
 
-## Planned workflow automation
+## Workflow automation roadmap
 
-Additional workflow automation is tracked under issue #36.
+The current workflow automation set was coordinated under issue #36. New
+automation should be introduced through focused follow-up issues before it is
+added to this script.
 
 ## Pull request status sync
 
@@ -177,7 +179,44 @@ Rules:
 - draft pull requests do not change issue status;
 - non-draft pull requests move referenced issues to `In Review`;
 - merged pull requests move only closing-keyword issue references to `Done`;
-- the workflow updates Project status only and does not close issues directly.
+- the workflow updates Project status only and does not close issues directly;
+- after a merged closing-keyword PR moves an issue to `Done`, the same script
+  attempts the issue archive sync rule described below.
+
+## Issue archive sync
+
+Workflow: `.github/workflows/project-archive-sync.yml`
+
+Script command:
+
+```bash
+python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --issue-number 39
+```
+
+Bulk repair commands:
+
+```bash
+python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-closed
+python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-open
+```
+
+Triggers:
+
+- issue closed;
+- issue reopened;
+- manual dispatch for one issue;
+- manual dispatch for every closed issue;
+- manual dispatch for every open issue.
+
+Rules:
+
+- closed issues are archived only when their roadmap Project status is already
+  `Done`;
+- closed issues with another status produce a warning and remain visible;
+- reopened/open issues are unarchived when they already exist in the Project;
+- open issues missing from the Project are added back as visible items;
+- the workflow does not change issue status, reopen issues, close issues, or edit
+  issue metadata.
 
 ## Issue label sync
 
