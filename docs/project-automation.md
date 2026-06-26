@@ -31,7 +31,7 @@ Project sync reads this block from issue bodies:
 - Suggested status: Ready
 ```
 
-Supported synced fields:
+Supported metadata keys:
 
 - `Milestone`
 - `Kind`
@@ -39,10 +39,15 @@ Supported synced fields:
 - `Size`
 - `Suggested status`
 
-The workflow writes `Milestone` to the GitHub issue milestone. Legacy `Phase`
-metadata is still accepted during migration, but Phase 1 through Phase 8 values
-now map to the shared `Nova MVP compiler` milestone instead of one milestone per
-internal roadmap phase.
+The issue sync workflow writes `Milestone` to the GitHub issue milestone and
+writes `Priority`, `Size`, and `Suggested status` to Project fields. Legacy
+`Phase` metadata is still accepted during migration, but Phase 1 through Phase 8
+values now map to the shared `Nova MVP compiler` milestone instead of one
+milestone per internal roadmap phase.
+
+The label sync workflow writes `Kind` metadata to GitHub issue labels. `Kind`
+may contain one value, such as `refactor`, or multiple values separated with
+slashes, commas, or semicolons, such as `docs / design`.
 
 The legacy custom Project `Phase` field has been removed from the roadmap
 Project. The cleanup command remains available as an idempotent maintenance
@@ -50,6 +55,14 @@ helper:
 
 ```bash
 python3 .github/scripts/project_automation.py remove-legacy-phase-field --confirm
+```
+
+The legacy custom Project `Kind` field is also deprecated because labels are the
+source of truth. After label-only automation is active on the default branch,
+remove it with:
+
+```bash
+python3 .github/scripts/project_automation.py remove-legacy-kind-field --confirm
 ```
 
 Managed milestone names:
@@ -101,9 +114,11 @@ Responsibilities:
 - add the issue to the roadmap Project when missing;
 - parse the issue `Project metadata` block;
 - sync roadmap grouping into the issue milestone;
-- sync remaining valid metadata into Project fields;
+- sync `Priority`, `Size`, and `Suggested status` into Project fields;
 - ignore the removed custom Project `Phase` field while still accepting legacy
   `Phase` metadata in issue bodies;
+- ignore the deprecated custom Project `Kind` field because issue labels now
+  represent kind metadata;
 - report missing or invalid metadata clearly.
 
 ## Planned workflow automation
@@ -156,7 +171,7 @@ Triggers:
 - manual dispatch for one issue;
 - manual dispatch for every open issue.
 
-The workflow syncs only labels owned by the Project `Kind` field:
+The workflow syncs only labels owned by `Kind` metadata:
 
 - `bug`
 - `feature`
@@ -166,7 +181,10 @@ The workflow syncs only labels owned by the Project `Kind` field:
 - `test`
 - `docs`
 
-It may remove stale labels from that managed set when an issue's kind changes, but it does not remove unrelated labels that were added manually.
+It may remove stale labels from that managed set when an issue's kind changes,
+but it does not remove unrelated labels that were added manually. Multiple kind
+values are supported in one metadata block, so `Kind: docs / design` keeps both
+the `docs` and `design` labels on the issue.
 
 ## Roadmap drift check
 

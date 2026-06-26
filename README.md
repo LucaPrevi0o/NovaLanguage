@@ -33,7 +33,7 @@ Implemented or partially implemented today:
 - L-value checking
 - `break` / `continue` context checking
 - JUnit tests grouped by compiler layer
-- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, and deliverable-based Project milestone automation
+- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, deliverable-based Project milestone automation, and label-based issue-kind automation
 
 Not implemented yet:
 
