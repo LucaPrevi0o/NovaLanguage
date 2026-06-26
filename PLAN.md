@@ -52,6 +52,7 @@ Status: Current.
 - [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, `semantic.scope`, and `semantic.type`.
 - [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
 - [x] GitHub issue milestones now own roadmap grouping for Project automation; Phase 1-8 work is tracked under `Nova MVP compiler`, Phase 9 work uses dedicated advanced-feature milestones, and custom Project `Phase`/`Kind` duplicates are removed in favor of milestones and labels.
+- [x] GitHub issue creation uses YAML issue forms so metadata is selected through structured fields before automation syncs milestones, labels, and Project fields.
 
 ## Phase 1 - Restore Build Health
 

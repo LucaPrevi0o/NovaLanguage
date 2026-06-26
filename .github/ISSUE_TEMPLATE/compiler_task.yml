@@ -1,0 +1,147 @@
+name: Compiler task
+description: Track a focused compiler task, refactor, test, documentation, or cleanup item.
+title: "task: "
+labels:
+  - refactor
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the smallest useful compiler or documentation improvement this issue should complete.
+      placeholder: Describe the task in one or two concrete sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      description: Choose the deliverable or feature track this issue belongs to.
+      options:
+        - Nova MVP compiler
+        - Future development
+        - Project workflow
+        - Advanced overload and override rules
+        - Access control
+        - Inheritance conflict checks
+        - Generics
+        - Bounded generics
+        - Class parameters
+        - Operator-overloadable Nova types
+        - Lambdas
+        - Variadic generics
+        - Monomorphization
+      default: 0
+    validations:
+      required: true
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Labels
+      description: Select the managed labels that describe this issue.
+      options:
+        - label: bug
+        - label: feature
+        - label: refactor
+        - label: design
+        - label: research
+        - label: test
+        - label: docs
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      description: Identify the compiler area or workflow area.
+      placeholder: type-system / semantic-analysis
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+      default: 2
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S
+        - M
+        - L
+      default: 1
+    validations:
+      required: true
+  - type: dropdown
+    id: suggested-status
+    attributes:
+      label: Suggested status
+      options:
+        - Backlog
+        - Ready
+        - In Progress
+        - Blocked
+        - In Review
+        - Done
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Link the relevant PLAN.md phase, docs page, previous issue, or implementation limitation.
+      value: |
+        Relevant docs:
+
+        - `PLAN.md`
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the concrete work that belongs in this issue.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Make the boundary explicit so the issue stays small and reviewable.
+      placeholder: |
+        - ...
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] The change is tied to one compiler layer or one clearly described workflow improvement.
+        - [ ] Behavior changes include focused tests, or the issue explains why this is docs/configuration-only.
+        - [ ] Parser work remains syntactic unless syntax truly changes.
+        - [ ] Relevant docs, package documentation, or roadmap notes are updated when meaningful.
+        - [ ] `./mvnw test` passes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Record commands to run before opening or merging the PR.
+      value: |
+        - [ ] `./mvnw test`
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add links to related issues, PRs, docs, or suspected files.
