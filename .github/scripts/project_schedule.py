@@ -4,20 +4,23 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import re
 import sys
-import urllib.error
-import urllib.request
-from dataclasses import dataclass
 from datetime import date
-from typing import Any
 
-API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com")
-GRAPHQL_URL = os.environ.get("GITHUB_GRAPHQL_URL", "https://api.github.com/graphql")
-PROJECT_OWNER = os.environ.get("PROJECT_OWNER", "LucaPrevi0o")
-PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER", "4"))
+from project_automation import (
+    GitHubClient,
+    Project,
+    ProjectAutomationError,
+    ProjectField,
+    add_issue_to_project,
+    get_issue,
+    get_project,
+    list_open_issues,
+    token_from_environment,
+)
+
 START_DATE_FIELD = os.environ.get("PROJECT_START_DATE_FIELD", "Start date")
 END_DATE_FIELD = os.environ.get("PROJECT_END_DATE_FIELD", "End date")
 NO_RESPONSE = "_No response_"
@@ -36,100 +39,6 @@ SCHEDULE_FIELD_ALIASES = {
 
 class ProjectScheduleError(RuntimeError):
     """Raised when schedule metadata cannot be synchronized safely."""
-
-
-@dataclass(frozen=True)
-class Issue:
-    """GitHub issue data needed by schedule sync."""
-
-    number: int
-    node_id: str
-    title: str
-    body: str
-
-
-@dataclass(frozen=True)
-class ProjectField:
-    """GitHub Project field metadata."""
-
-    id: str
-    name: str
-
-
-@dataclass(frozen=True)
-class Project:
-    """GitHub Project metadata used by schedule sync."""
-
-    id: str
-    title: str
-    fields: dict[str, ProjectField]
-
-
-class GitHubClient:
-    """Small GitHub REST/GraphQL client backed by the workflow token."""
-
-    def __init__(self, token: str) -> None:
-        if not token:
-            raise ProjectScheduleError(
-                "Missing GitHub token. Set PROJECT_TOKEN with project write access, or provide GITHUB_TOKEN "
-                "for read-only repository access."
-            )
-        self.token = token
-
-    def rest(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
-        """Call the GitHub REST API."""
-
-        url = f"{API_URL.rstrip('/')}/{path.lstrip('/')}"
-        data = json.dumps(payload).encode("utf-8") if payload is not None else None
-        request = urllib.request.Request(
-            url,
-            data=data,
-            method=method,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {self.token}",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "User-Agent": "NovaLanguage-project-schedule-sync",
-            },
-        )
-        return self._open_json(request)
-
-    def graphql(self, query: str, variables: dict[str, Any] | None = None) -> Any:
-        """Call the GitHub GraphQL API."""
-
-        request = urllib.request.Request(
-            GRAPHQL_URL,
-            data=json.dumps({"query": query, "variables": variables or {}}).encode("utf-8"),
-            method="POST",
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {self.token}",
-                "User-Agent": "NovaLanguage-project-schedule-sync",
-            },
-        )
-        response = self._open_json(request)
-        errors = response.get("errors")
-        if errors:
-            messages = "; ".join(error.get("message", str(error)) for error in errors)
-            raise ProjectScheduleError(messages)
-        return response["data"]
-
-    def _open_json(self, request: urllib.request.Request) -> Any:
-        try:
-            with urllib.request.urlopen(request) as response:
-                content = response.read().decode("utf-8")
-        except urllib.error.HTTPError as error:
-            detail = error.read().decode("utf-8")
-            raise ProjectScheduleError(f"GitHub API {error.code}: {detail}") from error
-        if not content:
-            return None
-        return json.loads(content)
-
-
-def token_from_environment() -> str:
-    """Return the best token available to the workflow."""
-
-    return os.environ.get("PROJECT_TOKEN") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
 
 
 def normalize_key(value: str) -> str:
@@ -246,118 +155,16 @@ def normalized_schedule(metadata: dict[str, str]) -> dict[str, str]:
     return schedule
 
 
-def get_issue(client: GitHubClient, repository: str, number: int) -> Issue:
-    """Fetch one issue through the REST API."""
+def project_date_field(project: Project, field_name: str) -> ProjectField:
+    """Return one Project date field by name, or fail with setup guidance."""
 
-    payload = client.rest("GET", f"/repos/{repository}/issues/{number}")
-    if "pull_request" in payload:
-        raise ProjectScheduleError(f"#{number} is a pull request, not an issue")
-    return Issue(
-        number=payload["number"],
-        node_id=payload["node_id"],
-        title=payload["title"],
-        body=payload.get("body") or "",
-    )
-
-
-def list_open_issues(client: GitHubClient, repository: str) -> list[int]:
-    """Return all open issue numbers for one repository."""
-
-    numbers: list[int] = []
-    page = 1
-    while True:
-        payload = client.rest("GET", f"/repos/{repository}/issues?state=open&per_page=100&page={page}")
-        if not payload:
-            return numbers
-        numbers.extend(issue["number"] for issue in payload if "pull_request" not in issue)
-        page += 1
-
-
-def get_project(client: GitHubClient) -> Project:
-    """Fetch the configured user-owned Project and its fields."""
-
-    data = client.graphql(
-        """
-        query($owner: String!, $number: Int!) {
-          user(login: $owner) {
-            projectV2(number: $number) {
-              id
-              title
-              fields(first: 50) {
-                nodes {
-                  ... on ProjectV2FieldCommon {
-                    id
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-        """,
-        {"owner": PROJECT_OWNER, "number": PROJECT_NUMBER},
-    )
-    project_data = data["user"]["projectV2"]
-    if project_data is None:
-        raise ProjectScheduleError(f"Project {PROJECT_OWNER}/{PROJECT_NUMBER} was not found")
-
-    fields: dict[str, ProjectField] = {}
-    for node in project_data["fields"]["nodes"]:
-        if node is None:
-            continue
-        fields[node["name"]] = ProjectField(node["id"], node["name"])
-
-    return Project(project_data["id"], project_data["title"], fields)
-
-
-def project_item_id(client: GitHubClient, project: Project, issue: Issue) -> str | None:
-    """Return the Project item ID for an issue, if it is already in the Project."""
-
-    data = client.graphql(
-        """
-        query($issueId: ID!) {
-          node(id: $issueId) {
-            ... on Issue {
-              projectItems(first: 50, includeArchived: true) {
-                nodes {
-                  id
-                  project {
-                    id
-                  }
-                }
-              }
-            }
-          }
-        }
-        """,
-        {"issueId": issue.node_id},
-    )
-    for node in data["node"]["projectItems"]["nodes"]:
-        if node["project"]["id"] == project.id:
-            return node["id"]
-    return None
-
-
-def add_issue_to_project(client: GitHubClient, project: Project, issue: Issue) -> str:
-    """Add an issue to the Project and return the Project item ID."""
-
-    existing = project_item_id(client, project, issue)
-    if existing:
-        return existing
-
-    data = client.graphql(
-        """
-        mutation($projectId: ID!, $contentId: ID!) {
-          addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
-            item {
-              id
-            }
-          }
-        }
-        """,
-        {"projectId": project.id, "contentId": issue.node_id},
-    )
-    return data["addProjectV2ItemById"]["item"]["id"]
+    field = project.fields.get(field_name)
+    if field is None:
+        raise ProjectScheduleError(
+            f"Project field '{field_name}' was not found. "
+            "Create the date field in the roadmap Project or adjust PROJECT_START_DATE_FIELD/PROJECT_END_DATE_FIELD."
+        )
+    return field
 
 
 def set_date_value(client: GitHubClient, project: Project, item_id: str, field: ProjectField, value: str) -> None:
@@ -390,10 +197,12 @@ def set_date_value(client: GitHubClient, project: Project, item_id: str, field: 
 def sync_issue_schedule(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
     """Sync one issue's schedule metadata into Project date fields."""
 
-    issue = get_issue(client, repository, issue_number)
-    metadata = parse_schedule(issue.body)
-    schedule = normalized_schedule(metadata)
+    try:
+        issue = get_issue(client, repository, issue_number)
+    except ProjectAutomationError as error:
+        raise ProjectScheduleError(str(error)) from error
 
+    schedule = normalized_schedule(parse_schedule(issue.body))
     if not schedule:
         message = f"#{issue.number} has no Expected start or Expected deadline metadata; skipping schedule sync"
         if strict:
@@ -401,34 +210,43 @@ def sync_issue_schedule(client: GitHubClient, repository: str, issue_number: int
         print(f"::notice::{message}")
         return False
 
-    project = get_project(client)
-    item_id = add_issue_to_project(client, project, issue)
+    try:
+        project = get_project(client)
+        item_id = add_issue_to_project(client, project, issue)
+    except ProjectAutomationError as error:
+        raise ProjectScheduleError(str(error)) from error
 
     for field_name, value in schedule.items():
-        field = project.fields.get(field_name)
-        if field is None:
-            raise ProjectScheduleError(
-                f"Project field '{field_name}' was not found. "
-                "Create the date field in the roadmap Project or adjust PROJECT_START_DATE_FIELD/PROJECT_END_DATE_FIELD."
-            )
-        set_date_value(client, project, item_id, field, value)
+        field = project_date_field(project, field_name)
+        try:
+            set_date_value(client, project, item_id, field, value)
+        except ProjectAutomationError as error:
+            raise ProjectScheduleError(str(error)) from error
         print(f"Synced #{issue.number}: {field_name} = {value}")
 
     return True
+
+
+def issue_numbers_for_args(client: GitHubClient, repository: str, args: argparse.Namespace) -> list[int]:
+    """Return selected issue numbers for the current invocation."""
+
+    if args.all_open and args.issue_number is not None:
+        raise ProjectScheduleError("Provide --issue-number or --all-open, not both")
+    if args.all_open:
+        try:
+            return list_open_issues(client, repository)
+        except ProjectAutomationError as error:
+            raise ProjectScheduleError(str(error)) from error
+    if args.issue_number is not None:
+        return [args.issue_number]
+    raise ProjectScheduleError("Provide --issue-number or --all-open")
 
 
 def sync_schedule_command(args: argparse.Namespace) -> int:
     """Run schedule synchronization."""
 
     client = GitHubClient(token_from_environment())
-    if args.all_open and args.issue_number is not None:
-        raise ProjectScheduleError("Provide --issue-number or --all-open, not both")
-    if args.all_open:
-        issue_numbers = list_open_issues(client, args.repo)
-    elif args.issue_number is not None:
-        issue_numbers = [args.issue_number]
-    else:
-        raise ProjectScheduleError("Provide --issue-number or --all-open")
+    issue_numbers = issue_numbers_for_args(client, args.repo, args)
 
     failures = 0
     for number in issue_numbers:
