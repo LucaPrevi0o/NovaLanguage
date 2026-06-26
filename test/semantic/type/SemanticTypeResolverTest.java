@@ -34,6 +34,24 @@ public class SemanticTypeResolverTest {
         return new SemanticScopeBuilder().build(statements);
     }
 
+    private VariableDeclarationStatement variable(List<StatementNode> statements, String name) {
+
+        for (var statement : statements)
+            if (statement instanceof VariableDeclarationStatement declaration && declaration.getName().equals(name))
+                return declaration;
+        fail("Expected variable declaration named " + name);
+        return null;
+    }
+
+    private ClassDeclarationStatement classDeclaration(List<StatementNode> statements, String name) {
+
+        for (var statement : statements)
+            if (statement instanceof ClassDeclarationStatement declaration && declaration.getName().equals(name))
+                return declaration;
+        fail("Expected class declaration named " + name);
+        return null;
+    }
+
     @Test
     void testBuiltinValueTypesExposeSemanticDomains() {
 
@@ -51,6 +69,65 @@ public class SemanticTypeResolverTest {
 
         assertEquals(ValueTypeDomain.TEXT, stringType.domain());
         assertEquals(ValueTypeDomain.VOID, voidType.domain());
+    }
+
+    @Test
+    void testBuiltinValueTypesResolveToSemanticDomainsFromSourceSyntax() {
+
+        assertBuiltinValueDomain("byte", ValueTypeDomain.INTEGRAL, true);
+        assertBuiltinValueDomain("int", ValueTypeDomain.INTEGRAL, true);
+        assertBuiltinValueDomain("long", ValueTypeDomain.INTEGRAL, true);
+        assertBuiltinValueDomain("float", ValueTypeDomain.FLOATING_POINT, true);
+        assertBuiltinValueDomain("double", ValueTypeDomain.FLOATING_POINT, true);
+        assertBuiltinValueDomain("bool", ValueTypeDomain.BOOLEAN, false);
+        assertBuiltinValueDomain("char", ValueTypeDomain.CHARACTER, false);
+        assertBuiltinValueDomain("string", ValueTypeDomain.TEXT, false);
+        assertBuiltinValueDomain("void", ValueTypeDomain.VOID, false);
+    }
+
+    @Test
+    void testSourceTypeSyntaxResolvesEverySemanticTypeCategory() {
+
+        var ast = parse("""
+            int count;
+            public class Known { }
+            Known object;
+            Known[] objects;
+            Missing missing;
+            public class Box[T] { public T value; }
+            """);
+        var rootScope = scope(ast);
+        var resolver = new TypeResolver();
+
+        var count = variable(ast, "count");
+        var valueType = resolver.resolve(count.getDeclaredTypeSyntax(), count.getDeclaredType(), count, rootScope);
+        assertTrue(valueType.diagnostics().isEmpty());
+        assertEquals(TypeKind.VALUE, valueType.type().getKind());
+
+        var object = variable(ast, "object");
+        var classType = resolver.resolve(object.getDeclaredTypeSyntax(), object.getDeclaredType(), object, rootScope);
+        assertTrue(classType.diagnostics().isEmpty());
+        assertEquals(TypeKind.CLASS, classType.type().getKind());
+
+        var objects = variable(ast, "objects");
+        var arrayType = resolver.resolve(objects.getDeclaredTypeSyntax(), objects.getDeclaredType(), objects, rootScope);
+        assertTrue(arrayType.diagnostics().isEmpty());
+        var arraySymbol = assertInstanceOf(ArrayTypeSymbol.class, arrayType.type());
+        assertEquals(TypeKind.ARRAY, arraySymbol.getKind());
+        assertEquals(TypeKind.CLASS, arraySymbol.elementType().getKind());
+
+        var missing = variable(ast, "missing");
+        var unknownType = resolver.resolve(missing.getDeclaredTypeSyntax(), missing.getDeclaredType(), missing, rootScope);
+        assertEquals(TypeKind.UNKNOWN, unknownType.type().getKind());
+        assertInstanceOf(UnknownTypeSymbol.class, unknownType.type());
+        assertEquals(1, unknownType.diagnostics().size());
+
+        var box = classDeclaration(ast, "Box");
+        var boxScope = rootScope.childOwnedBy(box).orElseThrow();
+        var field = box.getFields()[0];
+        var genericType = resolver.resolve(field.getDeclaredTypeSyntax(), field.getDeclaredType(), field, boxScope);
+        assertTrue(genericType.diagnostics().isEmpty());
+        assertEquals(TypeKind.GENERIC_PARAMETER, genericType.type().getKind());
     }
 
     @Test
@@ -215,5 +292,18 @@ public class SemanticTypeResolverTest {
         assertEquals(1, arrayType.getDimensions());
         var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.elementType());
         assertEquals("int", elementType.getName());
+    }
+
+    private void assertBuiltinValueDomain(String name, ValueTypeDomain expectedDomain, boolean expectedNumeric) {
+
+        var rootScope = scope(List.of());
+        var syntax = new NamedTypeSyntax(1, 1, name, true);
+        var resolution = new TypeResolver().resolve(syntax, null, rootScope);
+
+        assertTrue(resolution.diagnostics().isEmpty());
+        var valueType = assertInstanceOf(ValueTypeSymbol.class, resolution.type());
+        assertEquals(TypeKind.VALUE, valueType.getKind());
+        assertEquals(expectedDomain, valueType.domain());
+        assertEquals(expectedNumeric, valueType.isNumeric());
     }
 }

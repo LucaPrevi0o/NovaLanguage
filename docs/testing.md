@@ -88,6 +88,7 @@ Useful cases:
 - overload selection and no-match diagnostics;
 - subtype assignment and inherited member access;
 - invalid array access;
+- semantic type categories such as value/math, class/object, array, generic-parameter, and unknown;
 - invalid return statements;
 - invalid `break` and `continue` placement.
 
