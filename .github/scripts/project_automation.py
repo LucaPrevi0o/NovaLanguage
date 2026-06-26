@@ -23,10 +23,10 @@ PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER", "4"))
 PROJECT_TITLE = os.environ.get("PROJECT_TITLE", "Nova - Development Roadmap")
 
 STATUS_FIELD = "Status"
-KIND_FIELD = "Kind"
 PRIORITY_FIELD = "Priority"
 SIZE_FIELD = "Size"
 LEGACY_PHASE_FIELD = "Phase"
+LEGACY_KIND_FIELD = "Kind"
 
 METADATA_HEADER = "Project metadata"
 
@@ -327,20 +327,24 @@ def normalize_key(value: str) -> str:
     return re.sub(r"\s+", " ", value.strip().lower())
 
 
-def first_kind(value: str) -> str:
-    """Use the first kind in values such as 'docs / design'."""
+def kind_values(value: str) -> tuple[str, ...]:
+    """Return normalized kind values from slash, comma, or semicolon separated metadata."""
 
-    return value.split("/", 1)[0].strip()
+    values: list[str] = []
+    seen: set[str] = set()
+    for raw_kind in re.split(r"[/,;]", value):
+        kind = normalize_key(raw_kind)
+        if not kind or kind in seen:
+            continue
+        values.append(kind)
+        seen.add(kind)
+    return tuple(values)
 
 
 def canonical_metadata(metadata: dict[str, str]) -> dict[str, str]:
     """Convert issue metadata into Project field option names."""
 
     canonical: dict[str, str] = {}
-
-    kind = metadata.get("Kind")
-    if kind:
-        canonical[KIND_FIELD] = normalize_key(first_kind(kind))
 
     priority = metadata.get("Priority")
     if priority:
@@ -748,7 +752,7 @@ def remove_issue_label(client: GitHubClient, repository: str, issue_number: int,
 
 
 def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
-    """Sync one issue's metadata into Project fields."""
+    """Sync one issue's metadata into its milestone and Project fields."""
 
     issue = get_issue(client, repository, issue_number)
     metadata = parse_metadata(issue.body)
@@ -794,15 +798,22 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
     return updated
 
 
-def kind_label_from_metadata(metadata: dict[str, str]) -> str | None:
-    """Return the managed kind label represented by issue metadata."""
+def kind_labels_from_metadata(metadata: dict[str, str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Return managed kind labels and unknown kind values represented by issue metadata."""
 
     kind = metadata.get("Kind")
     if not kind:
-        return None
-    kind_key = normalize_key(first_kind(kind))
-    label = MANAGED_KIND_LABELS.get(kind_key)
-    return label[0] if label else kind_key
+        return (), ()
+
+    labels: list[str] = []
+    unknown: list[str] = []
+    for kind_key in kind_values(kind):
+        label = MANAGED_KIND_LABELS.get(kind_key)
+        if label:
+            labels.append(label[0])
+        else:
+            unknown.append(kind_key)
+    return tuple(labels), tuple(unknown)
 
 
 def sync_labels_for_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
@@ -817,39 +828,49 @@ def sync_labels_for_issue(client: GitHubClient, repository: str, issue_number: i
         print(f"::warning::{message}")
         return False
 
-    target_label = kind_label_from_metadata(metadata)
-    if not target_label:
+    target_labels, unknown_kinds = kind_labels_from_metadata(metadata)
+    if not target_labels and not unknown_kinds:
         message = f"#{issue.number} has no Kind metadata; skipping label sync"
         if strict:
             raise ProjectAutomationError(message)
         print(f"::warning::{message}")
         return False
 
+    if unknown_kinds:
+        unknown_list = ", ".join(unknown_kinds)
+        message = f"Kind metadata contains unmanaged label values: {unknown_list}"
+        if strict:
+            raise ProjectAutomationError(message)
+        print(f"::warning::{message}")
+
     managed_labels = {entry[0] for entry in MANAGED_KIND_LABELS.values()}
-    if target_label not in managed_labels:
-        message = f"Kind '{target_label}' is not a managed label"
+    target_label_set = set(target_labels)
+    if not target_label_set:
+        message = f"#{issue.number} has no managed Kind labels to sync"
         if strict:
             raise ProjectAutomationError(message)
         print(f"::warning::{message}")
         return False
 
-    label_name, color, description = MANAGED_KIND_LABELS[target_label]
-    ensure_label(client, repository, label_name, color, description)
+    for target_label in target_labels:
+        label_name, color, description = MANAGED_KIND_LABELS[target_label]
+        ensure_label(client, repository, label_name, color, description)
 
     changed = False
     current_labels = set(issue.labels)
-    for stale_label in sorted((current_labels & managed_labels) - {label_name}):
+    for stale_label in sorted((current_labels & managed_labels) - target_label_set):
         remove_issue_label(client, repository, issue.number, stale_label)
         print(f"Removed stale managed label '{stale_label}' from #{issue.number}")
         changed = True
 
-    if label_name not in current_labels:
+    for label_name in sorted(target_label_set - current_labels):
         add_issue_label(client, repository, issue.number, label_name)
         print(f"Added label '{label_name}' to #{issue.number}")
         changed = True
 
     if not changed:
-        print(f"#{issue.number} already has managed label '{label_name}'")
+        labels = ", ".join(sorted(target_label_set))
+        print(f"#{issue.number} already has managed labels: {labels}")
     return changed
 
 
@@ -1129,6 +1150,20 @@ def remove_legacy_phase_field_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def remove_legacy_kind_field_command(args: argparse.Namespace) -> int:
+    """Run the remove-legacy-kind-field subcommand."""
+
+    if not args.confirm:
+        raise ProjectAutomationError(
+            "Refusing to remove the legacy Project Kind field without --confirm. "
+            "Run this only when issue labels are the source of truth for kind metadata."
+        )
+
+    client = GitHubClient(token_from_environment())
+    remove_project_field(client, LEGACY_KIND_FIELD)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
 
@@ -1171,6 +1206,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Confirm that the duplicate Project Phase field should be removed",
     )
     cleanup_parser.set_defaults(func=remove_legacy_phase_field_command)
+
+    kind_cleanup_parser = subparsers.add_parser(
+        "remove-legacy-kind-field",
+        help="Remove the legacy custom Project Kind field after label migration",
+    )
+    kind_cleanup_parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Confirm that issue labels should be the only Kind projection",
+    )
+    kind_cleanup_parser.set_defaults(func=remove_legacy_kind_field_command)
 
     return parser
 
