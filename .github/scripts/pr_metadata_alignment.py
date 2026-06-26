@@ -194,7 +194,17 @@ def project_item_id_for_content(client: GitHubClient, project: Project, content_
             """
             query($contentId: ID!) {
               node(id: $contentId) {
-                ... on ProjectV2ItemContent {
+                ... on Issue {
+                  projectItems(first: 50, includeArchived: true) {
+                    nodes {
+                      id
+                      project {
+                        id
+                      }
+                    }
+                  }
+                }
+                ... on PullRequest {
                   projectItems(first: 50, includeArchived: true) {
                     nodes {
                       id
@@ -213,7 +223,7 @@ def project_item_id_for_content(client: GitHubClient, project: Project, content_
         raise PullRequestMetadataError(str(error)) from error
 
     node = data.get("node")
-    if not node:
+    if not node or "projectItems" not in node:
         return None
     for item in node["projectItems"]["nodes"]:
         if item["project"]["id"] == project.id:
