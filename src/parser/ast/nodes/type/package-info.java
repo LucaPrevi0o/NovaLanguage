@@ -15,5 +15,6 @@
 /// ## Important distinction
 ///
 /// Type syntax is not the same thing as a resolved type. A source file may mention a type name
-/// that parses correctly but fails semantic resolution later.
+/// that parses correctly but fails semantic resolution later. Semantic meaning is represented by
+/// `semantic.type.symbol.TypeSymbol` implementations after `semantic.type.TypeResolver` runs.
 package parser.ast.nodes.type;

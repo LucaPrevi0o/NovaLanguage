@@ -235,6 +235,7 @@ Tasks:
 - [x] Model Nova classes and Nova value/math types separately, matching the README design.
 - [x] Isolate syntaxless `ReturnType` fallback conversion in `semantic.type.ReturnTypeSyntaxBridge`.
 - [x] Add regression tests for semantic type categories: value/math, class/object, array, generic-parameter, and unknown.
+- [x] Document the `TypeSyntax` to `TypeSymbol` boundary for parser-owned syntax and semantic-owned meaning.
 
 Exit criteria:
 
@@ -243,6 +244,7 @@ Exit criteria:
 - [x] Semantic analysis no longer reads lexer token classes outside the isolated `ReturnType` compatibility bridge.
 - [x] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
 - [x] Semantic type-category behavior is covered by focused regression tests.
+- [x] The parser/semantic type boundary is documented with examples.
 
 ## Phase 6 - Multi-File Project Pipeline
 

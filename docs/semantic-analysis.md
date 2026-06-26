@@ -98,6 +98,30 @@ new MissingClass();
 
 If `MissingClass` is not declared or otherwise known to the compilation context, semantic analysis should produce an undefined-class diagnostic.
 
+## Type syntax and type symbols
+
+Semantic analysis resolves source type syntax into semantic type symbols.
+
+The parser preserves declarations such as:
+
+```nova
+Box[] values;
+```
+
+as parsed `TypeSyntax`. Semantic analysis then resolves that syntax into a `TypeSymbol`, for example an array symbol whose element type is the class symbol for `Box`.
+
+The resolver currently distinguishes:
+
+- value/math types;
+- class/object types;
+- array types;
+- visible generic parameters;
+- unknown types used after failed resolution.
+
+The parser should not reject a syntactically valid type name just because semantic analysis may later report it as unknown.
+
+For the complete boundary rule and examples, see [`type-model.md`](type-model.md).
+
 ## Duplicate declaration validation
 
 Duplicate validation should report repeated declarations in the same semantic scope.

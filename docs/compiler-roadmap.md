@@ -92,7 +92,7 @@ Exit condition: front-end runs can return an AST plus diagnostics without relyin
 
 ## Phase 4 - Semantic analysis split
 
-Status: **in progress**.
+Status: **complete**.
 
 The goal is to make parsing syntax-only and validate meaning through semantic passes.
 
@@ -118,9 +118,8 @@ Completed or partially completed work includes:
 - adding parsed type syntax nodes that declaration AST constructors receive directly;
 - removing the parser-side `TypeRegistry` adapter.
 
-Remaining work includes:
+Future semantic work is intentionally scoped to later phases:
 
-- keeping parser-generated ASTs simple and complete;
 - deferring advanced semantic rules, such as access control, override compatibility, inherited-member conflicts, and generic overload specificity, until the type model boundary is cleaner.
 
 ## Phase 5 - Real type model
@@ -147,6 +146,7 @@ Completed work:
 - syntaxless `ReturnType` fallback conversion is isolated in `ReturnTypeSyntaxBridge`;
 - the parser-side `TypeRegistry` adapter has been removed;
 - built-in primitive-like declarations resolve to Nova value type symbols.
+- the `TypeSyntax` to `TypeSymbol` boundary is documented in [`type-model.md`](type-model.md).
 
 Planned work:
 
