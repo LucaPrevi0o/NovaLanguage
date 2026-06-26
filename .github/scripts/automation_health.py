@@ -16,9 +16,11 @@ EXPECTED_SCRIPTS = (
     ".github/scripts/issue_forms.py",
     ".github/scripts/issue_metadata.py",
     ".github/scripts/mirror_docs_to_wiki.py",
+    ".github/scripts/pr_metadata_alignment.py",
     ".github/scripts/prepare_javadoc_site.py",
     ".github/scripts/project_automation.py",
     ".github/scripts/project_metadata.py",
+    ".github/scripts/project_schedule.py",
 )
 
 EXPECTED_WORKFLOWS = (
@@ -26,29 +28,27 @@ EXPECTED_WORKFLOWS = (
     ".github/workflows/docs-publish.yml",
     ".github/workflows/issue-form-check.yml",
     ".github/workflows/issue-metadata-check.yml",
+    ".github/workflows/pr-metadata-alignment.yml",
     ".github/workflows/project-archive-sync.yml",
     ".github/workflows/project-drift-check.yml",
     ".github/workflows/project-label-sync.yml",
     ".github/workflows/project-pr-status.yml",
+    ".github/workflows/project-schedule-sync.yml",
     ".github/workflows/project-sync.yml",
 )
 
-EXPECTED_PROJECT_COMMANDS = (
+PROJECT_AUTOMATION_COMMANDS = (
     "check-plan-drift",
-    "remove-legacy-kind-field",
-    "remove-legacy-phase-field",
     "sync-issue",
     "sync-issue-archive",
     "sync-labels",
     "sync-pr-status",
 )
 
-WORKFLOW_MANAGED_PROJECT_COMMANDS = (
-    "check-plan-drift",
-    "sync-issue",
-    "sync-issue-archive",
-    "sync-labels",
-    "sync-pr-status",
+WORKFLOW_MANAGED_PROJECT_COMMANDS = PROJECT_AUTOMATION_COMMANDS
+DOCUMENTED_ENTRY_POINTS = (
+    ".github/scripts/automation_health.py",
+    ".github/workflows/automation-health-check.yml",
 )
 
 SCRIPT_REFERENCE_PATTERN = re.compile(r"(?<![\w/.-])\.github/scripts/[A-Za-z0-9_./-]+\.py")
@@ -203,7 +203,7 @@ def check_project_command_wiring(root: Path, findings: list[Finding]) -> None:
 
     project_script = root / ".github" / "scripts" / "project_automation.py"
     declared = declared_project_commands(root, findings)
-    missing_commands = sorted(set(EXPECTED_PROJECT_COMMANDS) - declared)
+    missing_commands = sorted(set(PROJECT_AUTOMATION_COMMANDS) - declared)
     for command in missing_commands:
         findings.append(Finding("error", f"Expected project automation subcommand is missing: {command}", project_script))
 
@@ -229,14 +229,11 @@ def documented_automation_text(root: Path) -> str:
 
 
 def check_documentation_mentions(root: Path, findings: list[Finding]) -> None:
-    """Check that the health-check entry points are documented."""
+    """Check that automation health-check entry points are documented."""
 
     docs_text = documented_automation_text(root)
     docs_path = root / "docs" / "automation-health-check.md"
-    for expected in (
-        ".github/scripts/automation_health.py",
-        ".github/workflows/automation-health-check.yml",
-    ):
+    for expected in DOCUMENTED_ENTRY_POINTS:
         if expected not in docs_text:
             findings.append(Finding("error", f"Automation health-check docs do not mention {expected}", docs_path))
 
