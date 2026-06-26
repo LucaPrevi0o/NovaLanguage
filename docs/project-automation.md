@@ -23,7 +23,7 @@ Project sync reads this block from issue bodies:
 ```markdown
 ## Project metadata
 
-- Milestone: Phase 5 - Type model
+- Milestone: Nova MVP compiler
 - Area: type-system / semantic-analysis
 - Kind: refactor
 - Priority: P1
@@ -39,12 +39,14 @@ Supported synced fields:
 - `Size`
 - `Suggested status`
 
-The workflow writes `Milestone` to the GitHub issue milestone. During the migration from the
-old Project `Phase` field, legacy `Phase` metadata is still accepted and mapped to the
-corresponding milestone.
+The workflow writes `Milestone` to the GitHub issue milestone. Legacy `Phase`
+metadata is still accepted during migration, but Phase 1 through Phase 8 values
+now map to the shared `Nova MVP compiler` milestone instead of one milestone per
+internal roadmap phase.
 
-The legacy custom Project `Phase` field is not written by current automation. After this
-milestone-aware workflow is merged to the default branch, remove the old field with:
+The legacy custom Project `Phase` field has been removed from the roadmap
+Project. The cleanup command remains available as an idempotent maintenance
+helper:
 
 ```bash
 python3 .github/scripts/project_automation.py remove-legacy-phase-field --confirm
@@ -53,13 +55,23 @@ python3 .github/scripts/project_automation.py remove-legacy-phase-field --confir
 Managed milestone names:
 
 - `Project workflow`
-- `Phase 4 - Semantic analysis split`
-- `Phase 5 - Type model`
-- `Phase 6 - Multi-file project pipeline`
-- `Phase 7 - Standard library`
-- `Phase 8 - IR preparation`
-- `Phase 9 - Advanced features`
+- `Nova MVP compiler`
+- `Advanced overload and override rules`
+- `Access control`
+- `Inheritance conflict checks`
+- `Generics`
+- `Bounded generics`
+- `Class parameters`
+- `Operator-overloadable Nova types`
+- `Lambdas`
+- `Variadic generics`
+- `Monomorphization`
 - `Future development`
+
+Use `Nova MVP compiler` for Phase 1 through Phase 8 work: build health,
+parser stability, diagnostics, semantic separation, the type model, the
+multi-file pipeline, standard-library loading, and IR preparation. Use the
+specific advanced-feature milestones for post-MVP Phase 9 work.
 
 The workflow maps short issue values such as `P1` into Project values such as `1 - Important next step`.
 
@@ -90,13 +102,13 @@ Responsibilities:
 - parse the issue `Project metadata` block;
 - sync roadmap grouping into the issue milestone;
 - sync remaining valid metadata into Project fields;
-- leave the old custom Project `Phase` field untouched so it can be removed after the
-  migration is active on the default branch;
+- ignore the removed custom Project `Phase` field while still accepting legacy
+  `Phase` metadata in issue bodies;
 - report missing or invalid metadata clearly.
 
 ## Planned workflow automation
 
-Additional workflow automation is tracked under issue #27.
+Additional workflow automation is tracked under issue #36.
 
 ## Pull request status sync
 
@@ -177,9 +189,10 @@ Triggers:
 Checks:
 
 - `PLAN.md` and `README.md` should agree on the current focus phase;
-- the current focus milestone should have at least one active Project item;
-- the current focus milestone should normally have an `In Progress` Project item;
-- completed phase milestones should not still have non-done P1 Project items;
+- the current focus deliverable milestone should have at least one active Project item;
+- the current focus deliverable milestone should normally have an `In Progress` Project item;
+- shared deliverable milestones such as `Nova MVP compiler` are not used to infer
+  whether one internal phase has stale work from another phase;
 - immediate next steps are loosely matched to open issues and reported as notices.
 
 Errors fail the workflow. Warnings are reported as GitHub annotations and can optionally be treated as failures through manual dispatch.

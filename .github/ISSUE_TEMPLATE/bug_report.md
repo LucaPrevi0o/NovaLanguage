@@ -12,7 +12,7 @@ assignees: []
 
 ## Project metadata
 
-- Milestone: Phase 5 - Type model
+- Milestone: Nova MVP compiler
 - Area: diagnostics
 - Kind: bug
 - Priority: P1
