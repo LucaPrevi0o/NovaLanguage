@@ -37,7 +37,7 @@ Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## P
 
 ## Keeping form options aligned
 
-The canonical source for managed labels, milestones, priorities, statuses, and sizes is `.github/scripts/project_metadata.py`. The helper script `.github/scripts/issue_forms.py` imports those constants, updates the remaining shared option blocks, and rejects duplicated native body fields.
+The canonical source for managed labels, milestones, priorities, statuses, and sizes is `.github/scripts/project_metadata.py`. The helper script `.github/scripts/issue_forms.py` imports those constants, updates the remaining shared option blocks, and rejects duplicated native body fields. The native issue metadata check also imports the same constants through `.github/scripts/issue_metadata.py`, so label and milestone validation follows the same source of truth.
 
 To update forms locally after changing managed metadata:
 

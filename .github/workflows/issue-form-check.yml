@@ -5,9 +5,11 @@ on:
     paths:
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/scripts/issue_forms.py"
+      - ".github/scripts/issue_metadata.py"
       - ".github/scripts/project_metadata.py"
       - ".github/scripts/project_automation.py"
       - ".github/workflows/issue-form-check.yml"
+      - ".github/workflows/issue-metadata-check.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,3 +30,10 @@ jobs:
 
       - name: Check shared issue-form fields
         run: python3 .github/scripts/issue_forms.py --check
+
+      - name: Check native metadata helper
+        run: |
+          python3 .github/scripts/issue_metadata.py \
+            --issue-number 0 \
+            --labels refactor \
+            --milestone "Nova MVP compiler"

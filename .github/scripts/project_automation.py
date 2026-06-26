@@ -15,148 +15,32 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from project_metadata import (
+    ACTIVE_STATUSES,
+    DONE_STATUS,
+    HIGH_PRIORITY,
+    LEGACY_KIND_FIELD,
+    LEGACY_PHASE_FIELD,
+    MANAGED_KIND_LABELS,
+    METADATA_HEADER,
+    MILESTONE_ALIASES,
+    MILESTONE_DESCRIPTIONS,
+    NO_RESPONSE,
+    PHASE_NUMBER_TO_MILESTONE,
+    PRIORITY_ALIASES,
+    PRIORITY_FIELD,
+    SHARED_PHASE_MILESTONES,
+    SIZE_FIELD,
+    STATUS_ALIASES,
+    STATUS_FIELD,
+)
+
 
 API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com")
 GRAPHQL_URL = os.environ.get("GITHUB_GRAPHQL_URL", "https://api.github.com/graphql")
 PROJECT_OWNER = os.environ.get("PROJECT_OWNER", "LucaPrevi0o")
 PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER", "4"))
 PROJECT_TITLE = os.environ.get("PROJECT_TITLE", "Nova - Development Roadmap")
-
-STATUS_FIELD = "Status"
-PRIORITY_FIELD = "Priority"
-SIZE_FIELD = "Size"
-LEGACY_PHASE_FIELD = "Phase"
-LEGACY_KIND_FIELD = "Kind"
-
-METADATA_HEADER = "Project metadata"
-NO_RESPONSE = "_No response_"
-
-MVP_MILESTONE = "Nova MVP compiler"
-PROJECT_WORKFLOW_MILESTONE = "Project workflow"
-FUTURE_MILESTONE = "Future development"
-
-ADVANCED_FEATURE_MILESTONES = (
-    "Advanced overload and override rules",
-    "Access control",
-    "Inheritance conflict checks",
-    "Generics",
-    "Bounded generics",
-    "Class parameters",
-    "Operator-overloadable Nova types",
-    "Lambdas",
-    "Variadic generics",
-    "Monomorphization",
-)
-
-
-MILESTONE_ALIASES = {
-    "project workflow": PROJECT_WORKFLOW_MILESTONE,
-    "nova mvp compiler": MVP_MILESTONE,
-    "mvp compiler": MVP_MILESTONE,
-    "first usable compiler": MVP_MILESTONE,
-    "phase 1 - build health": MVP_MILESTONE,
-    "1 - build health": MVP_MILESTONE,
-    "phase 2 - parser semantics": MVP_MILESTONE,
-    "2 - parser semantics": MVP_MILESTONE,
-    "phase 3 - diagnostics": MVP_MILESTONE,
-    "3 - diagnostics": MVP_MILESTONE,
-    "phase 4 - semantic analysis split": MVP_MILESTONE,
-    "4 - semantic analysis split": MVP_MILESTONE,
-    "phase 5 - type model": MVP_MILESTONE,
-    "5 - type model": MVP_MILESTONE,
-    "phase 6 - multi-file project pipeline": MVP_MILESTONE,
-    "6 - multi-file project pipeline": MVP_MILESTONE,
-    "phase 7 - standard library as source": MVP_MILESTONE,
-    "phase 7 - standard library": MVP_MILESTONE,
-    "7 - standard library": MVP_MILESTONE,
-    "phase 8 - ir preparation": MVP_MILESTONE,
-    "8 - ir preparation": MVP_MILESTONE,
-    "phase 9 - advanced nova features": FUTURE_MILESTONE,
-    "phase 9 - advanced features": FUTURE_MILESTONE,
-    "9 - advanced features": FUTURE_MILESTONE,
-    "advanced overload and override rules": "Advanced overload and override rules",
-    "access control": "Access control",
-    "inheritance conflict checks": "Inheritance conflict checks",
-    "generics": "Generics",
-    "bounded generics": "Bounded generics",
-    "class parameters": "Class parameters",
-    "operator-overloadable nova types": "Operator-overloadable Nova types",
-    "operator overloadable nova types": "Operator-overloadable Nova types",
-    "lambdas": "Lambdas",
-    "variadic generics": "Variadic generics",
-    "monomorphization": "Monomorphization",
-    "future development": FUTURE_MILESTONE,
-}
-
-MILESTONE_DESCRIPTIONS = {
-    PROJECT_WORKFLOW_MILESTONE: (
-        "Repository automation, issue tracking, documentation publishing, and project-management workflow work."
-    ),
-    MVP_MILESTONE: (
-        "Phase 1 through Phase 8 work needed for the first usable Nova compiler front-end."
-    ),
-    "Advanced overload and override rules": "Post-MVP overload, override, specificity, and dispatch design work.",
-    "Access control": "Post-MVP visibility and member-access enforcement work.",
-    "Inheritance conflict checks": "Post-MVP inherited-member conflict and hierarchy validation work.",
-    "Generics": "Post-MVP generic type and function support.",
-    "Bounded generics": "Post-MVP generic constraint and bound support.",
-    "Class parameters": "Post-MVP class parameter syntax, semantics, and lowering support.",
-    "Operator-overloadable Nova types": "Post-MVP operator overload support for Nova-defined types.",
-    "Lambdas": "Post-MVP lambda syntax, typing, capture, and lowering support.",
-    "Variadic generics": "Post-MVP variadic type parameter support.",
-    "Monomorphization": "Post-MVP generic specialization and monomorphization support.",
-    FUTURE_MILESTONE: "Future-facing design and maintenance work that is not part of the current compiler phase.",
-}
-
-PRIORITY_ALIASES = {
-    "p0": "0 - Blocks progress",
-    "0": "0 - Blocks progress",
-    "0 - blocks progress": "0 - Blocks progress",
-    "p1": "1 - Important next step",
-    "1": "1 - Important next step",
-    "1 - important next step": "1 - Important next step",
-    "p2": "2 - Possible next focus",
-    "2": "2 - Possible next focus",
-    "2 - possible next focus": "2 - Possible next focus",
-    "p3": "3 - Later addition",
-    "3": "3 - Later addition",
-    "3 - later addition": "3 - Later addition",
-}
-
-STATUS_ALIASES = {
-    "backlog": "Backlog",
-    "ready": "Ready",
-    "in progress": "In Progress",
-    "blocked": "Blocked",
-    "in review": "In Review",
-    "done": "Done",
-}
-
-MANAGED_KIND_LABELS = {
-    "bug": ("bug", "d73a4a", "Detected functional problem."),
-    "feature": ("feature", "a2eeef", "New feature or request."),
-    "refactor": ("refactor", "1d76db", "Code restructuring without changing intended behavior."),
-    "design": ("design", "7b61ff", "Architecture or language/compiler design work."),
-    "research": ("research", "fbca04", "Research or investigation before implementation."),
-    "test": ("test", "f9d0c4", "Testing work or regression coverage."),
-    "docs": ("docs", "0075ca", "Documentation work."),
-}
-
-PHASE_NUMBER_TO_MILESTONE = {
-    1: MVP_MILESTONE,
-    2: MVP_MILESTONE,
-    3: MVP_MILESTONE,
-    4: MVP_MILESTONE,
-    5: MVP_MILESTONE,
-    6: MVP_MILESTONE,
-    7: MVP_MILESTONE,
-    8: MVP_MILESTONE,
-}
-SHARED_PHASE_MILESTONES = {MVP_MILESTONE}
-
-ACTIVE_STATUSES = {"Ready", "In Progress", "In Review"}
-DONE_STATUS = "Done"
-HIGH_PRIORITY = "1 - Important next step"
 
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "between", "by", "can", "from",
@@ -1001,10 +885,7 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
         option_id = field.options.get(option_name)
         if option_id is None:
             message = f"Project field '{field_name}' has no option '{option_name}' for #{issue.number}"
-            if strict:
-                raise ProjectAutomationError(message)
-            print(f"::warning::{message}")
-            continue
+            raise ProjectAutomationError(message)
         set_single_select_value(client, project, item_id, field, option_id)
         updated = True
         print(f"Synced #{issue.number}: {field_name} = {option_name}")

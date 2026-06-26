@@ -22,34 +22,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Require managed label
-        env:
-          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
-        run: |
-          case ",${ISSUE_LABELS}," in
-            *,bug,*|*,feature,*|*,refactor,*|*,design,*|*,research,*|*,test,*|*,docs,*)
-              echo "Managed issue label found: ${ISSUE_LABELS}"
-              ;;
-            *)
-              echo "::error::Issue #${{ github.event.issue.number }} has no managed label. Add at least one of: bug, feature, refactor, design, research, test, docs."
-              exit 1
-              ;;
-          esac
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - name: Require managed milestone
+      - name: Check native metadata
         env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
           ISSUE_MILESTONE: ${{ github.event.issue.milestone.title }}
-        run: |
-          case "${ISSUE_MILESTONE}" in
-            "Project workflow"|"Nova MVP compiler"|"Advanced overload and override rules"|"Access control"|"Inheritance conflict checks"|"Generics"|"Bounded generics"|"Class parameters"|"Operator-overloadable Nova types"|"Lambdas"|"Variadic generics"|"Monomorphization"|"Future development")
-              echo "Managed issue milestone found: ${ISSUE_MILESTONE}"
-              ;;
-            "")
-              echo "::error::Issue #${{ github.event.issue.number }} has no milestone. Select one managed roadmap milestone."
-              exit 1
-              ;;
-            *)
-              echo "::error::Issue #${{ github.event.issue.number }} uses unmanaged milestone '${ISSUE_MILESTONE}'."
-              exit 1
-              ;;
-          esac
+        run: python3 .github/scripts/issue_metadata.py

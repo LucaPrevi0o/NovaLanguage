@@ -118,7 +118,7 @@ Rules:
 - every issue should have one managed roadmap milestone;
 - unmanaged milestones fail the workflow so they are fixed before roadmap automation relies on them.
 
-This workflow validates native GitHub issue properties. It does not edit labels, milestones, issue bodies, or Project fields.
+This workflow validates native GitHub issue properties through `.github/scripts/issue_metadata.py`, which imports the managed labels and milestones from `.github/scripts/project_metadata.py`. It does not edit labels, milestones, issue bodies, or Project fields.
 
 ## Issue to Project sync
 
@@ -147,7 +147,8 @@ Responsibilities:
 - sync `Priority`, `Size`, and `Suggested status` into Project fields;
 - ignore the removed custom Project `Phase` field while still accepting legacy `Phase` metadata in issue bodies;
 - ignore the deprecated custom Project `Kind` field because issue labels now represent kind metadata;
-- warn about missing legacy metadata without failing new issues that rely on native labels and milestones.
+- warn about missing legacy milestone metadata without failing new issues that rely on native labels and milestones;
+- fail when `Priority`, `Size`, or `Suggested status` maps to an option that does not exist in the roadmap Project.
 
 ## Workflow automation roadmap
 
