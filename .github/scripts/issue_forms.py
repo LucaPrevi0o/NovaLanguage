@@ -1,115 +1,113 @@
 #!/usr/bin/env python3
-"""Keep GitHub issue-form shared options aligned with project automation constants."""
+"""Keep GitHub issue-form workflow metadata aligned and non-duplicated."""
 
 from __future__ import annotations
 
 import argparse
 import difflib
-import importlib.util
-import sys
 from pathlib import Path
-from types import ModuleType
 from typing import Iterable
 
-SHARED_FORM_FIELDS = {
-    "milestone": "Milestone",
-    "labels": "Labels",
+from project_metadata import SIZE_OPTIONS, priority_options, status_options
+
+SYNCED_FORM_FIELDS = {
     "priority": "Priority",
     "size": "Size",
     "suggested-status": "Suggested status",
 }
 
-SIZE_OPTIONS = ("XS", "S", "M", "L", "XL")
+FORBIDDEN_FORM_FIELDS = {
+    "milestone": "Milestone",
+    "labels": "Labels",
+}
 
 
-def load_project_automation(root: Path) -> ModuleType:
-    """Load the project automation module without requiring a Python package."""
-
-    script = root / ".github" / "scripts" / "project_automation.py"
-    spec = importlib.util.spec_from_file_location("nova_project_automation", script)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot load {script}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+class IssueFormError(RuntimeError):
+    """Raised when issue forms violate the shared metadata policy."""
 
 
-def unique_values(values: Iterable[str]) -> tuple[str, ...]:
-    """Return unique strings while preserving their first-seen order."""
 
-    ordered: list[str] = []
-    seen: set[str] = set()
-    for value in values:
-        if value in seen:
-            continue
-        ordered.append(value)
-        seen.add(value)
-    return tuple(ordered)
+def shared_options() -> dict[str, tuple[str, ...]]:
+    """Build issue-form option lists from the shared metadata source of truth."""
 
-
-def shared_options(root: Path) -> dict[str, tuple[str, ...]]:
-    """Build issue-form option lists from the automation source of truth."""
-
-    automation = load_project_automation(root)
-    milestones = (
-        automation.PROJECT_WORKFLOW_MILESTONE,
-        automation.MVP_MILESTONE,
-        *automation.ADVANCED_FEATURE_MILESTONES,
-        automation.FUTURE_MILESTONE,
-    )
     return {
-        "milestone": tuple(milestones),
-        "labels": tuple(entry[0] for entry in automation.MANAGED_KIND_LABELS.values()),
-        "priority": unique_values(automation.PRIORITY_ALIASES.values()),
+        "priority": priority_options(),
         "size": SIZE_OPTIONS,
-        "suggested-status": unique_values(automation.STATUS_ALIASES.values()),
+        "suggested-status": status_options(),
     }
 
 
-def option_lines(field_id: str, values: Iterable[str]) -> list[str]:
-    """Render one issue-form options block."""
 
-    if field_id == "labels":
-        return [f"        - label: {value}\n" for value in values]
+def field_block_bounds(lines: list[str], field_id: str) -> tuple[int, int] | None:
+    """Return the line range for one issue-form field block."""
+
+    index = 0
+    while index < len(lines):
+        if lines[index] != f"    id: {field_id}\n":
+            index += 1
+            continue
+        start = index
+        while start > 0 and not lines[start].startswith("  - type: "):
+            start -= 1
+        end = index + 1
+        while end < len(lines) and not lines[end].startswith("  - type: "):
+            end += 1
+        return start, end
+    return None
+
+
+
+def forbidden_fields_in_text(text: str) -> list[str]:
+    """Return forbidden issue-form body fields present in one file."""
+
+    lines = text.splitlines(keepends=True)
+    return [field_name for field_id, field_name in FORBIDDEN_FORM_FIELDS.items() if field_block_bounds(lines, field_id)]
+
+
+
+def option_lines(values: Iterable[str]) -> list[str]:
+    """Render one dropdown options block."""
+
     return [f"        - {value}\n" for value in values]
 
 
+
 def replace_field_options(text: str, field_id: str, values: Iterable[str]) -> str:
-    """Replace the options list for one issue-form field."""
+    """Replace the options list for one issue-form dropdown field."""
 
     lines = text.splitlines(keepends=True)
     result = lines[:]
-    index = 0
-    while index < len(result):
-        if result[index] != f"    id: {field_id}\n":
-            index += 1
-            continue
+    block = field_block_bounds(result, field_id)
+    if block is None:
+        raise IssueFormError(f"Missing required shared field '{field_id}'")
 
-        next_field = index + 1
-        while next_field < len(result) and not result[next_field].startswith("  - type: "):
-            next_field += 1
+    start, end = block
+    options_index = None
+    for candidate in range(start, end):
+        if result[candidate] == "      options:\n":
+            options_index = candidate
+            break
+    if options_index is None:
+        raise IssueFormError(f"Field '{field_id}' has no options block")
 
-        options_index = None
-        for candidate in range(index + 1, next_field):
-            if result[candidate] == "      options:\n":
-                options_index = candidate
-                break
-        if options_index is None:
-            raise ValueError(f"Field '{field_id}' has no options block")
+    options_end = options_index + 1
+    while options_end < end and result[options_end].startswith("        -"):
+        options_end += 1
 
-        options_end = options_index + 1
-        while options_end < next_field and result[options_end].startswith("        -"):
-            options_end += 1
-
-        result[options_index + 1:options_end] = option_lines(field_id, values)
-        index = next_field
-
+    result[options_index + 1:options_end] = option_lines(values)
     return "".join(result)
 
 
+
 def sync_form_text(text: str, options: dict[str, tuple[str, ...]]) -> str:
-    """Return issue-form text with all shared option blocks synchronized."""
+    """Return issue-form text with all synchronized option blocks updated."""
+
+    forbidden = forbidden_fields_in_text(text)
+    if forbidden:
+        fields = ", ".join(forbidden)
+        raise IssueFormError(
+            f"Remove duplicated native GitHub field(s) from issue form body: {fields}"
+        )
 
     synced = text
     for field_id, values in options.items():
@@ -117,11 +115,13 @@ def sync_form_text(text: str, options: dict[str, tuple[str, ...]]) -> str:
     return synced
 
 
+
 def issue_form_paths(root: Path) -> list[Path]:
     """Return issue-form YAML files, excluding GitHub's template chooser config."""
 
     template_dir = root / ".github" / "ISSUE_TEMPLATE"
     return sorted(path for path in template_dir.glob("*.yml") if path.name != "config.yml")
+
 
 
 def unified_diff(path: Path, before: str, after: str) -> str:
@@ -135,18 +135,21 @@ def unified_diff(path: Path, before: str, after: str) -> str:
     ))
 
 
+
 def sync_issue_forms(root: Path, check: bool) -> int:
     """Synchronize or check all issue-form shared options."""
 
-    options = shared_options(root)
+    options = shared_options()
     changed = False
+    failed = False
     for path in issue_form_paths(root):
         before = path.read_text(encoding="utf-8")
         try:
             after = sync_form_text(before, options)
-        except ValueError as error:
+        except IssueFormError as error:
             print(f"::error file={path}::{error}")
-            return 1
+            failed = True
+            continue
         if before == after:
             print(f"{path}: already aligned")
             continue
@@ -158,10 +161,13 @@ def sync_issue_forms(root: Path, check: bool) -> int:
             path.write_text(after, encoding="utf-8")
             print(f"{path}: updated")
 
+    if failed:
+        return 1
     if changed and check:
         print("Run `python3 .github/scripts/issue_forms.py` to update issue-form shared options.")
         return 1
     return 0
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -173,6 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+
 def main() -> int:
     """Run the issue-form synchronization command."""
 
@@ -181,4 +188,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
