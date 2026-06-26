@@ -126,4 +126,4 @@ See [`PLAN.md`](PLAN.md) for the authoritative checklist.
 
 ## License
 
-No license file is currently included in this repository.
+This project is licensed under the Creative Commons Atribution-NonCommercial-ShareAlike 4.0 licensing (see [`LICENSE`](LICENSE)).
