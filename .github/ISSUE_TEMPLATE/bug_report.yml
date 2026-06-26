@@ -1,0 +1,155 @@
+name: Bug report
+description: Report a compiler regression, incorrect diagnostic, or wrong Nova front-end behavior.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the bug or regression in one or two sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      description: Choose the deliverable or feature track this issue belongs to.
+      options:
+        - Nova MVP compiler
+        - Future development
+        - Project workflow
+        - Advanced overload and override rules
+        - Access control
+        - Inheritance conflict checks
+        - Generics
+        - Bounded generics
+        - Class parameters
+        - Operator-overloadable Nova types
+        - Lambdas
+        - Variadic generics
+        - Monomorphization
+      default: 0
+    validations:
+      required: true
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Labels
+      description: Select the managed labels that describe this issue.
+      options:
+        - label: bug
+        - label: feature
+        - label: refactor
+        - label: design
+        - label: research
+        - label: test
+        - label: docs
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      description: Choose one or more affected compiler layers.
+      placeholder: lexer / parser / semantic-analysis / diagnostics
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+      default: 1
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S
+        - M
+        - L
+      default: 1
+    validations:
+      required: true
+  - type: dropdown
+    id: suggested-status
+    attributes:
+      label: Suggested status
+      options:
+        - Backlog
+        - Ready
+        - In Progress
+        - Blocked
+        - In Review
+        - Done
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Add the smallest Nova snippet and steps that reproduce the problem.
+      value: |
+        ```nova
+        // Smallest snippet that reproduces the problem.
+        ```
+
+        Steps to reproduce:
+
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should the compiler, parser, semantic analyzer, or diagnostic output do?
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What happens instead? Include diagnostics, stack traces, or command output if useful.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        - [ ] Add or update the smallest regression test that reproduces the bug.
+        - [ ] Fix the bug without expanding unrelated language behavior.
+        - [ ] Keep parser changes syntactic unless syntax truly changes.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: List related behavior that should not be changed by this issue.
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] The reproduction is covered by a focused test or documented reason why no test is needed.
+        - [ ] The reported behavior is fixed or the diagnostic is corrected.
+        - [ ] Existing tests pass with `./mvnw test`.
+        - [ ] Relevant documentation is updated if behavior or diagnostics changed.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add links to related issues, PRs, docs, or suspected files.

@@ -16,9 +16,31 @@ The token must have GitHub Projects write access, including the `project` scope 
 
 The built-in `GITHUB_TOKEN` is still passed to the scripts for normal repository access, but it is usually not enough for writing user-level Projects v2 fields.
 
-## Issue metadata block
+## Issue forms and metadata
 
-Project sync reads this block from issue bodies:
+New issues should be opened through the YAML issue forms in `.github/ISSUE_TEMPLATE/`.
+Blank issues are disabled so contributors are guided through the same structured
+fields each time.
+
+GitHub converts issue-form submissions into Markdown sections in the issue body.
+The automation reads these generated sections:
+
+```markdown
+### Milestone
+
+Nova MVP compiler
+
+### Labels
+
+- [x] refactor
+- [ ] docs
+
+### Priority
+
+P1
+```
+
+Existing issues that still contain the older metadata block remain supported:
 
 ```markdown
 ## Project metadata
@@ -48,6 +70,11 @@ milestone per internal roadmap phase.
 The label sync workflow writes `Kind` metadata to GitHub issue labels. `Kind`
 may contain one value, such as `refactor`, or multiple values separated with
 slashes, commas, or semicolons, such as `docs / design`.
+
+In issue forms, the `Labels` checkbox group is parsed as `Kind` metadata.
+Because GitHub checkbox groups do not enforce "at least one" selection, each
+form also has a default managed label. If no label checkbox is selected, label
+sync keeps the existing default label instead of failing the issue workflow.
 
 The legacy custom Project `Phase` field has been removed from the roadmap
 Project. The cleanup command remains available as an idempotent maintenance
@@ -112,7 +139,7 @@ Triggers:
 Responsibilities:
 
 - add the issue to the roadmap Project when missing;
-- parse the issue `Project metadata` block;
+- parse metadata from issue-form sections or the legacy `Project metadata` block;
 - sync roadmap grouping into the issue milestone;
 - sync `Priority`, `Size`, and `Suggested status` into Project fields;
 - ignore the removed custom Project `Phase` field while still accepting legacy
@@ -183,8 +210,9 @@ The workflow syncs only labels owned by `Kind` metadata:
 
 It may remove stale labels from that managed set when an issue's kind changes,
 but it does not remove unrelated labels that were added manually. Multiple kind
-values are supported in one metadata block, so `Kind: docs / design` keeps both
-the `docs` and `design` labels on the issue.
+values are supported in one metadata source, so `Kind: docs / design` or the
+same issue-form label selections keep both the `docs` and `design` labels on
+the issue.
 
 ## Roadmap drift check
 
