@@ -45,16 +45,14 @@ jobs:
         run: |
           python3 .github/scripts/project_automation.py sync-labels \
             --repo "${GITHUB_REPOSITORY}" \
-            --issue-number "${{ github.event.issue.number }}" \
-            --strict
+            --issue-number "${{ github.event.issue.number }}"
 
       - name: Sync requested issue labels
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_all_open == false && inputs.issue_number != '' }}
         run: |
           python3 .github/scripts/project_automation.py sync-labels \
             --repo "${GITHUB_REPOSITORY}" \
-            --issue-number "${{ inputs.issue_number }}" \
-            --strict
+            --issue-number "${{ inputs.issue_number }}"
 
       - name: Sync all open issue labels
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_all_open == true }}

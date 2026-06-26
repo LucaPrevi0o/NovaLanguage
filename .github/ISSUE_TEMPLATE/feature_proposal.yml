@@ -1,15 +1,16 @@
-name: Design task
-description: Capture a Nova language, compiler architecture, workflow, or roadmap design decision.
-title: "design: "
+name: Feature proposal
+description: Propose a Nova language or compiler feature before implementation work starts.
+title: "proposal: "
 labels:
+  - feature
   - design
 body:
   - type: textarea
     id: goal
     attributes:
       label: Goal
-      description: Describe the design question or decision this issue should resolve.
-      placeholder: State the decision target in one or two sentences.
+      description: Describe the feature or behavior change being proposed.
+      placeholder: State the proposed capability in one or two sentences.
     validations:
       required: true
   - type: dropdown
@@ -36,7 +37,7 @@ body:
         - M
         - L
         - XL
-      default: 1
+      default: 2
     validations:
       required: true
   - type: dropdown
@@ -55,46 +56,38 @@ body:
     validations:
       required: true
   - type: textarea
-    id: decision
+    id: problem
     attributes:
-      label: Decision to make
-      description: State the specific choice that needs to be made.
+      label: Problem or motivation
+      description: Explain why Nova needs this feature and what limitation it removes.
     validations:
       required: true
   - type: textarea
-    id: context
+    id: proposal
     attributes:
-      label: Context
-      description: Link roadmap phases, architecture docs, implementation constraints, or related issues.
+      label: Proposed behavior
+      description: Describe the syntax, semantics, diagnostics, or workflow behavior you want.
       value: |
-        Relevant docs:
+        Proposed behavior:
 
-        - `PLAN.md`
-        - `docs/architecture.md`
+        ```nova
+        // Optional example.
+        ```
     validations:
       required: true
   - type: textarea
-    id: options
+    id: alternatives
     attributes:
-      label: Options considered
-      value: |
-        ### Option A
-
-        - Pros:
-        - Cons:
-
-        ### Option B
-
-        - Pros:
-        - Cons:
+      label: Alternatives considered
+      description: List rejected designs or simpler approaches, if any.
   - type: textarea
     id: scope
     attributes:
       label: Scope
       value: |
-        - [ ] Describe the chosen design and its rationale.
-        - [ ] Identify the compiler layers affected by the design.
-        - [ ] Identify follow-up implementation issues if the decision is too large for one PR.
+        - [ ] Describe the feature behavior and its rationale.
+        - [ ] Identify affected compiler layers.
+        - [ ] Split follow-up implementation work into smaller issues if needed.
     validations:
       required: true
   - type: textarea
@@ -108,9 +101,9 @@ body:
     attributes:
       label: Acceptance criteria
       value: |
-        - [ ] The decision is documented in the appropriate docs page or roadmap section.
-        - [ ] The design preserves existing phase ordering unless the issue explicitly justifies changing it.
-        - [ ] Follow-up implementation issues are listed when needed.
+        - [ ] The accepted behavior is documented in the appropriate docs page or roadmap section.
+        - [ ] Implementation tasks are linked or created when the proposal is too large for one PR.
+        - [ ] Relevant examples or diagnostics are included when useful.
         - [ ] Documentation-only checks pass.
     validations:
       required: true
