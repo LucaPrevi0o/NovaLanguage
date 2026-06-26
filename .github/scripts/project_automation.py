@@ -30,35 +30,81 @@ LEGACY_PHASE_FIELD = "Phase"
 
 METADATA_HEADER = "Project metadata"
 
+MVP_MILESTONE = "Nova MVP compiler"
+PROJECT_WORKFLOW_MILESTONE = "Project workflow"
+FUTURE_MILESTONE = "Future development"
+
+ADVANCED_FEATURE_MILESTONES = (
+    "Advanced overload and override rules",
+    "Access control",
+    "Inheritance conflict checks",
+    "Generics",
+    "Bounded generics",
+    "Class parameters",
+    "Operator-overloadable Nova types",
+    "Lambdas",
+    "Variadic generics",
+    "Monomorphization",
+)
+
 
 MILESTONE_ALIASES = {
-    "project workflow": "Project workflow",
-    "phase 4 - semantic analysis split": "Phase 4 - Semantic analysis split",
-    "4 - semantic analysis split": "Phase 4 - Semantic analysis split",
-    "phase 5 - type model": "Phase 5 - Type model",
-    "5 - type model": "Phase 5 - Type model",
-    "phase 6 - multi-file project pipeline": "Phase 6 - Multi-file project pipeline",
-    "6 - multi-file project pipeline": "Phase 6 - Multi-file project pipeline",
-    "phase 7 - standard library as source": "Phase 7 - Standard library",
-    "phase 7 - standard library": "Phase 7 - Standard library",
-    "7 - standard library": "Phase 7 - Standard library",
-    "phase 8 - ir preparation": "Phase 8 - IR preparation",
-    "8 - ir preparation": "Phase 8 - IR preparation",
-    "phase 9 - advanced nova features": "Phase 9 - Advanced features",
-    "phase 9 - advanced features": "Phase 9 - Advanced features",
-    "9 - advanced features": "Phase 9 - Advanced features",
-    "future development": "Future development",
+    "project workflow": PROJECT_WORKFLOW_MILESTONE,
+    "nova mvp compiler": MVP_MILESTONE,
+    "mvp compiler": MVP_MILESTONE,
+    "first usable compiler": MVP_MILESTONE,
+    "phase 1 - build health": MVP_MILESTONE,
+    "1 - build health": MVP_MILESTONE,
+    "phase 2 - parser semantics": MVP_MILESTONE,
+    "2 - parser semantics": MVP_MILESTONE,
+    "phase 3 - diagnostics": MVP_MILESTONE,
+    "3 - diagnostics": MVP_MILESTONE,
+    "phase 4 - semantic analysis split": MVP_MILESTONE,
+    "4 - semantic analysis split": MVP_MILESTONE,
+    "phase 5 - type model": MVP_MILESTONE,
+    "5 - type model": MVP_MILESTONE,
+    "phase 6 - multi-file project pipeline": MVP_MILESTONE,
+    "6 - multi-file project pipeline": MVP_MILESTONE,
+    "phase 7 - standard library as source": MVP_MILESTONE,
+    "phase 7 - standard library": MVP_MILESTONE,
+    "7 - standard library": MVP_MILESTONE,
+    "phase 8 - ir preparation": MVP_MILESTONE,
+    "8 - ir preparation": MVP_MILESTONE,
+    "phase 9 - advanced nova features": FUTURE_MILESTONE,
+    "phase 9 - advanced features": FUTURE_MILESTONE,
+    "9 - advanced features": FUTURE_MILESTONE,
+    "advanced overload and override rules": "Advanced overload and override rules",
+    "access control": "Access control",
+    "inheritance conflict checks": "Inheritance conflict checks",
+    "generics": "Generics",
+    "bounded generics": "Bounded generics",
+    "class parameters": "Class parameters",
+    "operator-overloadable nova types": "Operator-overloadable Nova types",
+    "operator overloadable nova types": "Operator-overloadable Nova types",
+    "lambdas": "Lambdas",
+    "variadic generics": "Variadic generics",
+    "monomorphization": "Monomorphization",
+    "future development": FUTURE_MILESTONE,
 }
 
 MILESTONE_DESCRIPTIONS = {
-    "Project workflow": "Repository automation, issue tracking, documentation publishing, and project-management workflow work.",
-    "Phase 4 - Semantic analysis split": "Parser and semantic-analysis boundary work from Phase 4 of the Nova roadmap.",
-    "Phase 5 - Type model": "TypeSyntax, TypeSymbol, and type-model groundwork from Phase 5 of the Nova roadmap.",
-    "Phase 6 - Multi-file project pipeline": "Project-level compiler front-end pipeline work from Phase 6 of the Nova roadmap.",
-    "Phase 7 - Standard library": "Semantic standard-library and source-backed Core loading work from Phase 7 of the Nova roadmap.",
-    "Phase 8 - IR preparation": "Backend-neutral lowering and IR preparation work from Phase 8 of the Nova roadmap.",
-    "Phase 9 - Advanced features": "Deferred advanced Nova language features from Phase 9 of the Nova roadmap.",
-    "Future development": "Future-facing design and maintenance work that is not part of the current compiler phase.",
+    PROJECT_WORKFLOW_MILESTONE: (
+        "Repository automation, issue tracking, documentation publishing, and project-management workflow work."
+    ),
+    MVP_MILESTONE: (
+        "Phase 1 through Phase 8 work needed for the first usable Nova compiler front-end."
+    ),
+    "Advanced overload and override rules": "Post-MVP overload, override, specificity, and dispatch design work.",
+    "Access control": "Post-MVP visibility and member-access enforcement work.",
+    "Inheritance conflict checks": "Post-MVP inherited-member conflict and hierarchy validation work.",
+    "Generics": "Post-MVP generic type and function support.",
+    "Bounded generics": "Post-MVP generic constraint and bound support.",
+    "Class parameters": "Post-MVP class parameter syntax, semantics, and lowering support.",
+    "Operator-overloadable Nova types": "Post-MVP operator overload support for Nova-defined types.",
+    "Lambdas": "Post-MVP lambda syntax, typing, capture, and lowering support.",
+    "Variadic generics": "Post-MVP variadic type parameter support.",
+    "Monomorphization": "Post-MVP generic specialization and monomorphization support.",
+    FUTURE_MILESTONE: "Future-facing design and maintenance work that is not part of the current compiler phase.",
 }
 
 PRIORITY_ALIASES = {
@@ -96,13 +142,16 @@ MANAGED_KIND_LABELS = {
 }
 
 PHASE_NUMBER_TO_MILESTONE = {
-    4: "Phase 4 - Semantic analysis split",
-    5: "Phase 5 - Type model",
-    6: "Phase 6 - Multi-file project pipeline",
-    7: "Phase 7 - Standard library",
-    8: "Phase 8 - IR preparation",
-    9: "Phase 9 - Advanced features",
+    1: MVP_MILESTONE,
+    2: MVP_MILESTONE,
+    3: MVP_MILESTONE,
+    4: MVP_MILESTONE,
+    5: MVP_MILESTONE,
+    6: MVP_MILESTONE,
+    7: MVP_MILESTONE,
+    8: MVP_MILESTONE,
 }
+SHARED_PHASE_MILESTONES = {MVP_MILESTONE}
 
 ACTIVE_STATUSES = {"Ready", "In Progress", "In Review"}
 DONE_STATUS = "Done"
@@ -1008,21 +1057,24 @@ def check_plan_drift_command(args: argparse.Namespace) -> int:
 
     if plan_focus is not None:
         focus_milestone = PHASE_NUMBER_TO_MILESTONE.get(plan_focus)
-        active_focus_items = [
-            item for item in items
-            if item.milestone == focus_milestone and item.fields.get(STATUS_FIELD) in ACTIVE_STATUSES
-        ]
-        in_progress_focus_items = [
-            item for item in active_focus_items
-            if item.fields.get(STATUS_FIELD) == "In Progress"
-        ]
-        if not active_focus_items:
-            errors.append(f"No active Project item found for PLAN.md current focus Phase {plan_focus}")
-        elif not in_progress_focus_items:
-            warnings.append(f"PLAN.md current focus Phase {plan_focus} has active items but none marked In Progress")
+        if focus_milestone is None:
+            notices.append(f"PLAN.md current focus Phase {plan_focus} is not tied to one roadmap milestone")
         else:
-            labels = ", ".join(f"#{item.number} {item.title}" for item in in_progress_focus_items)
-            notices.append(f"Current focus is represented by {labels}")
+            active_focus_items = [
+                item for item in items
+                if item.milestone == focus_milestone and item.fields.get(STATUS_FIELD) in ACTIVE_STATUSES
+            ]
+            in_progress_focus_items = [
+                item for item in active_focus_items
+                if item.fields.get(STATUS_FIELD) == "In Progress"
+            ]
+            if not active_focus_items:
+                errors.append(f"No active Project item found for PLAN.md current focus Phase {plan_focus}")
+            elif not in_progress_focus_items:
+                warnings.append(f"PLAN.md current focus Phase {plan_focus} has active items but none marked In Progress")
+            else:
+                labels = ", ".join(f"#{item.number} {item.title}" for item in in_progress_focus_items)
+                notices.append(f"Current focus is represented by {labels}")
 
     statuses = phase_statuses(plan_text)
     for phase, status in statuses.items():
@@ -1030,6 +1082,8 @@ def check_plan_drift_command(args: argparse.Namespace) -> int:
             continue
         phase_milestone = PHASE_NUMBER_TO_MILESTONE.get(phase)
         if not phase_milestone:
+            continue
+        if phase_milestone in SHARED_PHASE_MILESTONES:
             continue
         stale_items = [
             item for item in items
@@ -1067,7 +1121,7 @@ def remove_legacy_phase_field_command(args: argparse.Namespace) -> int:
     if not args.confirm:
         raise ProjectAutomationError(
             "Refusing to remove the legacy Project Phase field without --confirm. "
-            "Run this only after milestone-aware automation is merged to the default branch."
+            "Run this only when the Project should not expose the duplicate Phase field."
         )
 
     client = GitHubClient(token_from_environment())
@@ -1114,7 +1168,7 @@ def build_parser() -> argparse.ArgumentParser:
     cleanup_parser.add_argument(
         "--confirm",
         action="store_true",
-        help="Confirm that milestone-aware automation is already active on the default branch",
+        help="Confirm that the duplicate Project Phase field should be removed",
     )
     cleanup_parser.set_defaults(func=remove_legacy_phase_field_command)
 

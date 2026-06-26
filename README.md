@@ -11,6 +11,9 @@ The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 Current focus: **Phase 5 - type model groundwork**.
 
 Phase 4 is still tracked as in progress because the parser-generated AST still needs a final simplicity/completeness cleanup, but the main parser/semantic split is already in place.
+Roadmap issues for Phases 1 through 8 are grouped under the `Nova MVP compiler`
+milestone; advanced Phase 9 language features are tracked as separate post-MVP
+milestones.
 
 Implemented or partially implemented today:
 
@@ -30,7 +33,7 @@ Implemented or partially implemented today:
 - L-value checking
 - `break` / `continue` context checking
 - JUnit tests grouped by compiler layer
-- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, and milestone-based Project automation
+- GitHub Actions Java CI, documentation checks, Wiki mirroring, Javadoc/GitHub Pages publishing, and deliverable-based Project milestone automation
 
 Not implemented yet:
 

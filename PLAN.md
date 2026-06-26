@@ -51,7 +51,7 @@ Status: Current.
 - [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
 - [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, `semantic.scope`, and `semantic.type`.
 - [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
-- [x] GitHub issue milestones now own roadmap grouping for Project automation; the custom Project `Phase` field is no longer written by sync workflows and has a post-merge cleanup command.
+- [x] GitHub issue milestones now own roadmap grouping for Project automation; Phase 1-8 work is tracked under `Nova MVP compiler`, Phase 9 work uses dedicated advanced-feature milestones, and the custom Project `Phase` field has been removed.
 
 ## Phase 1 - Restore Build Health
 

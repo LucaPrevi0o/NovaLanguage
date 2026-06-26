@@ -11,6 +11,9 @@ For the ecosystem naming vocabulary, see [`ecosystem.md`](ecosystem.md).
 Current focus: **Phase 5 - type model groundwork**.
 
 The main goal is to introduce a real type model without undoing the parser/semantic boundary.
+GitHub milestones track deliverables rather than internal phase numbers: Phase 1
+through Phase 8 work belongs to the `Nova MVP compiler` milestone, while Phase 9
+advanced language features are tracked as separate post-MVP milestones.
 
 In practical terms:
 
@@ -215,6 +218,9 @@ Planned work:
 Status: **not started**.
 
 Ambitious language features should wait until the core front-end pipeline is stable.
+Each accepted advanced feature should use its own milestone so design, syntax,
+semantic analysis, diagnostics, tests, and documentation can be completed as one
+focused integration track.
 
 Planned work includes:
 
