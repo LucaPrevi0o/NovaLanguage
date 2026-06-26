@@ -68,6 +68,7 @@ Important documentation:
 - [`docs/architecture.md`](docs/architecture.md) - current compiler-front-end architecture
 - [`docs/parser.md`](docs/parser.md) - parser structure and responsibilities
 - [`docs/semantic-analysis.md`](docs/semantic-analysis.md) - semantic passes and scope model
+- [`docs/type-model.md`](docs/type-model.md) - `TypeSyntax`, `TypeSymbol`, and compatibility boundary
 - [`docs/language-design.md`](docs/language-design.md) - long-term Nova language vision
 - [`docs/ecosystem.md`](docs/ecosystem.md) - Nova ecosystem naming and package vocabulary
 - [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md) - roadmap explained in narrative form

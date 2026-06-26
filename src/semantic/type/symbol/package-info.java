@@ -1,7 +1,15 @@
-/// > NOTE: this doc should be expanded with more detailed information about the classes and interfaces in this package, including their purpose, usage, and relationships to other components of the semantic analysis phase.
+/// # Semantic type symbols
 ///
-/// This package contains classes and interfaces related to symbols in the semantic analysis phase of a compiler or interpreter.
+/// Resolved Nova type categories used by semantic analysis.
 ///
-/// Symbols represent identifiers, such as variable names, function names, and type names, and are used to store information about these identifiers during the compilation process.
-/// The classes in this package may include symbol tables, symbol entries, and utilities for managing and resolving symbols within different scopes of a program.
+/// Parser AST nodes preserve source type spelling as `parser.ast.nodes.type.TypeSyntax`.
+/// Semantic analysis resolves that syntax into symbols from this package.
+///
+/// ## Current symbol categories
+///
+/// - `ValueTypeSymbol` for Nova value/math types and built-in primitive-like types.
+/// - `ClassTypeSymbol` for object/class declarations.
+/// - `ArrayTypeSymbol` for arrays with resolved element types.
+/// - `GenericParameterSymbol` for visible generic parameters.
+/// - `UnknownTypeSymbol` for unresolved type names after diagnostics have been reported.
 package semantic.type.symbol;
