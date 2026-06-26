@@ -4,6 +4,7 @@ import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
 import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.type.TypeSyntax;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,19 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
     /// @param line The line number where the field is declared.
     /// @param column The column number where the field is declared.
     /// @param variableType The return type of the field.
+    /// @param variableName The name of the field.
+    /// @param initialValue The initial value of the field, if any.
+    /// @param accessModifier The access modifier of the field (e.g., public, private).
+    public ClassFieldDeclaration(int line, int column, TypeSyntax variableType, String variableName, ExpressionNode initialValue, AccessModifier accessModifier) {
+
+        super(line, column, variableType, variableName, initialValue);
+        this.accessModifier = accessModifier;
+    }
+
+    /// Constructs a compatibility ClassFieldDeclaration from a legacy ReturnType adapter.
+    /// @param line The line number where the field is declared.
+    /// @param column The column number where the field is declared.
+    /// @param variableType The temporary ReturnType adapter for older callers.
     /// @param variableName The name of the field.
     /// @param initialValue The initial value of the field, if any.
     /// @param accessModifier The access modifier of the field (e.g., public, private).

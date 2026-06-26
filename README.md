@@ -10,7 +10,7 @@ The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 
 Current focus: **Phase 5 - type model groundwork**.
 
-Phase 4 is still tracked as in progress because the parser-generated AST still needs a final simplicity/completeness cleanup, but the main parser/semantic split is already in place.
+Phase 4 is complete: parsing now builds syntax-only ASTs, while semantic passes own name resolution, scope construction, duplicate checks, type checks, return checks, l-value checks, and loop-control validation.
 Roadmap issues for Phases 1 through 8 are grouped under the `Nova MVP compiler`
 milestone; advanced Phase 9 language features are tracked as separate post-MVP
 milestones.
@@ -20,6 +20,7 @@ Implemented or partially implemented today:
 - Lexical analysis
 - Recursive-descent parsing
 - AST construction with parsed type-syntax preservation
+- Declaration AST constructors that accept parsed `TypeSyntax` directly
 - Parser recovery and structured lexer/parser diagnostics
 - Semantic declaration collection
 - Semantic scope construction
@@ -37,7 +38,7 @@ Implemented or partially implemented today:
 
 Not implemented yet:
 
-- Full removal of temporary `ReturnType` adapters from declaration AST construction and printer compatibility paths
+- Full removal of temporary `ReturnType` adapter constructors, compatibility getters, fallback bridges, and printer compatibility paths
 - Multi-file project compilation
 - Semantic standard-library declarations
 - Standard library loading from Nova source files

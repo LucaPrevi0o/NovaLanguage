@@ -4,6 +4,7 @@ import parser.ast.Printable;
 import parser.ast.nodes.*;
 import parser.ast.nodes.statement.DeclarationStatement;
 import lexer.token.ReturnType;
+import parser.ast.nodes.type.TypeSyntax;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,18 @@ public class VariableDeclarationStatement extends DeclarationStatement implement
     /// @param line The line number where the variable is declared.
     /// @param column The column number where the variable is declared.
     /// @param variableType The return type of the variable.
+    /// @param variableName The name of the variable.
+    /// @param initialValue The initial value of the variable, if any.
+    public VariableDeclarationStatement(int line, int column, TypeSyntax variableType, String variableName, ExpressionNode initialValue) {
+
+        super(line, column, variableType, variableName);
+        this.initialValue = initialValue;
+    }
+
+    /// Constructs a compatibility VariableDeclarationStatement from a legacy ReturnType adapter.
+    /// @param line The line number where the variable is declared.
+    /// @param column The column number where the variable is declared.
+    /// @param variableType The temporary ReturnType adapter for older callers.
     /// @param variableName The name of the variable.
     /// @param initialValue The initial value of the variable, if any.
     public VariableDeclarationStatement(int line, int column, ReturnType variableType, String variableName, ExpressionNode initialValue) {

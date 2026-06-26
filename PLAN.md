@@ -24,7 +24,7 @@ Current focus: Phase 5 - type model groundwork.
 | 1. Build health               | Complete    | Maven wrapper and baseline test flow are restored.                                                                                                                                  |
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
-| 4. Semantic analysis split    | In progress | Semantic declaration collection, scope construction, name/type diagnostics, overload-aware duplicate validation, type checks, return/l-value checks, and loop-control checks exist. |
+| 4. Semantic analysis split    | Complete    | Parser-generated ASTs are syntax-only; semantic declaration collection, scopes, diagnostics, type checks, return/l-value checks, and loop-control checks own meaning.              |
 | 5. Type model                 | In progress | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, and syntaxless `ReturnType` fallback is isolated.                     |
 | 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                                                |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
@@ -159,7 +159,7 @@ Exit criteria:
 
 ## Phase 4 - Split Semantic Analysis From Parsing
 
-Status: In progress.
+Status: Complete.
 
 Goal: make the parser build syntax only, then validate meaning through semantic passes.
 
@@ -177,7 +177,7 @@ Tasks:
 - [x] Add l-value checking.
 - [x] Add `break`/`continue` context checking.
 - [x] Move symbol-table validation out of parser code where possible.
-- [ ] Keep parser-generated AST simple and complete.
+- [x] Keep parser-generated AST simple and complete.
 
 Parser-owned semantic checks inventory:
 
@@ -200,11 +200,12 @@ Parser-owned semantic checks inventory:
 - [x] Type/name resolution: `ClassParser` no longer rejects unknown superclasses; semantic name resolution reports them.
 - [x] Declaration validation: duplicate declarations are no longer rejected during parsing; semantic duplicate validation reports them.
 - [x] L-value validation: `ExpressionParser` no longer rejects invalid assignment targets; semantic l-value checking reports them.
-- [x] Type syntax/resolution coupling: `DeclarationParser.parseType()` now accepts identifier type syntax; semantic name resolution reports unknown types.
+- [x] Type syntax/resolution coupling: `DeclarationParser.parseTypeSyntax()` accepts identifier type syntax; semantic name resolution reports unknown types.
 - [x] Scope construction coupling: declaration and class parsers no longer build parser symbol-table scopes or register symbols while parsing syntax.
 - [x] TypeRegistry boundary decision: expression parsing no longer depends on parser type metadata, and `TypeRegistry` is not used for semantic validation.
-- [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes before adapting them to `ReturnType`.
+- [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes for declared source types.
 - [x] Type syntax exposure: declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters.
+- [x] Type syntax construction: declaration/class parsing now passes parsed `TypeSyntax` directly into declaration AST constructors instead of building parser-owned `ReturnType` adapters.
 - [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
 - [x] TypeRegistry adapter removal: declaration/class parsing no longer uses a parser-side type registry.
 
@@ -225,7 +226,7 @@ Tasks:
 - [x] Add parsed type syntax nodes, such as `TypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`.
 - [x] Add resolved semantic type symbols, such as `ValueTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
 - [x] Resolve declared type names through semantic type symbols during name resolution.
-- [x] Let parser-created `ReturnType` objects carry source `TypeSyntax` while downstream code still uses the temporary adapter.
+- [x] Keep legacy `ReturnType` adapters able to expose source `TypeSyntax` while downstream compatibility paths are retired.
 - [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
 - [x] Keep `ReturnType` as a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs.
 - [x] Expose parsed `TypeSyntax` directly from declaration AST nodes and semantic declarations.
@@ -239,7 +240,7 @@ Exit criteria:
 - [x] Type names can be parsed before they are resolved.
 - [x] Forward and mutual references become possible.
 - [x] Semantic analysis no longer reads lexer token classes outside the isolated `ReturnType` compatibility bridge.
-- [ ] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
+- [x] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
 
 ## Phase 6 - Multi-File Project Pipeline
 
@@ -335,5 +336,5 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Audit whether declaration constructors should accept `TypeSyntax` directly instead of accepting `ReturnType` adapters.
+1. Audit remaining manual AST construction, printer paths, and compatibility getters that still rely on `ReturnType` adapter fallbacks.
 2. Keep advanced inheritance and overload rules scoped to later work: access control, conflict checks, override validation, generic specificity, and conversions.

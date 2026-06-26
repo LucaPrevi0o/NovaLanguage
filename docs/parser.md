@@ -111,7 +111,7 @@ Important boundary:
 - the parser may recognize generic type syntax;
 - a future type model should decide whether generic parameters are valid and visible.
 
-Declaration and class parsing now build source-level type syntax nodes and expose them through declaration AST accessors. `ReturnType` remains available as a compatibility adapter for older AST/printer paths, but semantic type resolution reads parsed `TypeSyntax` before consulting legacy adapter metadata. The parser no longer has a type registry; it accepts syntactic type names and leaves visibility and type validity to semantic analysis.
+Declaration and class parsing now build source-level type syntax nodes and pass them directly into declaration AST constructors. Declaration AST accessors expose that parsed `TypeSyntax` without requiring a `ReturnType` adapter. `ReturnType` remains available as a compatibility adapter for older manual AST/printer paths, but semantic type resolution reads parsed `TypeSyntax` before consulting legacy adapter metadata. The parser no longer has a type registry; it accepts syntactic type names and leaves visibility and type validity to semantic analysis.
 
 ## Error recovery
 

@@ -21,6 +21,6 @@
 /// - Switch case validation.
 /// - Control-flow-sensitive return behavior, once implemented.
 ///
-/// `ForEachStatement` exposes parsed element `TypeSyntax` for semantic type resolution while
-/// keeping its temporary `ReturnType` adapter for compatibility.
+/// `ForEachStatement` receives parsed element `TypeSyntax` directly from the parser and exposes it
+/// for semantic type resolution while keeping its temporary `ReturnType` adapter for compatibility.
 package parser.ast.nodes.statement.conditional;
