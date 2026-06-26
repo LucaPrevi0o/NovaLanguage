@@ -1,0 +1,72 @@
+name: Sync issue schedule to Project
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - reopened
+      - transferred
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to sync. Leave empty when syncing every open issue.
+        required: false
+        type: string
+      sync_all_open:
+        description: Sync schedule dates for every open issue with schedule metadata.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: project-schedule-sync-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  sync-schedule:
+    name: Sync issue schedule dates
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+      PROJECT_OWNER: LucaPrevi0o
+      PROJECT_NUMBER: "4"
+      PROJECT_START_DATE_FIELD: Start date
+      PROJECT_END_DATE_FIELD: End date
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Sync issue event schedule
+        if: ${{ github.event_name == 'issues' }}
+        run: |
+          python3 .github/scripts/project_schedule.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --issue-number "${{ github.event.issue.number }}"
+
+      - name: Sync requested issue schedule
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_all_open == false && inputs.issue_number != '' }}
+        run: |
+          python3 .github/scripts/project_schedule.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --issue-number "${{ inputs.issue_number }}"
+
+      - name: Sync all open issue schedules
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_all_open == true }}
+        run: |
+          python3 .github/scripts/project_schedule.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --all-open
+
+      - name: Require manual input
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_all_open == false && inputs.issue_number == '' }}
+        run: |
+          echo "::error::Provide issue_number or enable sync_all_open."
+          exit 1
