@@ -12,21 +12,32 @@ Nova uses structured GitHub issue forms to keep roadmap metadata consistent and 
 
 Blank issues are disabled in `.github/ISSUE_TEMPLATE/config.yml`, so contributors are guided through these templates.
 
-## Shared metadata
+## Native GitHub metadata
 
-Every issue form uses the same shared metadata fields:
+Issue forms intentionally do **not** ask for `Labels` or `Milestone` in the issue body. Those are native GitHub issue properties and should be set through GitHub's label and milestone controls.
 
-- `Milestone`
-- `Labels`
+The native source of truth is:
+
+- GitHub issue labels for work kind, such as `bug`, `feature`, `refactor`, `design`, `research`, `test`, or `docs`.
+- GitHub issue milestones for roadmap grouping, such as `Nova MVP compiler`, `Project workflow`, advanced feature milestones, or `Future development`.
+
+The `Check issue metadata` workflow validates new or edited issues and fails when an issue has no managed label, no milestone, or an unmanaged milestone.
+
+## Issue-form metadata
+
+Every issue form still uses these shared project fields because GitHub does not provide native equivalents for this repository workflow:
+
 - `Priority`
 - `Size`
 - `Suggested status`
 
-The metadata is parsed by the project automation documented in `docs/project-automation.md`. The `Labels` checkbox group is treated as `Kind` metadata and synchronized to the managed GitHub labels.
+Those fields are parsed by the project automation documented in `docs/project-automation.md` and synchronized into the roadmap Project.
+
+Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## Project metadata` block remain supported by the existing automation during migration, but new issue forms should not reintroduce those duplicated body fields.
 
 ## Keeping form options aligned
 
-The canonical source for managed milestones, labels, priorities, and statuses is `.github/scripts/project_automation.py`. The helper script `.github/scripts/issue_forms.py` imports those constants and updates the matching option blocks in every issue form.
+The canonical source for managed labels, milestones, priorities, statuses, and sizes is `.github/scripts/project_metadata.py`. The helper script `.github/scripts/issue_forms.py` imports those constants, updates the remaining shared option blocks, and rejects duplicated native body fields.
 
 To update forms locally after changing managed metadata:
 
