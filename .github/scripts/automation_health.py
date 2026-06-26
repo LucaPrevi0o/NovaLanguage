@@ -46,7 +46,10 @@ PROJECT_AUTOMATION_COMMANDS = (
 )
 
 WORKFLOW_MANAGED_PROJECT_COMMANDS = PROJECT_AUTOMATION_COMMANDS
-DOCUMENTED_ENTRY_POINTS = (*EXPECTED_SCRIPTS, *EXPECTED_WORKFLOWS)
+DOCUMENTED_ENTRY_POINTS = (
+    ".github/scripts/automation_health.py",
+    ".github/workflows/automation-health-check.yml",
+)
 
 SCRIPT_REFERENCE_PATTERN = re.compile(r"(?<![\w/.-])\.github/scripts/[A-Za-z0-9_./-]+\.py")
 PROJECT_COMMAND_PATTERN = re.compile(r"\.github/scripts/project_automation\.py\s+([a-z][a-z0-9-]+)")
@@ -226,13 +229,13 @@ def documented_automation_text(root: Path) -> str:
 
 
 def check_documentation_mentions(root: Path, findings: list[Finding]) -> None:
-    """Check that automation entry points are documented."""
+    """Check that automation health-check entry points are documented."""
 
     docs_text = documented_automation_text(root)
-    docs_path = root / "docs" / "automation-inventory.md"
+    docs_path = root / "docs" / "automation-health-check.md"
     for expected in DOCUMENTED_ENTRY_POINTS:
         if expected not in docs_text:
-            findings.append(Finding("error", f"Automation docs do not mention {expected}", docs_path))
+            findings.append(Finding("error", f"Automation health-check docs do not mention {expected}", docs_path))
 
 
 def run_health_check(root: Path) -> list[Finding]:
