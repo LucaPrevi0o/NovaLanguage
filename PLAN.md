@@ -234,6 +234,7 @@ Tasks:
 - [x] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [x] Model Nova classes and Nova value/math types separately, matching the README design.
 - [x] Isolate syntaxless `ReturnType` fallback conversion in `semantic.type.ReturnTypeSyntaxBridge`.
+- [x] Add regression tests for semantic type categories: value/math, class/object, array, generic-parameter, and unknown.
 
 Exit criteria:
 
@@ -241,6 +242,7 @@ Exit criteria:
 - [x] Forward and mutual references become possible.
 - [x] Semantic analysis no longer reads lexer token classes outside the isolated `ReturnType` compatibility bridge.
 - [x] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
+- [x] Semantic type-category behavior is covered by focused regression tests.
 
 ## Phase 6 - Multi-File Project Pipeline
 

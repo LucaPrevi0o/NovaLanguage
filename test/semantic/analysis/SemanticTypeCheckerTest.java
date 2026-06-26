@@ -24,6 +24,13 @@ public class SemanticTypeCheckerTest {
         return new TypeChecker().check(parse(source));
     }
 
+    private boolean hasDiagnosticContaining(List<Diagnostic> diagnostics, String text) {
+
+        for (var diagnostic : diagnostics)
+            if (diagnostic.message().contains(text)) return true;
+        return false;
+    }
+
     @Test
     void testReportsVariableInitializerMismatch() {
 
@@ -211,6 +218,22 @@ public class SemanticTypeCheckerTest {
     }
 
     @Test
+    void testUsesClassArrayElementCategoryForIndexingAndAssignment() {
+
+        var diagnostics = check("""
+            public class Box { }
+            Box[] boxes;
+            Box valid = boxes[0];
+            int invalidValue = boxes[0];
+            Box invalidIndex = boxes[true];
+            """);
+
+        assertEquals(2, diagnostics.size());
+        assertTrue(hasDiagnosticContaining(diagnostics, "cannot assign Box to int"));
+        assertTrue(hasDiagnosticContaining(diagnostics, "Array index must be int, got bool"));
+    }
+
+    @Test
     void testAcceptsClassFieldAccessWithMatchingType() {
 
         var diagnostics = check("""
@@ -267,6 +290,22 @@ public class SemanticTypeCheckerTest {
             public class Box { public int get(bool ok) { return 1; } }
             Box box;
             int value = box.get(true);
+            """);
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void testAcceptsGenericParameterTypesVisibleFromClassScope() {
+
+        var diagnostics = check("""
+            public class Box[T] {
+              public T value;
+              public T pick(T input) {
+                T local = input;
+                return local;
+              }
+            }
             """);
 
         assertTrue(diagnostics.isEmpty());
