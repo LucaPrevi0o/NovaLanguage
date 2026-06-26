@@ -13,41 +13,6 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: milestone
-    attributes:
-      label: Milestone
-      description: Choose the deliverable or feature track this issue belongs to.
-      options:
-        - Project workflow
-        - Nova MVP compiler
-        - Advanced overload and override rules
-        - Access control
-        - Inheritance conflict checks
-        - Generics
-        - Bounded generics
-        - Class parameters
-        - Operator-overloadable Nova types
-        - Lambdas
-        - Variadic generics
-        - Monomorphization
-        - Future development
-      default: 1
-    validations:
-      required: true
-  - type: checkboxes
-    id: labels
-    attributes:
-      label: Labels
-      description: Select the managed labels that describe this issue. Managed labels describe the type of work, not the milestone or design area.
-      options:
-        - label: bug
-        - label: feature
-        - label: refactor
-        - label: design
-        - label: research
-        - label: test
-        - label: docs
-  - type: dropdown
     id: priority
     attributes:
       label: Priority
