@@ -8,7 +8,8 @@ from pathlib import Path
 
 
 REPOSITORY = os.environ["GITHUB_REPOSITORY"]
-REPOSITORY_NAME = REPOSITORY.rsplit("/", 1)[-1]
+REPOSITORY_OWNER, REPOSITORY_NAME = REPOSITORY.split("/", 1)
+ROADMAP_URL = os.environ.get("PROJECT_ROADMAP_URL", f"https://github.com/users/{REPOSITORY_OWNER}/projects/4")
 SITE_DIR = Path(".site")
 ASSET_DIR = SITE_DIR / "assets"
 
@@ -149,7 +150,7 @@ def main() -> None:
       <h1>{REPOSITORY_NAME}</h1>
       <p class="summary">
         This site is generated automatically from the <code>main</code> branch and collects
-        the project API reference, human-written Wiki pages, and source repository links.
+        the project API reference, human-written Wiki pages, roadmap tracker, and source repository links.
       </p>
       <ul class="links">
         <li>
@@ -162,6 +163,12 @@ def main() -> None:
           <a href="https://github.com/{REPOSITORY}/wiki">
             <strong>Project Wiki</strong>
             <span>Read the mirrored Markdown documentation and design notes.</span>
+          </a>
+        </li>
+        <li>
+          <a href="{ROADMAP_URL}">
+            <strong>Development Roadmap</strong>
+            <span>Open the live GitHub Project used to track current priorities and future work.</span>
           </a>
         </li>
         <li>
