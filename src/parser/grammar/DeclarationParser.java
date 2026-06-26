@@ -12,8 +12,6 @@ import parser.ast.nodes.statement.declaration.*;
 import error.diagnostic.ParseException;
 import parser.support.ParserBase;
 import parser.support.ParserState;
-import parser.support.TypeSyntaxAdapter;
-import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.Delimiter;
 import lexer.token.family.Keyword;
@@ -109,13 +107,6 @@ public class DeclarationParser extends ParserBase {
     /// @return `true` if the token is a syntactic type token, `false` otherwise.
     public boolean isValidType(Token token) { return (token instanceof TypeToken) || isTypeName(token); }
 
-    /// Parses a type, which can be either a primitive type or a class name, along with any array dimensions.
-    ///
-    /// Grammar rule:
-    /// `type → (primitiveType | CLASSNAME) arrayDimensions?`
-    /// @return A ReturnType representing the parsed type, including base type, array dimensions, super types, and generic parameters as applicable.
-    protected ReturnType parseType() { return TypeSyntaxAdapter.toReturnType(parseTypeSyntax()); }
-
     /// Parses source-level type syntax without resolving its meaning.
     ///
     /// Grammar rule:
@@ -178,7 +169,7 @@ public class DeclarationParser extends ParserBase {
         if (!check(Delimiter.RPAREN)) do {
 
             //if (parameters.size() >= 255) throw parseError("Cannot have more than 255 parameters", getCurrentToken());
-            var paramType = parseType();
+            var paramType = parseTypeSyntax();
             var paramName = consume(new IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), getLiteralValue(paramName), paramType));
         } while (match(Delimiter.COMMA));
@@ -202,7 +193,7 @@ public class DeclarationParser extends ParserBase {
 
         if (startsTypedDeclaration()) {
 
-            var returnType = parseType();
+            var returnType = parseTypeSyntax();
             if (check(new IdentifierLiteral())) {
 
                 var nameToken = advance();
@@ -224,7 +215,7 @@ public class DeclarationParser extends ParserBase {
         var savedCurrent = state.getCurrentPosition();
         try {
 
-            parseType();
+            parseTypeSyntax();
             return check(new IdentifierLiteral());
         } catch (ParseException e) { return false; }
         finally { state.setCurrentPosition(savedCurrent); }
@@ -234,12 +225,12 @@ public class DeclarationParser extends ParserBase {
     ///
     /// Grammar rule:
     /// `functionDecl → type IDENTIFIER "(" parameters? ")" "{" declaration* "}"`
-    /// @param returnType The return type of the function, already parsed.
+    /// @param returnType The parsed return type syntax of the function.
     /// @param name The name of the function.
     /// @param line The line number where the function is declared (for error reporting and AST node construction).
     /// @param column The column number where the function is declared (for error reporting and AST node construction).
     /// @return A FunctionDeclarationStatement representing the parsed function declaration.
-    private FunctionDeclarationStatement parseFunctionDeclaration(ReturnType returnType, String name, int line, int column) {
+    private FunctionDeclarationStatement parseFunctionDeclaration(TypeSyntax returnType, String name, int line, int column) {
 
         consume(Delimiter.LPAREN, "Expect '(' after function name");
 
@@ -258,14 +249,14 @@ public class DeclarationParser extends ParserBase {
     ///
     /// Grammar rule:
     /// `varDecl → type arrayDimensions? IDENTIFIER ("=" expression)? ("," IDENTIFIER ("=" expression)?)* ";"`
-    /// @param type The return type of the variable, already parsed.
+    /// @param type The parsed type syntax of the variable.
     /// @param name The name of the variable.
     /// @param line The line number where the variable is declared (for error reporting and AST node construction).
     /// @param column The column number where the variable is declared (for error reporting and AST node construction).
     /// @return A StatementNode representing the parsed variable declaration(s).
     /// - If there is only one variable declared, returns a VariableDeclarationStatement.
     /// - If there are multiple variables declared in the same statement, returns a BlockStatement containing multiple VariableDeclarationStatements.
-    private StatementNode parseVariableDeclaration(ReturnType type, String name, int line, int column) {
+    private StatementNode parseVariableDeclaration(TypeSyntax type, String name, int line, int column) {
 
         ExpressionNode initializer = null;
         if (match(Operator.ASSIGN)) initializer = expressionParser.parseExpression();
@@ -383,7 +374,7 @@ public class DeclarationParser extends ParserBase {
 
             // Save position to restore if this is not a for-each
             var savedCurrent = state.getCurrentPosition();
-            var type = parseType();
+            var type = parseTypeSyntax();
 
             if (check(new IdentifierLiteral())) {
 
@@ -417,7 +408,7 @@ public class DeclarationParser extends ParserBase {
         if (match(Delimiter.SEMICOLON)) initializer = null;
         else if (startsTypedDeclaration()) {
 
-            var type = parseType();
+            var type = parseTypeSyntax();
             var nameToken = consume(new IdentifierLiteral(), "Expect variable name");
             var name = getLiteralValue(nameToken);
 

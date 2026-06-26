@@ -5,6 +5,7 @@ import parser.ast.nodes.statement.declaration.FunctionParameter;
 import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
 import parser.ast.nodes.StatementNode;
+import parser.ast.nodes.type.TypeSyntax;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,20 @@ public class ClassMethodDeclaration extends FunctionDeclarationStatement {
     /// @param line The line number where the method is declared.
     /// @param column The column number where the method is declared.
     /// @param returnType The return type of the method.
+    /// @param name The name of the method.
+    /// @param parameters The parameters of the method.
+    /// @param body The body of the method.
+    /// @param accessModifier The access modifier of the method (e.g., public, private).
+    public ClassMethodDeclaration(int line, int column, TypeSyntax returnType, String name, FunctionParameter[] parameters, StatementNode body, AccessModifier accessModifier) {
+
+        super(line, column, returnType, name, parameters, body);
+        this.accessModifier = accessModifier;
+    }
+
+    /// Constructs a compatibility ClassMethodDeclaration from a legacy ReturnType adapter.
+    /// @param line The line number where the method is declared.
+    /// @param column The column number where the method is declared.
+    /// @param returnType The temporary ReturnType adapter for older callers.
     /// @param name The name of the method.
     /// @param parameters The parameters of the method.
     /// @param body The body of the method.

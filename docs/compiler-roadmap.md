@@ -115,7 +115,7 @@ Completed or partially completed work includes:
 - `break` / `continue` context checking;
 - moving undefined identifier and undefined class checks out of expression parsing;
 - removing parser-owned symbol-table scope construction and symbol registration;
-- adding parsed type syntax nodes that can be carried by parser-created `ReturnType` adapters;
+- adding parsed type syntax nodes that declaration AST constructors receive directly;
 - removing the parser-side `TypeRegistry` adapter.
 
 Remaining work includes:
@@ -128,14 +128,15 @@ Remaining work includes:
 Status: **in progress**.
 
 Parser-created declarations preserve source `TypeSyntax`, and semantic type symbols carry
-Nova-level type categories. Syntaxless `ReturnType` compatibility fallbacks are isolated behind
-`semantic.type.ReturnTypeSyntaxBridge` until declaration constructors can be migrated fully to
-parsed type syntax.
+Nova-level type categories. Declaration AST constructors now accept parsed `TypeSyntax`
+directly, while syntaxless `ReturnType` compatibility fallbacks are isolated behind
+`semantic.type.ReturnTypeSyntaxBridge` for older manually constructed AST nodes.
 
 Completed work:
 
 - parsed type syntax nodes for named, array, and generic-parameter type syntax;
-- parser-created `ReturnType` objects can carry their source `TypeSyntax`;
+- declaration AST constructors accept parsed `TypeSyntax` directly;
+- parser-created declarations no longer need temporary `ReturnType` adapters;
 - declaration AST nodes expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters;
 - semantic declarations preserve both parsed `TypeSyntax` and the temporary `ReturnType` adapter;
 - semantic type symbols for value, class, array, generic-parameter, and unknown types;
@@ -149,8 +150,8 @@ Completed work:
 
 Planned work:
 
-- audit whether declaration constructors should accept parsed `TypeSyntax` directly instead of accepting `ReturnType` adapters;
-- remove the compatibility bridge once AST construction no longer needs syntaxless adapters;
+- audit remaining manual AST construction and printer paths that still rely on compatibility adapters;
+- remove the compatibility bridge once syntaxless adapter fallbacks are no longer needed;
 - continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
 
 This phase is important before implementing advanced language features.

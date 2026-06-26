@@ -11,6 +11,7 @@
 /// - Implement grammar rules in small, auditable methods.
 /// - Keep parser cursor movement local and explicit.
 /// - Build AST nodes without performing semantic validation.
+/// - Pass parsed source `TypeSyntax` directly into declaration AST constructors.
 /// - Report structured parser diagnostics when required syntax is missing.
 /// - Recover at well-defined boundaries such as statements, blocks, or class members.
 ///

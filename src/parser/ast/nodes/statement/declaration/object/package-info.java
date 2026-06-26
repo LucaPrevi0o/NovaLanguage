@@ -11,6 +11,7 @@
 /// - Preserve access modifiers required by the class grammar.
 /// - Preserve method and constructor parameters.
 /// - Preserve member bodies where applicable.
+/// - Receive parsed field and method `TypeSyntax` directly from class parsing.
 ///
 /// ## Semantic checks performed later
 ///

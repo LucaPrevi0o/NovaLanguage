@@ -49,6 +49,10 @@ public class ClassParserTest {
         var cls = (ClassDeclarationStatement) ast.getFirst();
         assertEquals(1, cls.getMethods().length);
         assertEquals("add", cls.getMethods()[0].getName());
+
+        var returnSyntax = assertInstanceOf(NamedTypeSyntax.class, cls.getMethods()[0].getDeclaredTypeSyntax());
+        assertEquals("int", returnSyntax.getName());
+        assertTrue(returnSyntax.isPrimitive());
     }
 
     @Test
@@ -237,7 +241,7 @@ public class ClassParserTest {
         var ast = parse("public class Orphan :: NoParent { }");
         var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
 
-        var syntax = assertInstanceOf(NamedTypeSyntax.class, cls.getSuperClasses()[0].getSyntax());
+        var syntax = assertInstanceOf(NamedTypeSyntax.class, cls.getSuperClassSyntaxes()[0]);
         assertEquals("NoParent", syntax.getName());
         assertFalse(syntax.isPrimitive());
     }
@@ -259,10 +263,10 @@ public class ClassParserTest {
         var ast = parse("public class Container[T] { public T value; }");
         var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
 
-        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, cls.getGenericClassParameter().getSyntax());
+        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, cls.getGenericClassParameterSyntax());
         assertEquals("T", genericSyntax.getName());
 
-        var fieldSyntax = assertInstanceOf(NamedTypeSyntax.class, cls.getFields()[0].getDeclaredType().getSyntax());
+        var fieldSyntax = assertInstanceOf(NamedTypeSyntax.class, cls.getFields()[0].getDeclaredTypeSyntax());
         assertEquals("T", fieldSyntax.getName());
         assertFalse(fieldSyntax.isPrimitive());
     }

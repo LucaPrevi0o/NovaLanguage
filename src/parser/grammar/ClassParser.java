@@ -11,9 +11,8 @@ import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.*;
 import parser.ast.nodes.type.GenericTypeSyntax;
 import parser.ast.nodes.type.NamedTypeSyntax;
+import parser.ast.nodes.type.TypeSyntax;
 import parser.support.ParserBase;
-import parser.support.TypeSyntaxAdapter;
-import lexer.token.ReturnType;
 
 import java.util.ArrayList;
 
@@ -50,7 +49,7 @@ public class ClassParser extends ParserBase {
     private final DeclarationParser declarationParser;
 
     /// Represents the header of a class declaration, including its name, generic parameter, and superclasses.
-    private record ClassHeader(Token classToken, String className, ReturnType genericParameter, ReturnType[] superClasses) { }
+    private record ClassHeader(Token classToken, String className, TypeSyntax genericParameter, TypeSyntax[] superClasses) { }
 
     /// Represents the members of a class, including fields, constructors, methods, and inner classes.
     private record ClassMembers(
@@ -117,8 +116,8 @@ public class ClassParser extends ParserBase {
     /// ```
     /// genericParameter → "[" IDENTIFIER "]"
     /// ```
-    /// @return A ReturnType representing the generic parameter, or `null` if no generic parameter is present.
-    private ReturnType parseGenericParameter() {
+    /// @return A TypeSyntax node representing the generic parameter, or `null` if no generic parameter is present.
+    private TypeSyntax parseGenericParameter() {
 
         if (!match(Delimiter.LSQUARE)) return null;
 
@@ -126,12 +125,11 @@ public class ClassParser extends ParserBase {
         var genericParameterName = getLiteralValue(genToken);
         consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
 
-        var genericParameterSyntax = new GenericTypeSyntax(
+        return new GenericTypeSyntax(
             genToken.getLine(),
             genToken.getColumn(),
             genericParameterName
         );
-        return TypeSyntaxAdapter.toReturnType(genericParameterSyntax);
     }
 
     /// Parses an optional list of superclasses for a class declaration, which is specified after a double colon `::` and can include multiple comma-separated class names.
@@ -140,32 +138,31 @@ public class ClassParser extends ParserBase {
     /// ```
     /// superClasses → "::" IDENTIFIER ("," IDENTIFIER)*
     /// ```
-    /// @return An array of ReturnType representing the superclasses, or an empty array if no superclasses are specified.
-    private ReturnType[] parseSuperClasses() {
+    /// @return An array of TypeSyntax nodes representing the superclasses, or an empty array if no superclasses are specified.
+    private TypeSyntax[] parseSuperClasses() {
 
-        var superClasses = new ArrayList<ReturnType>();
-        if (!match(Delimiter.DOUBLE_COLON)) return superClasses.toArray(new ReturnType[0]);
+        var superClasses = new ArrayList<TypeSyntax>();
+        if (!match(Delimiter.DOUBLE_COLON)) return superClasses.toArray(new TypeSyntax[0]);
 
         superClasses.add(parseSuperClass("Expect superclass name after '::'"));
         while (match(Delimiter.COMMA)) superClasses.add(parseSuperClass("Expect superclass name after ','"));
-        return superClasses.toArray(new ReturnType[0]);
+        return superClasses.toArray(new TypeSyntax[0]);
     }
 
     /// Parses a single superclass name for a class declaration, which is expected to be an identifier.
     ///
     /// @param message The error message to display if the superclass name is not found.
-    /// @return A ReturnType representing the parsed superclass.
-    private ReturnType parseSuperClass(String message) {
+    /// @return A TypeSyntax node representing the parsed superclass.
+    private TypeSyntax parseSuperClass(String message) {
 
         var superClassToken = consume(new IdentifierLiteral(), message);
         var superClassName = getLiteralValue(superClassToken);
-        var superClassSyntax = new NamedTypeSyntax(
+        return new NamedTypeSyntax(
             superClassToken.getLine(),
             superClassToken.getColumn(),
             superClassName,
             false
         );
-        return TypeSyntaxAdapter.toReturnType(superClassSyntax);
     }
 
     /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.
@@ -261,7 +258,7 @@ public class ClassParser extends ParserBase {
         if (!declarationParser.isValidType(peek()))
             throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
 
-        var type = declarationParser.parseType();
+        var type = declarationParser.parseTypeSyntax();
         var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
         var memberName = getLiteralValue(memberNameToken);
 
@@ -309,13 +306,13 @@ public class ClassParser extends ParserBase {
     /// ```
     /// classField → accessModifier type IDENTIFIER ("=" expression)? ";"
     /// ```
-    /// @param type The return type of the field.
+    /// @param type The parsed source type syntax of the field.
     /// @param name The name of the field.
     /// @param line The line number where the field declaration appears.
     /// @param column The column number where the field declaration starts.
     /// @param accessModifier The access modifier of the field (e.g., public, private).
     /// @return A ClassFieldDeclaration representing the parsed class field declaration.
-    private ClassFieldDeclaration parseClassField(ReturnType type, String name, int line, int column, AccessModifier accessModifier) {
+    private ClassFieldDeclaration parseClassField(TypeSyntax type, String name, int line, int column, AccessModifier accessModifier) {
 
         ExpressionNode initializer = null;
 
@@ -330,13 +327,13 @@ public class ClassParser extends ParserBase {
     /// ```
     /// classMethod → accessModifier type IDENTIFIER "(" parameters? ")" "{" declaration* "}"
     /// ```
-    /// @param returnType The return type of the method.
+    /// @param returnType The parsed source type syntax of the method.
     /// @param name The name of the method.
     /// @param line The line number where the method declaration appears.
     /// @param column The column number where the method declaration starts.
     /// @param accessModifier The access modifier of the method (e.g., public, private).
     /// @return A ClassMethodDeclaration representing the parsed class method declaration.
-    private ClassMethodDeclaration parseClassMethod(ReturnType returnType, String name, int line, int column, AccessModifier accessModifier) {
+    private ClassMethodDeclaration parseClassMethod(TypeSyntax returnType, String name, int line, int column, AccessModifier accessModifier) {
 
         consume(Delimiter.LPAREN, "Expect '(' after method name");
 

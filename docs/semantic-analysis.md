@@ -200,7 +200,7 @@ Known limitations include:
 
 - declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly, while `ReturnType` remains as a compatibility adapter;
 - semantic passes resolve parsed type syntax into semantic type symbols, with syntaxless `ReturnType` fallback conversion isolated in `semantic.type.ReturnTypeSyntaxBridge`;
-- type checking uses semantic type symbols internally, but declaration constructors still accept `ReturnType` adapters;
+- type checking uses semantic type symbols internally, but some compatibility constructors/getters still expose `ReturnType` for older manual AST and printer paths;
 - semantic type symbols now distinguish Nova class/object types from Nova value/math types;
 - parser-side type registry metadata has been removed; declaration/class parsing preserves type spelling through `TypeSyntax`;
 - basic inheritance checks support subtype assignment and inherited member lookup, but access control, inherited-field conflicts, override compatibility, abstract/final behavior, and generic specificity are not implemented yet;

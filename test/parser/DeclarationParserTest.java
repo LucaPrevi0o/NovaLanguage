@@ -131,7 +131,7 @@ public class DeclarationParserTest {
         var ast = parse("int[3][] values;");
         var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
 
-        var typeSyntax = assertInstanceOf(ArrayTypeSyntax.class, declaration.getDeclaredType().getSyntax());
+        var typeSyntax = assertInstanceOf(ArrayTypeSyntax.class, declaration.getDeclaredTypeSyntax());
         assertEquals("int", typeSyntax.getName());
         assertEquals(2, typeSyntax.getSizes().length);
         assertNotNull(typeSyntax.getSizes()[0]);
@@ -147,7 +147,7 @@ public class DeclarationParserTest {
         var ast = parse("Missing value;");
         var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
 
-        var typeSyntax = assertInstanceOf(NamedTypeSyntax.class, declaration.getDeclaredType().getSyntax());
+        var typeSyntax = assertInstanceOf(NamedTypeSyntax.class, declaration.getDeclaredTypeSyntax());
         assertEquals("Missing", typeSyntax.getName());
         assertFalse(typeSyntax.isPrimitive());
     }
@@ -176,6 +176,25 @@ public class DeclarationParserTest {
         var ast = parse("int add(int a, int b) { return 0; }");
         var fn = (FunctionDeclarationStatement) ast.getFirst();
         assertEquals(2, fn.getParameters().length);
+    }
+
+    @Test
+    void testFunctionDeclarationAndParametersExposeParsedTypeSyntaxDirectly() {
+
+        var ast = parse("Result build(Result[] input) { return input; }");
+        var fn = assertInstanceOf(FunctionDeclarationStatement.class, ast.getFirst());
+
+        var returnSyntax = assertInstanceOf(NamedTypeSyntax.class, fn.getDeclaredTypeSyntax());
+        assertEquals("Result", returnSyntax.getName());
+        assertFalse(returnSyntax.isPrimitive());
+
+        var parameterSyntax = assertInstanceOf(ArrayTypeSyntax.class, fn.getParameters()[0].getTypeSyntax());
+        assertEquals("Result", parameterSyntax.getName());
+        assertEquals(1, parameterSyntax.getSizes().length);
+        assertNull(parameterSyntax.getSizes()[0]);
+
+        var elementSyntax = assertInstanceOf(NamedTypeSyntax.class, parameterSyntax.getElementType());
+        assertFalse(elementSyntax.isPrimitive());
     }
 
     @Test

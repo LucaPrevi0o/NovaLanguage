@@ -11,6 +11,7 @@ import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.type.TypeSyntax;
+import parser.support.TypeSyntaxAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +26,10 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     private ClassFieldDeclaration[] fields;
     private ClassConstructorDeclaration[] constructors;
     private ClassDeclarationStatement[] innerClasses;
-    private final ReturnType[] superClasses;
-    private final ReturnType genericClassParameter;
+    private final ReturnType[] compatibilitySuperClasses;
+    private final ReturnType compatibilityGenericClassParameter;
+    private final TypeSyntax[] superClassSyntaxes;
+    private final TypeSyntax genericClassParameterSyntax;
 
     /// Constructs a new ClassDeclarationStatement.
     ///
@@ -35,8 +38,34 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
     /// @param name The name of the class.
     /// @param methods The methods declared within the class.
     /// @param fields The fields declared within the class.
-    /// @param superClasses The superclasses that the class extends or implements.
-    /// @param genericClassParameter The generic parameter of the class, if any.
+    /// @param superClasses The parsed superclass type syntax nodes that the class extends or implements.
+    /// @param genericClassParameter The parsed generic parameter type syntax of the class, if any.
+    /// @param innerClasses The inner classes declared within the class.
+    /// @param accessModifier The access modifier of the class (e.g., public, private).
+    /// @param constructors The constructors declared within the class.
+    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, TypeSyntax[] superClasses, TypeSyntax genericClassParameter, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
+
+        super(line, column, name);
+        this.methods = methods;
+        this.fields = fields;
+        this.superClassSyntaxes = superClasses != null ? superClasses.clone() : new TypeSyntax[0];
+        this.genericClassParameterSyntax = genericClassParameter;
+        this.compatibilitySuperClasses = null;
+        this.compatibilityGenericClassParameter = null;
+        this.innerClasses = innerClasses;
+        this.accessModifier = accessModifier;
+        this.constructors = constructors;
+    }
+
+    /// Constructs a compatibility ClassDeclarationStatement from legacy ReturnType adapters.
+    ///
+    /// @param line The line number where the class is declared.
+    /// @param column The column number where the class is declared.
+    /// @param name The name of the class.
+    /// @param methods The methods declared within the class.
+    /// @param fields The fields declared within the class.
+    /// @param superClasses The temporary ReturnType superclass adapters for older callers.
+    /// @param genericClassParameter The temporary ReturnType generic parameter adapter, if any.
     /// @param innerClasses The inner classes declared within the class.
     /// @param accessModifier The access modifier of the class (e.g., public, private).
     /// @param constructors The constructors declared within the class.
@@ -45,8 +74,10 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         super(line, column, name);
         this.methods = methods;
         this.fields = fields;
-        this.superClasses = superClasses;
-        this.genericClassParameter = genericClassParameter;
+        this.compatibilitySuperClasses = superClasses;
+        this.compatibilityGenericClassParameter = genericClassParameter;
+        this.superClassSyntaxes = syntaxFromReturnTypes(superClasses);
+        this.genericClassParameterSyntax = genericClassParameter != null ? genericClassParameter.getSyntax() : null;
         this.innerClasses = innerClasses;
         this.accessModifier = accessModifier;
         this.constructors = constructors;
@@ -66,27 +97,29 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
 
     /// Returns the superclasses that the class extends or implements.
     /// @return An array of ReturnType objects representing the superclasses that the class extends or implements.
-    public ReturnType[] getSuperClasses() { return superClasses; }
+    public ReturnType[] getSuperClasses() {
+        return compatibilitySuperClasses != null ? compatibilitySuperClasses : adaptersFromSyntaxes(superClassSyntaxes);
+    }
 
     /// Returns the parsed source type syntax for each declared superclass.
     /// @return An array of parsed superclass type syntax nodes, with {@code null} for compatibility-only entries.
     public TypeSyntax[] getSuperClassSyntaxes() {
 
-        if (superClasses == null) return new TypeSyntax[0];
-        var syntaxes = new TypeSyntax[superClasses.length];
-        for (var i = 0; i < superClasses.length; i++)
-            syntaxes[i] = superClasses[i] != null ? superClasses[i].getSyntax() : null;
-        return syntaxes;
+        return superClassSyntaxes.clone();
     }
 
     /// Returns the generic parameter of the class, if any.
     /// @return A ReturnType object representing the generic parameter of the class, or null if the class does not have a generic parameter.
-    public ReturnType getGenericClassParameter() { return genericClassParameter; }
+    public ReturnType getGenericClassParameter() {
+        return compatibilityGenericClassParameter != null
+            ? compatibilityGenericClassParameter
+            : TypeSyntaxAdapter.toReturnType(genericClassParameterSyntax);
+    }
 
     /// Returns the parsed source type syntax for this class's generic parameter, when available.
     /// @return The generic parameter syntax, or {@code null} if none is declared.
     public TypeSyntax getGenericClassParameterSyntax() {
-        return genericClassParameter != null ? genericClassParameter.getSyntax() : null;
+        return genericClassParameterSyntax;
     }
 
     /// Returns the inner classes declared within the class.
@@ -107,8 +140,8 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         return new ReturnType(
             new NonPrimitiveType(this.getName()),
             new ExpressionNode[0],
-            superClasses,
-            genericClassParameter,
+            getSuperClasses(),
+            getGenericClassParameter(),
             getTypeSyntax()
         );
     }
@@ -142,7 +175,9 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
+        var genericClassParameter = getGenericClassParameter();
         if (genericClassParameter != null) entries.add(new PrintEntry.Info("Generic Parameter: " + buildTypeStringWithSizes(genericClassParameter)));
+        var superClasses = getSuperClasses();
         if (superClasses != null && superClasses.length > 0) {
 
             var superNames = new StringBuilder();
@@ -158,5 +193,23 @@ public class ClassDeclarationStatement extends Symbol implements Printable {
         entries.add(new PrintEntry.Children("Fields", fields));
         entries.add(new PrintEntry.Children("Methods", methods));
         return entries;
+    }
+
+    private static TypeSyntax[] syntaxFromReturnTypes(ReturnType[] types) {
+
+        if (types == null) return new TypeSyntax[0];
+        var syntaxes = new TypeSyntax[types.length];
+        for (var i = 0; i < types.length; i++)
+            syntaxes[i] = types[i] != null ? types[i].getSyntax() : null;
+        return syntaxes;
+    }
+
+    private static ReturnType[] adaptersFromSyntaxes(TypeSyntax[] syntaxes) {
+
+        if (syntaxes == null) return new ReturnType[0];
+        var adapters = new ReturnType[syntaxes.length];
+        for (var i = 0; i < syntaxes.length; i++)
+            adapters[i] = TypeSyntaxAdapter.toReturnType(syntaxes[i]);
+        return adapters;
     }
 }
