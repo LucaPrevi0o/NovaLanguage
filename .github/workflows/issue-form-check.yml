@@ -8,8 +8,10 @@ on:
       - ".github/scripts/issue_metadata.py"
       - ".github/scripts/project_metadata.py"
       - ".github/scripts/project_automation.py"
+      - ".github/scripts/project_schedule.py"
       - ".github/workflows/issue-form-check.yml"
       - ".github/workflows/issue-metadata-check.yml"
+      - ".github/workflows/project-schedule-sync.yml"
   workflow_dispatch:
 
 permissions:
@@ -37,3 +39,6 @@ jobs:
             --issue-number 0 \
             --labels refactor \
             --milestone "Nova MVP compiler"
+
+      - name: Check schedule sync helper syntax
+        run: python3 -m py_compile .github/scripts/project_schedule.py
