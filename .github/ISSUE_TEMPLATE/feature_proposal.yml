@@ -1,0 +1,149 @@
+name: Feature proposal
+description: Propose a Nova language or compiler feature before implementation work starts.
+title: "proposal: "
+labels:
+  - feature
+  - design
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the feature or behavior change being proposed.
+      placeholder: State the proposed capability in one or two sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      description: Choose the deliverable or feature track this issue belongs to.
+      options:
+        - Project workflow
+        - Nova MVP compiler
+        - Advanced overload and override rules
+        - Access control
+        - Inheritance conflict checks
+        - Generics
+        - Bounded generics
+        - Class parameters
+        - Operator-overloadable Nova types
+        - Lambdas
+        - Variadic generics
+        - Monomorphization
+        - Future development
+      default: 12
+    validations:
+      required: true
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Labels
+      description: Select the managed labels that describe this issue. Managed labels describe the type of work, not the milestone or design area.
+      options:
+        - label: bug
+        - label: feature
+        - label: refactor
+        - label: design
+        - label: research
+        - label: test
+        - label: docs
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority used by the roadmap Project.
+      options:
+        - 0 - Blocks progress
+        - 1 - Important next step
+        - 2 - Possible next focus
+        - 3 - Later addition
+      default: 2
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      description: Select the expected implementation and review size.
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+      default: 2
+    validations:
+      required: true
+  - type: dropdown
+    id: suggested-status
+    attributes:
+      label: Suggested status
+      description: Select the initial roadmap status to write into the Project.
+      options:
+        - Backlog
+        - Ready
+        - In Progress
+        - Blocked
+        - In Review
+        - Done
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: Explain why Nova needs this feature and what limitation it removes.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the syntax, semantics, diagnostics, or workflow behavior you want.
+      value: |
+        Proposed behavior:
+
+        ```nova
+        // Optional example.
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List rejected designs or simpler approaches, if any.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        - [ ] Describe the feature behavior and its rationale.
+        - [ ] Identify affected compiler layers.
+        - [ ] Split follow-up implementation work into smaller issues if needed.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      placeholder: |
+        - ...
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] The accepted behavior is documented in the appropriate docs page or roadmap section.
+        - [ ] Implementation tasks are linked or created when the proposal is too large for one PR.
+        - [ ] Relevant examples or diagnostics are included when useful.
+        - [ ] Documentation-only checks pass.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add links to related issues, PRs, docs, or open questions.
