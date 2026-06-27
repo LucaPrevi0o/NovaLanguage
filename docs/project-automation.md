@@ -59,6 +59,14 @@ The legacy custom Project `Kind` field is also deprecated because labels are the
 python3 .github/scripts/project_automation.py remove-legacy-kind-field --confirm
 ```
 
+Legacy body metadata is no longer a supported source for synchronization. Audit the current issue set when changing metadata automation or before enabling failure-on-findings gates:
+
+```bash
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+```
+
+That command is read-only. It reports issues that still contain legacy `## Project metadata` blocks, duplicated native metadata headings such as `### Milestone` or `### Labels`, legacy schedule values, or missing native labels/milestones that make the body metadata the only remaining source. Use `--fail-on-findings` when a branch should fail until all open issues are clean.
+
 Managed milestone names:
 
 - `Project workflow`
@@ -109,7 +117,7 @@ Responsibilities:
 
 - add the issue to the roadmap Project when missing;
 - sync `Priority`, `Size`, and `Suggested status` into Project fields;
-- preserve managed native labels unless legacy kind metadata explicitly asks for label migration;
+- preserve native GitHub labels as the source of truth for issue kind;
 - sync optional `Expected start` and `Expected deadline` into Roadmap date fields;
 - ensure reopened issues are visible in the Project.
 
@@ -183,6 +191,7 @@ The consolidated workflow exposes one `target` input:
 - `all-open` repairs Project fields, labels, schedules, and archive visibility for every open issue;
 - `all-closed` repairs archive state for every closed issue;
 - `drift` runs the roadmap drift check.
+- `legacy-audit` reports open issues that still depend on legacy body metadata.
 
 Bulk repair commands remain available locally:
 
@@ -192,4 +201,13 @@ python3 .github/scripts/project_automation.py sync-labels --repo LucaPrevi0o/Nov
 python3 .github/scripts/project_schedule.py --repo LucaPrevi0o/NovaLanguage --all-open
 python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-closed
 python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-open
+```
+
+Legacy migration audits can be scoped to one issue, open issues, closed issues, or the full issue history:
+
+```bash
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --issue-number 23
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-closed
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all
 ```

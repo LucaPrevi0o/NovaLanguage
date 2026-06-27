@@ -45,6 +45,12 @@ python3 .github/scripts/issue_forms.py --check
 python3 .github/scripts/issue_metadata.py --issue-number 0 --labels refactor --milestone "Nova MVP compiler"
 ```
 
+It also runs the lightweight Python unit tests for automation helper behavior:
+
+```bash
+python3 -m unittest discover -s .github/tests -p "*_test.py"
+```
+
 ## Scope
 
 This check protects the YAML/Python automation layer from accidental drift while preserving the externally visible behavior of existing workflows.

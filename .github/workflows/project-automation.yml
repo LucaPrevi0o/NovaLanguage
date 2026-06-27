@@ -31,6 +31,7 @@ on:
           - all-open
           - all-closed
           - drift
+          - legacy-audit
       issue_number:
         description: Issue number for the issue target.
         required: false
@@ -40,7 +41,7 @@ on:
         required: false
         type: string
       fail_on_warning:
-        description: Treat drift warnings as failures for the drift target.
+        description: Treat drift warnings or legacy audit findings as failures.
         required: false
         default: false
         type: boolean
@@ -85,6 +86,9 @@ jobs:
             --issue-number 0 \
             --labels refactor \
             --milestone "Nova MVP compiler"
+
+      - name: Run automation unit tests
+        run: python3 -m unittest discover -s .github/tests -p "*_test.py"
 
       - name: Check Project helper syntax
         run: |
@@ -241,6 +245,7 @@ jobs:
                 --issue-number 0 \
                 --labels refactor \
                 --milestone "Nova MVP compiler"
+              python3 -m unittest discover -s .github/tests -p "*_test.py"
               ;;
             issue)
               require_value "${ISSUE_NUMBER}" issue_number
@@ -294,6 +299,16 @@ jobs:
                 --repo "${GITHUB_REPOSITORY}" \
                 --plan PLAN.md \
                 --readme README.md \
+                "${args[@]}"
+              ;;
+            legacy-audit)
+              args=()
+              if [ "${FAIL_ON_WARNING}" = "true" ]; then
+                args+=(--fail-on-findings)
+              fi
+              python3 .github/scripts/project_automation.py audit-legacy-metadata \
+                --repo "${GITHUB_REPOSITORY}" \
+                --all-open \
                 "${args[@]}"
               ;;
             *)
