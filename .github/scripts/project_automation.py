@@ -879,6 +879,12 @@ def closing_issue_reference_numbers(repository: str, text: str) -> set[int]:
     return references
 
 
+def is_pull_request_reference_error(error: ProjectAutomationError, issue_number: int) -> bool:
+    """Return whether an issue lookup failed because the reference is a pull request."""
+
+    return str(error) == f"#{issue_number} is a pull request, not an issue"
+
+
 def sync_pr_status_command(args: argparse.Namespace) -> int:
     """Run the sync-pr-status subcommand."""
 
@@ -903,7 +909,13 @@ def sync_pr_status_command(args: argparse.Namespace) -> int:
         target_status = "In Review"
 
     for issue_number in sorted(targets):
-        set_issue_status(client, args.repo, issue_number, target_status)
+        try:
+            set_issue_status(client, args.repo, issue_number, target_status)
+        except ProjectAutomationError as error:
+            if is_pull_request_reference_error(error, issue_number):
+                print(f"::warning::Skipping #{issue_number} because it is a pull request, not an issue")
+                continue
+            raise
         if target_status == DONE_STATUS:
             sync_issue_archive(client, args.repo, issue_number)
     return 0
