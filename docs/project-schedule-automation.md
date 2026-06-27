@@ -31,19 +31,19 @@ Empty values are ignored. They do not clear Project dates that were already set 
 
 ## Workflow
 
-Workflow:
+Schedule synchronization now runs through the consolidated Project automation workflow:
 
 ```text
-.github/workflows/project-schedule-sync.yml
+.github/workflows/project-automation.yml
 ```
 
-Script:
+The script entry point remains:
 
 ```text
 .github/scripts/project_schedule.py
 ```
 
-The workflow runs when an issue is opened, edited, reopened, or transferred. It can also be run manually for one issue or for every open issue.
+The workflow runs schedule sync when an issue is opened, edited, reopened, or transferred. It can also be run manually through the `issue` target for one issue or the `all-open` target for every open issue.
 
 ## Project fields
 
@@ -76,14 +76,3 @@ python3 .github/scripts/project_schedule.py --repo LucaPrevi0o/NovaLanguage --al
 ```
 
 The script validates date format before writing to the Project. If both dates are present, `Expected start` must not be later than `Expected deadline`.
-
-## Legacy metadata
-
-The script also accepts schedule values in the older `## Project metadata` block while old issues are being migrated:
-
-```markdown
-## Project metadata
-
-- Expected start: 2026-07-01
-- Expected deadline: 2026-07-31
-```
