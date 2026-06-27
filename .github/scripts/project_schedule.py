@@ -10,13 +10,15 @@ import sys
 from datetime import date
 
 from project_automation import (
+    add_issue_to_project,
+    get_project,
+)
+from project_github import (
     GitHubClient,
     Project,
     ProjectAutomationError,
     ProjectField,
-    add_issue_to_project,
     get_issue,
-    get_project,
     list_open_issues,
     token_from_environment,
 )

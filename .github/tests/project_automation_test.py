@@ -11,10 +11,12 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from project_automation import (  # noqa: E402
-    Issue,
     issue_form_field_names,
     legacy_metadata_reasons,
     parse_metadata,
+)
+from project_github import (  # noqa: E402
+    Issue,
 )
 
 

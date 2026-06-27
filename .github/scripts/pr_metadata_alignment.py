@@ -9,14 +9,16 @@ import sys
 from dataclasses import dataclass
 
 from project_automation import (
-    GitHubClient,
-    Project,
-    ProjectAutomationError,
-    get_issue,
     get_project,
     issue_reference_numbers,
     project_issue_item,
     set_single_select_value,
+)
+from project_github import (
+    GitHubClient,
+    Project,
+    ProjectAutomationError,
+    get_issue,
     token_from_environment,
 )
 from project_metadata import MANAGED_KIND_LABELS, PRIORITY_FIELD, SIZE_FIELD, STATUS_FIELD
