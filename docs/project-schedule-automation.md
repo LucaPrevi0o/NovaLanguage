@@ -76,3 +76,9 @@ python3 .github/scripts/project_schedule.py --repo LucaPrevi0o/NovaLanguage --al
 ```
 
 The script validates date format before writing to the Project. If both dates are present, `Expected start` must not be later than `Expected deadline`.
+
+Legacy schedule values in `## Project metadata` are not synchronized. Use the legacy metadata audit to find old issue bodies that still need to be migrated to current `### Expected start` and `### Expected deadline` headings:
+
+```bash
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+```

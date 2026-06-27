@@ -88,42 +88,10 @@ def parse_issue_form_schedule(body: str) -> dict[str, str]:
     return metadata
 
 
-def parse_legacy_schedule(body: str) -> dict[str, str]:
-    """Parse schedule metadata from legacy Project metadata blocks."""
-
-    metadata: dict[str, str] = {}
-    in_block = False
-    header_pattern = re.compile(r"^##\s+(.+?)\s*$")
-    item_pattern = re.compile(r"^-\s*([^:]+):\s*(.*?)\s*$")
-
-    for line in body.splitlines():
-        header_match = header_pattern.match(line)
-        if header_match:
-            heading = header_match.group(1).strip()
-            if heading == "Project metadata":
-                in_block = True
-                continue
-            if in_block:
-                break
-        if not in_block:
-            continue
-        item_match = item_pattern.match(line)
-        if not item_match:
-            continue
-        field_name = SCHEDULE_FIELD_ALIASES.get(normalize_key(item_match.group(1)))
-        value = item_match.group(2).strip()
-        if field_name and value and value != NO_RESPONSE:
-            metadata[field_name] = value
-
-    return metadata
-
-
 def parse_schedule(body: str) -> dict[str, str]:
-    """Parse schedule metadata from supported issue body formats."""
+    """Parse schedule metadata from current issue-form fields."""
 
-    metadata = parse_legacy_schedule(body)
-    metadata.update(parse_issue_form_schedule(body))
-    return metadata
+    return parse_issue_form_schedule(body)
 
 
 def iso_date(value: str, field_name: str) -> str:

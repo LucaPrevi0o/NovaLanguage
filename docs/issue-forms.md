@@ -39,7 +39,13 @@ Every issue form still uses these shared project fields because GitHub does not 
 
 `Expected start` and `Expected deadline` are optional `YYYY-MM-DD` fields. When present, `.github/scripts/project_schedule.py` writes them into the roadmap Project date fields used by the Roadmap view. Empty schedule fields are ignored and do not clear existing Project dates.
 
-Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## Project metadata` block remain supported by the existing automation during migration, but new issue forms should not reintroduce those duplicated body fields. Legacy schedule metadata in the `## Project metadata` block is also accepted with keys such as `Expected start` and `Expected deadline`.
+Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## Project metadata` block are not a supported source for Project synchronization. New issue forms should not reintroduce those duplicated body fields, and existing issues should keep native labels, native milestones, and the current `Priority`, `Size`, `Suggested status`, `Expected start`, and `Expected deadline` headings instead.
+
+Run the legacy metadata audit before changing automation that touches issue metadata, and migrate any open findings to native labels, native milestones, and current issue-form fields:
+
+```bash
+python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+```
 
 ## Keeping form options aligned
 

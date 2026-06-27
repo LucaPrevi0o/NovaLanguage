@@ -23,7 +23,6 @@ from project_metadata import (
     LEGACY_PHASE_FIELD,
     MANAGED_KIND_LABELS,
     METADATA_HEADER,
-    MILESTONE_ALIASES,
     MILESTONE_DESCRIPTIONS,
     NO_RESPONSE,
     PHASE_NUMBER_TO_MILESTONE,
@@ -49,14 +48,17 @@ STOPWORDS = {
 }
 
 ISSUE_FORM_FIELD_ALIASES = {
-    "milestone": "Milestone",
-    "labels": "Kind",
-    "label": "Kind",
-    "kind": "Kind",
     "priority": "Priority",
     "size": "Size",
     "suggested status": "Suggested status",
     "area": "Area",
+}
+
+LEGACY_NATIVE_BODY_FIELD_ALIASES = {
+    "milestone": "Milestone",
+    "labels": "Kind",
+    "label": "Kind",
+    "kind": "Kind",
 }
 
 
@@ -131,6 +133,14 @@ class ProjectIssueItem:
     fields: dict[str, str]
 
 
+@dataclass(frozen=True)
+class LegacyMetadataFinding:
+    """One issue that still carries metadata migration markers."""
+
+    issue: Issue
+    reasons: tuple[str, ...]
+
+
 class GitHubClient:
     """Small GitHub REST/GraphQL client backed by the workflow token."""
 
@@ -201,8 +211,8 @@ def token_from_environment() -> str:
     return os.environ.get("PROJECT_TOKEN") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
 
 
-def parse_metadata_block(body: str) -> dict[str, str]:
-    """Parse the issue body's legacy Project metadata block."""
+def legacy_metadata_block_fields(body: str) -> dict[str, str]:
+    """Return fields from a legacy Project metadata block for migration audits."""
 
     metadata: dict[str, str] = {}
     in_block = False
@@ -286,17 +296,33 @@ def parse_issue_form_metadata(body: str) -> dict[str, str]:
 
 
 def parse_metadata(body: str) -> dict[str, str]:
-    """Parse issue metadata from legacy blocks or GitHub issue forms."""
+    """Parse current issue-form metadata owned by Project automation."""
 
-    metadata = parse_metadata_block(body)
-    metadata.update(parse_issue_form_metadata(body))
-    return metadata
+    return parse_issue_form_metadata(body)
 
 
 def normalize_key(value: str) -> str:
     """Normalize a metadata value for option matching."""
 
     return re.sub(r"\s+", " ", value.strip().lower())
+
+
+def issue_form_field_names(body: str) -> tuple[str, ...]:
+    """Return supported issue-form metadata field names found in Markdown headings."""
+
+    fields: list[str] = []
+    seen: set[str] = set()
+    heading_pattern = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
+    aliases = {**ISSUE_FORM_FIELD_ALIASES, **LEGACY_NATIVE_BODY_FIELD_ALIASES}
+
+    for match in heading_pattern.finditer(body):
+        field_name = aliases.get(normalize_key(match.group(1)))
+        if field_name is None or field_name in seen:
+            continue
+        fields.append(field_name)
+        seen.add(field_name)
+
+    return tuple(fields)
 
 
 def kind_values(value: str) -> tuple[str, ...]:
@@ -331,15 +357,6 @@ def canonical_metadata(metadata: dict[str, str]) -> dict[str, str]:
         canonical[STATUS_FIELD] = STATUS_ALIASES.get(normalize_key(status), status.strip())
 
     return canonical
-
-
-def milestone_from_metadata(metadata: dict[str, str]) -> str | None:
-    """Return the issue milestone represented by metadata."""
-
-    milestone = metadata.get("Milestone") or metadata.get("Phase")
-    if not milestone:
-        return None
-    return MILESTONE_ALIASES.get(normalize_key(milestone), milestone.strip())
 
 
 def repository_parts(repository: str) -> tuple[str, str]:
@@ -392,6 +409,12 @@ def list_closed_issues(client: GitHubClient, repository: str) -> list[int]:
     """Return all closed issue numbers for a repository."""
 
     return list_issues_by_state(client, repository, "closed")
+
+
+def list_all_issues(client: GitHubClient, repository: str) -> list[int]:
+    """Return all issue numbers for a repository."""
+
+    return list_issues_by_state(client, repository, "all")
 
 
 def get_pull_request(client: GitHubClient, repository: str, number: int) -> PullRequest:
@@ -857,27 +880,17 @@ def sync_issue(client: GitHubClient, repository: str, issue_number: int, strict:
     issue = get_issue(client, repository, issue_number)
     metadata = parse_metadata(issue.body)
     if not metadata:
-        message = f"#{issue.number} has no '## {METADATA_HEADER}' block; skipping"
+        message = f"#{issue.number} has no current issue-form Project metadata; skipping"
         if strict:
             raise ProjectAutomationError(message)
         print(f"::warning::{message}")
         return False
-
-    milestone_title = milestone_from_metadata(metadata)
-    if not milestone_title:
-        message = f"#{issue.number} has no Milestone metadata; legacy Phase metadata is also absent"
-        if strict:
-            raise ProjectAutomationError(message)
-        print(f"::warning::{message}")
 
     canonical = canonical_metadata(metadata)
     project = get_project(client)
     item_id = add_issue_to_project(client, project, issue)
 
     updated = False
-    if milestone_title:
-        updated = set_issue_milestone(client, repository, issue, milestone_title)
-
     for field_name, option_name in canonical.items():
         field = project.fields.get(field_name)
         if field is None:
@@ -913,13 +926,124 @@ def kind_labels_from_metadata(metadata: dict[str, str]) -> tuple[tuple[str, ...]
     return tuple(labels), tuple(unknown)
 
 
+def legacy_metadata_reasons(issue: Issue) -> tuple[str, ...]:
+    """Return migration reasons for issue metadata that still depends on legacy body fields."""
+
+    reasons: list[str] = []
+    legacy_metadata = legacy_metadata_block_fields(issue.body)
+    form_fields = set(issue_form_field_names(issue.body))
+
+    def add_reason(reason: str) -> None:
+        if reason not in reasons:
+            reasons.append(reason)
+
+    if legacy_metadata:
+        add_reason("legacy Project metadata block")
+
+    if "Phase" in legacy_metadata:
+        add_reason("legacy Phase metadata")
+    if "Kind" in legacy_metadata:
+        add_reason("legacy Kind metadata")
+
+    project_fields = tuple(
+        field for field in (PRIORITY_FIELD, SIZE_FIELD, "Suggested status")
+        if field in legacy_metadata
+    )
+    if project_fields:
+        add_reason(f"Project field metadata in legacy block: {', '.join(project_fields)}")
+
+    schedule_fields = tuple(
+        field for field in ("Expected start", "Expected deadline")
+        if field in legacy_metadata
+    )
+    if schedule_fields:
+        add_reason(f"schedule metadata in legacy block: {', '.join(schedule_fields)}")
+
+    native_form_fields = tuple(
+        field for field in ("Milestone", "Kind")
+        if field in form_fields
+    )
+    if native_form_fields:
+        add_reason(f"duplicated native issue-form field(s): {', '.join(native_form_fields)}")
+
+    legacy_milestone = legacy_metadata.get("Milestone") or legacy_metadata.get("Phase")
+    if legacy_milestone and not issue.milestone:
+        add_reason("native milestone missing; body metadata is still the roadmap source")
+
+    managed_labels = {entry[0] for entry in MANAGED_KIND_LABELS.values()}
+    target_labels, unknown_kinds = kind_labels_from_metadata(legacy_metadata)
+    if (target_labels or unknown_kinds) and not (set(issue.labels) & managed_labels):
+        add_reason("managed native label missing; body metadata is still the kind source")
+
+    return tuple(reasons)
+
+
+def legacy_metadata_issue_numbers(client: GitHubClient, repository: str, args: argparse.Namespace) -> list[int]:
+    """Return the issues selected for legacy metadata auditing."""
+
+    selected_modes = sum(
+        1 for selected in (
+            args.issue_number is not None,
+            args.all_open,
+            args.all_closed,
+            args.all,
+        ) if selected
+    )
+    if selected_modes != 1:
+        raise ProjectAutomationError("Provide exactly one of --issue-number, --all-open, --all-closed, or --all")
+
+    if args.issue_number is not None:
+        return [args.issue_number]
+    if args.all_open:
+        return list_open_issues(client, repository)
+    if args.all_closed:
+        return list_closed_issues(client, repository)
+    return list_all_issues(client, repository)
+
+
+def audit_legacy_metadata_command(args: argparse.Namespace) -> int:
+    """Run the audit-legacy-metadata subcommand."""
+
+    client = GitHubClient(token_from_environment())
+    issue_numbers = legacy_metadata_issue_numbers(client, args.repo, args)
+
+    findings: list[LegacyMetadataFinding] = []
+    failures = 0
+    for number in issue_numbers:
+        try:
+            issue = get_issue(client, args.repo, number)
+        except ProjectAutomationError as error:
+            failures += 1
+            print(f"::error::Failed to inspect #{number}: {error}")
+            continue
+
+        reasons = legacy_metadata_reasons(issue)
+        if reasons:
+            findings.append(LegacyMetadataFinding(issue, reasons))
+
+    for finding in findings:
+        reason_text = "; ".join(finding.reasons)
+        print(f"::warning::{finding.issue.url} uses legacy metadata: {reason_text}")
+
+    if findings:
+        print(f"Found {len(findings)} issue(s) with legacy metadata migration markers.")
+    else:
+        print("No legacy metadata migration markers found.")
+
+    if failures:
+        return 1
+    if findings and args.fail_on_findings:
+        return 1
+    return 0
+
+
 def sync_labels_for_issue(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
     """Sync one issue's managed kind labels from its metadata."""
 
     issue = get_issue(client, repository, issue_number)
     metadata = parse_metadata(issue.body)
     if not metadata:
-        message = f"#{issue.number} has no '## {METADATA_HEADER}' block; skipping label sync"
+        message = f"#{issue.number} has no current issue-form Project metadata; skipping label sync"
         if strict:
             raise ProjectAutomationError(message)
         print(f"::warning::{message}")
@@ -1319,6 +1443,22 @@ def build_parser() -> argparse.ArgumentParser:
     labels_parser.add_argument("--all-open", action="store_true", help="Sync labels for all open issues")
     labels_parser.add_argument("--strict", action="store_true", help="Fail on missing or invalid issue metadata")
     labels_parser.set_defaults(func=sync_labels_command)
+
+    audit_parser = subparsers.add_parser(
+        "audit-legacy-metadata",
+        help="Report issues that still contain legacy body metadata",
+    )
+    audit_parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="Repository in owner/name form")
+    audit_parser.add_argument("--issue-number", type=int, help="Issue number to inspect")
+    audit_parser.add_argument("--all-open", action="store_true", help="Inspect all open issues")
+    audit_parser.add_argument("--all-closed", action="store_true", help="Inspect all closed issues")
+    audit_parser.add_argument("--all", action="store_true", help="Inspect all issues")
+    audit_parser.add_argument(
+        "--fail-on-findings",
+        action="store_true",
+        help="Exit non-zero when legacy metadata is found",
+    )
+    audit_parser.set_defaults(func=audit_legacy_metadata_command)
 
     archive_parser = subparsers.add_parser(
         "sync-issue-archive",
