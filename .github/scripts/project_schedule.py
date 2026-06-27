@@ -9,9 +9,10 @@ import re
 import sys
 from datetime import date
 
-from project_automation import (
+from project_board import (
     add_issue_to_project,
     get_project,
+    set_date_value,
 )
 from project_github import (
     GitHubClient,
@@ -135,33 +136,6 @@ def project_date_field(project: Project, field_name: str) -> ProjectField:
             "Create the date field in the roadmap Project or adjust PROJECT_START_DATE_FIELD/PROJECT_END_DATE_FIELD."
         )
     return field
-
-
-def set_date_value(client: GitHubClient, project: Project, item_id: str, field: ProjectField, value: str) -> None:
-    """Set one Project date field value."""
-
-    client.graphql(
-        """
-        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-          updateProjectV2ItemFieldValue(input: {
-            projectId: $projectId,
-            itemId: $itemId,
-            fieldId: $fieldId,
-            value: { date: $date }
-          }) {
-            projectV2Item {
-              id
-            }
-          }
-        }
-        """,
-        {
-            "projectId": project.id,
-            "itemId": item_id,
-            "fieldId": field.id,
-            "date": value,
-        },
-    )
 
 
 def sync_issue_schedule(client: GitHubClient, repository: str, issue_number: int, strict: bool) -> bool:
