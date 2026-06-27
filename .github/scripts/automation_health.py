@@ -24,17 +24,10 @@ EXPECTED_SCRIPTS = (
 )
 
 EXPECTED_WORKFLOWS = (
-    ".github/workflows/automation-health-check.yml",
     ".github/workflows/docs-publish.yml",
-    ".github/workflows/issue-form-check.yml",
-    ".github/workflows/issue-metadata-check.yml",
-    ".github/workflows/pr-metadata-alignment.yml",
-    ".github/workflows/project-archive-sync.yml",
-    ".github/workflows/project-drift-check.yml",
-    ".github/workflows/project-label-sync.yml",
-    ".github/workflows/project-pr-status.yml",
-    ".github/workflows/project-schedule-sync.yml",
-    ".github/workflows/project-sync.yml",
+    ".github/workflows/java-ci.yml",
+    ".github/workflows/project-automation.yml",
+    ".github/workflows/qodana_code_quality.yml",
 )
 
 PROJECT_AUTOMATION_COMMANDS = (
@@ -48,7 +41,7 @@ PROJECT_AUTOMATION_COMMANDS = (
 WORKFLOW_MANAGED_PROJECT_COMMANDS = PROJECT_AUTOMATION_COMMANDS
 DOCUMENTED_ENTRY_POINTS = (
     ".github/scripts/automation_health.py",
-    ".github/workflows/automation-health-check.yml",
+    ".github/workflows/project-automation.yml",
 )
 
 SCRIPT_REFERENCE_PATTERN = re.compile(r"(?<![\w/.-])\.github/scripts/[A-Za-z0-9_./-]+\.py")
@@ -251,7 +244,7 @@ def run_health_check(root: Path) -> list[Finding]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the command-line parser."""
+    """Build the automation-health command-line parser."""
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=default_root(), help="Repository root path")
