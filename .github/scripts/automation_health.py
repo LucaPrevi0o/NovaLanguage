@@ -19,6 +19,7 @@ EXPECTED_SCRIPTS = (
     ".github/scripts/pr_metadata_alignment.py",
     ".github/scripts/prepare_javadoc_site.py",
     ".github/scripts/project_automation.py",
+    ".github/scripts/project_github.py",
     ".github/scripts/project_metadata.py",
     ".github/scripts/project_schedule.py",
 )

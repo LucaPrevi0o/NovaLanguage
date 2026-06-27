@@ -94,6 +94,8 @@ jobs:
         run: |
           python3 -m py_compile \
             .github/scripts/project_automation.py \
+            .github/scripts/project_github.py \
+            .github/scripts/project_metadata.py \
             .github/scripts/project_schedule.py \
             .github/scripts/pr_metadata_alignment.py
 
