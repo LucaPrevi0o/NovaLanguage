@@ -23,6 +23,9 @@ concurrency:
   group: documentation-publish
   cancel-in-progress: true
 
+env:
+  PYTHONPATH: .github/scripts
+
 jobs:
   publish-wiki:
     name: Mirror docs to GitHub Wiki
@@ -58,7 +61,7 @@ jobs:
           git clone "${wiki_url}" wiki-repo
 
       - name: Mirror Markdown documentation
-        run: python3 .github/scripts/mirror_docs_to_wiki.py
+        run: python3 -m nova_automation.docs.wiki
 
       - name: Commit and push wiki changes
         working-directory: wiki-repo
@@ -108,7 +111,7 @@ jobs:
 
           mkdir -p .site/javadoc
           cp -R target/site/apidocs/. .site/javadoc/
-          python3 .github/scripts/prepare_javadoc_site.py
+          python3 -m nova_automation.docs.pages
 
           touch .site/.nojekyll
 
