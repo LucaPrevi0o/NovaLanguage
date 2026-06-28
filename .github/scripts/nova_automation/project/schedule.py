@@ -9,12 +9,12 @@ import re
 import sys
 from datetime import date
 
-from .project_board import (
+from .board import (
     add_issue_to_project,
     get_project,
     set_date_value,
 )
-from .project_github import (
+from ..github import (
     GitHubClient,
     Project,
     ProjectAutomationError,

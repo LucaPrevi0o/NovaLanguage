@@ -92,7 +92,7 @@ jobs:
 
       - name: Check Project helper syntax
         run: |
-          python3 -m py_compile .github/scripts/*.py .github/scripts/nova_automation/*.py
+          python3 -m compileall -q .github/scripts
 
   check-issue-metadata:
     name: Check native issue metadata

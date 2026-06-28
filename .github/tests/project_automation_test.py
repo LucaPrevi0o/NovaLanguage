@@ -12,8 +12,8 @@ from unittest.mock import patch
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import nova_automation.project_automation as project_automation  # noqa: E402
-from nova_automation.project_github import (  # noqa: E402
+import nova_automation.pull_requests.status as project_automation  # noqa: E402
+from nova_automation.github import (  # noqa: E402
     ProjectAutomationError,
     PullRequest,
 )
@@ -39,10 +39,10 @@ class ProjectAutomationPullRequestStatusTest(unittest.TestCase):
             status_calls.append((repository, issue_number, status))
 
         with (
-            patch("nova_automation.project_automation.GitHubClient", return_value=object()),
-            patch("nova_automation.project_automation.token_from_environment", return_value="token"),
-            patch("nova_automation.project_automation.get_pull_request", return_value=pull_request),
-            patch("nova_automation.project_automation.set_issue_status", side_effect=fake_set_issue_status),
+            patch("nova_automation.pull_requests.status.GitHubClient", return_value=object()),
+            patch("nova_automation.pull_requests.status.token_from_environment", return_value="token"),
+            patch("nova_automation.pull_requests.status.get_pull_request", return_value=pull_request),
+            patch("nova_automation.pull_requests.status.set_issue_status", side_effect=fake_set_issue_status),
             patch("builtins.print") as print_mock,
         ):
             result = project_automation.sync_pr_status_command(
@@ -64,10 +64,10 @@ class ProjectAutomationPullRequestStatusTest(unittest.TestCase):
         )
 
         with (
-            patch("nova_automation.project_automation.GitHubClient", return_value=object()),
-            patch("nova_automation.project_automation.token_from_environment", return_value="token"),
-            patch("nova_automation.project_automation.get_pull_request", return_value=pull_request),
-            patch("nova_automation.project_automation.set_issue_status", side_effect=ProjectAutomationError("GitHub API 500")),
+            patch("nova_automation.pull_requests.status.GitHubClient", return_value=object()),
+            patch("nova_automation.pull_requests.status.token_from_environment", return_value="token"),
+            patch("nova_automation.pull_requests.status.get_pull_request", return_value=pull_request),
+            patch("nova_automation.pull_requests.status.set_issue_status", side_effect=ProjectAutomationError("GitHub API 500")),
         ):
             with self.assertRaisesRegex(ProjectAutomationError, "GitHub API 500"):
                 project_automation.sync_pr_status_command(

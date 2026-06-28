@@ -25,18 +25,31 @@ EXPECTED_SCRIPTS = (
     ".github/scripts/project_metadata.py",
     ".github/scripts/project_schedule.py",
     ".github/scripts/nova_automation/__init__.py",
-    ".github/scripts/nova_automation/automation_health.py",
-    ".github/scripts/nova_automation/issue_forms.py",
-    ".github/scripts/nova_automation/issue_metadata.py",
-    ".github/scripts/nova_automation/mirror_docs_to_wiki.py",
-    ".github/scripts/nova_automation/pr_metadata_alignment.py",
-    ".github/scripts/nova_automation/prepare_javadoc_site.py",
-    ".github/scripts/nova_automation/project_automation.py",
-    ".github/scripts/nova_automation/project_board.py",
-    ".github/scripts/nova_automation/project_github.py",
-    ".github/scripts/nova_automation/project_issue_metadata.py",
-    ".github/scripts/nova_automation/project_metadata.py",
-    ".github/scripts/nova_automation/project_schedule.py",
+    ".github/scripts/nova_automation/cli/__init__.py",
+    ".github/scripts/nova_automation/cli/automation_health.py",
+    ".github/scripts/nova_automation/cli/project_automation.py",
+    ".github/scripts/nova_automation/docs/__init__.py",
+    ".github/scripts/nova_automation/docs/pages.py",
+    ".github/scripts/nova_automation/docs/wiki.py",
+    ".github/scripts/nova_automation/github/__init__.py",
+    ".github/scripts/nova_automation/github/client.py",
+    ".github/scripts/nova_automation/github/models.py",
+    ".github/scripts/nova_automation/github/repository.py",
+    ".github/scripts/nova_automation/issues/__init__.py",
+    ".github/scripts/nova_automation/issues/forms.py",
+    ".github/scripts/nova_automation/issues/labels.py",
+    ".github/scripts/nova_automation/issues/native_metadata.py",
+    ".github/scripts/nova_automation/project/__init__.py",
+    ".github/scripts/nova_automation/project/board.py",
+    ".github/scripts/nova_automation/project/issue_metadata.py",
+    ".github/scripts/nova_automation/project/metadata.py",
+    ".github/scripts/nova_automation/project/schedule.py",
+    ".github/scripts/nova_automation/pull_requests/__init__.py",
+    ".github/scripts/nova_automation/pull_requests/metadata_alignment.py",
+    ".github/scripts/nova_automation/pull_requests/references.py",
+    ".github/scripts/nova_automation/pull_requests/status.py",
+    ".github/scripts/nova_automation/roadmap/__init__.py",
+    ".github/scripts/nova_automation/roadmap/drift.py",
 )
 
 EXPECTED_WORKFLOWS = (
@@ -79,9 +92,9 @@ class AutomationHealthError(RuntimeError):
 
 
 def default_root() -> Path:
-    """Return the repository root when the module lives in .github/scripts/nova_automation/."""
+    """Return the repository root when this module lives under nova_automation/cli."""
 
-    return Path(__file__).resolve().parents[3]
+    return Path(__file__).resolve().parents[4]
 
 
 def annotation_value(value: str) -> str:
@@ -160,7 +173,9 @@ def compile_python_scripts(root: Path, findings: list[Finding]) -> None:
     with tempfile.TemporaryDirectory(prefix="nova-automation-pyc-") as bytecode_dir:
         bytecode_root = Path(bytecode_dir)
         for path in script_paths(root):
-            cfile = bytecode_root / f"{path.stem}.pyc"
+            relative = path.relative_to(root)
+            cfile = bytecode_root / relative.with_suffix(".pyc")
+            cfile.parent.mkdir(parents=True, exist_ok=True)
             try:
                 py_compile.compile(str(path), cfile=str(cfile), doraise=True)
             except py_compile.PyCompileError as error:
@@ -180,9 +195,9 @@ def referenced_scripts_by_workflow(root: Path) -> dict[Path, set[str]]:
 def declared_project_commands(root: Path, findings: list[Finding]) -> set[str]:
     """Return subcommands declared by project_automation.py."""
 
-    path = root / ".github" / "scripts" / "nova_automation" / "project_automation.py"
+    path = root / ".github" / "scripts" / "nova_automation" / "cli" / "project_automation.py"
     if not path.is_file():
-        findings.append(Finding("error", "nova_automation/project_automation.py is missing", path))
+        findings.append(Finding("error", "nova_automation/cli/project_automation.py is missing", path))
         return set()
     return set(ADD_PARSER_PATTERN.findall(read_text(path)))
 
@@ -210,7 +225,7 @@ def check_workflow_script_references(root: Path, findings: list[Finding]) -> Non
 def check_project_command_wiring(root: Path, findings: list[Finding]) -> None:
     """Check project_automation.py subcommands and workflow references."""
 
-    project_script = root / ".github" / "scripts" / "nova_automation" / "project_automation.py"
+    project_script = root / ".github" / "scripts" / "nova_automation" / "cli" / "project_automation.py"
     declared = declared_project_commands(root, findings)
     missing_commands = sorted(set(PROJECT_AUTOMATION_COMMANDS) - declared)
     for command in missing_commands:

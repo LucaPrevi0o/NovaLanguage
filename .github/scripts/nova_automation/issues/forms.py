@@ -8,7 +8,7 @@ import difflib
 from pathlib import Path
 from typing import Iterable
 
-from .project_metadata import SIZE_OPTIONS, priority_options, status_options
+from ..project.metadata import SIZE_OPTIONS, priority_options, status_options
 
 SYNCED_FORM_FIELDS = {
     "priority": "Priority",

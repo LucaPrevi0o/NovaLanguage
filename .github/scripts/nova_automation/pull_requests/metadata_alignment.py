@@ -8,24 +8,24 @@ import os
 import sys
 from dataclasses import dataclass
 
-from .project_automation import (
+from .references import (
     issue_reference_numbers,
 )
-from .project_board import (
+from ..project.board import (
     add_content_to_project,
     get_project,
     project_item_id_for_content,
     project_issue_item,
     set_single_select_value,
 )
-from .project_github import (
+from ..github import (
     GitHubClient,
     Project,
     ProjectAutomationError,
     get_issue,
     token_from_environment,
 )
-from .project_metadata import MANAGED_KIND_LABELS, PRIORITY_FIELD, SIZE_FIELD, STATUS_FIELD
+from ..project.metadata import MANAGED_KIND_LABELS, PRIORITY_FIELD, SIZE_FIELD, STATUS_FIELD
 
 PROJECT_STATUS_FOR_READY_PR = os.environ.get("PROJECT_PR_READY_STATUS", "In Review")
 COPIED_PROJECT_FIELDS = (PRIORITY_FIELD, SIZE_FIELD)

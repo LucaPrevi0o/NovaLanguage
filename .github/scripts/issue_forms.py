@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for nova_automation.issue_forms."""
+"""Compatibility wrapper for nova_automation.issues.forms."""
 
-from nova_automation.issue_forms import *  # noqa: F401,F403
-from nova_automation.issue_forms import main as _main
+from nova_automation.issues.forms import *  # noqa: F401,F403
+from nova_automation.issues.forms import main as _main
 
 
 if __name__ == "__main__":

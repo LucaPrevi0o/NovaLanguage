@@ -12,12 +12,12 @@ from unittest.mock import patch
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from nova_automation.project_github import Issue  # noqa: E402
-from nova_automation.project_issue_metadata import (  # noqa: E402
+from nova_automation.github import Issue  # noqa: E402
+from nova_automation.issues.labels import sync_labels_for_issue  # noqa: E402
+from nova_automation.project.issue_metadata import (  # noqa: E402
     issue_form_field_names,
     legacy_metadata_reasons,
     parse_metadata,
-    sync_labels_for_issue,
 )
 
 

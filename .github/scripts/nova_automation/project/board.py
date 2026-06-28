@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from .project_github import (
+from ..github import (
     GitHubClient,
     Issue,
     Project,
@@ -16,7 +16,7 @@ from .project_github import (
     ProjectItem,
     get_issue,
 )
-from .project_metadata import DONE_STATUS, STATUS_FIELD
+from .metadata import DONE_STATUS, STATUS_FIELD
 
 
 PROJECT_OWNER = os.environ.get("PROJECT_OWNER", "LucaPrevi0o")

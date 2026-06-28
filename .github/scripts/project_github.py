@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for nova_automation.project_github."""
+"""Compatibility wrapper for nova_automation.github."""
 
-from nova_automation.project_github import *  # noqa: F401,F403
+from nova_automation.github import *  # noqa: F401,F403

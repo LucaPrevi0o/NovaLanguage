@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for nova_automation.project_schedule."""
+"""Compatibility wrapper for nova_automation.project.schedule."""
 
-from nova_automation.project_schedule import *  # noqa: F401,F403
-from nova_automation.project_schedule import main as _main
+from nova_automation.project.schedule import *  # noqa: F401,F403
+from nova_automation.project.schedule import main as _main
 
 
 if __name__ == "__main__":
