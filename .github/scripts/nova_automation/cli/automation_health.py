@@ -12,18 +12,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 EXPECTED_SCRIPTS = (
-    ".github/scripts/automation_health.py",
-    ".github/scripts/issue_forms.py",
-    ".github/scripts/issue_metadata.py",
-    ".github/scripts/mirror_docs_to_wiki.py",
-    ".github/scripts/pr_metadata_alignment.py",
-    ".github/scripts/prepare_javadoc_site.py",
-    ".github/scripts/project_automation.py",
-    ".github/scripts/project_board.py",
-    ".github/scripts/project_github.py",
-    ".github/scripts/project_issue_metadata.py",
-    ".github/scripts/project_metadata.py",
-    ".github/scripts/project_schedule.py",
     ".github/scripts/nova_automation/__init__.py",
     ".github/scripts/nova_automation/cli/__init__.py",
     ".github/scripts/nova_automation/cli/automation_health.py",
@@ -69,12 +57,12 @@ PROJECT_AUTOMATION_COMMANDS = (
 
 WORKFLOW_MANAGED_PROJECT_COMMANDS = PROJECT_AUTOMATION_COMMANDS
 DOCUMENTED_ENTRY_POINTS = (
-    ".github/scripts/automation_health.py",
+    "PYTHONPATH=.github/scripts python3 -m nova_automation.cli.automation_health",
     ".github/workflows/project-automation.yml",
 )
 
 SCRIPT_REFERENCE_PATTERN = re.compile(r"(?<![\w/.-])\.github/scripts/[A-Za-z0-9_./-]+\.py")
-PROJECT_COMMAND_PATTERN = re.compile(r"\.github/scripts/project_automation\.py\s+([a-z][a-z0-9-]+)")
+PROJECT_COMMAND_PATTERN = re.compile(r"nova_automation\.cli\.project_automation\s+([a-z][a-z0-9-]+)")
 ADD_PARSER_PATTERN = re.compile(r"add_parser\(\s*[\"']([^\"']+)[\"']")
 
 
@@ -183,7 +171,7 @@ def compile_python_scripts(root: Path, findings: list[Finding]) -> None:
 
 
 def referenced_scripts_by_workflow(root: Path) -> dict[Path, set[str]]:
-    """Return Python script paths referenced by each workflow file."""
+    """Return legacy Python script paths referenced by each workflow file."""
 
     references: dict[Path, set[str]] = {}
     for workflow in workflow_paths(root):
@@ -193,7 +181,7 @@ def referenced_scripts_by_workflow(root: Path) -> dict[Path, set[str]]:
 
 
 def declared_project_commands(root: Path, findings: list[Finding]) -> set[str]:
-    """Return subcommands declared by project_automation.py."""
+    """Return subcommands declared by the Project automation CLI module."""
 
     path = root / ".github" / "scripts" / "nova_automation" / "cli" / "project_automation.py"
     if not path.is_file():
@@ -203,7 +191,7 @@ def declared_project_commands(root: Path, findings: list[Finding]) -> set[str]:
 
 
 def workflow_project_commands(root: Path) -> dict[Path, set[str]]:
-    """Return project_automation.py subcommands invoked by workflows."""
+    """Return project automation subcommands invoked by workflows."""
 
     commands: dict[Path, set[str]] = {}
     for workflow in workflow_paths(root):
@@ -214,16 +202,21 @@ def workflow_project_commands(root: Path) -> dict[Path, set[str]]:
 
 
 def check_workflow_script_references(root: Path, findings: list[Finding]) -> None:
-    """Check that workflow Python script references point to existing files."""
+    """Check that workflows no longer call removed compatibility wrappers."""
 
     for workflow, references in referenced_scripts_by_workflow(root).items():
         for reference in sorted(references):
-            if not (root / reference).is_file():
-                findings.append(Finding("error", f"Workflow references missing script {reference}", workflow))
+            findings.append(
+                Finding(
+                    "error",
+                    f"Workflow still references removed compatibility wrapper {reference}; use `python3 -m` package entry points",
+                    workflow,
+                )
+            )
 
 
 def check_project_command_wiring(root: Path, findings: list[Finding]) -> None:
-    """Check project_automation.py subcommands and workflow references."""
+    """Check Project automation subcommands and workflow references."""
 
     project_script = root / ".github" / "scripts" / "nova_automation" / "cli" / "project_automation.py"
     declared = declared_project_commands(root, findings)
