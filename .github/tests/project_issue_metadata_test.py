@@ -12,8 +12,8 @@ from unittest.mock import patch
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from project_github import Issue  # noqa: E402
-from project_issue_metadata import (  # noqa: E402
+from nova_automation.project_github import Issue  # noqa: E402
+from nova_automation.project_issue_metadata import (  # noqa: E402
     issue_form_field_names,
     legacy_metadata_reasons,
     parse_metadata,
