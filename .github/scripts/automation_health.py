@@ -21,6 +21,7 @@ EXPECTED_SCRIPTS = (
     ".github/scripts/project_automation.py",
     ".github/scripts/project_board.py",
     ".github/scripts/project_github.py",
+    ".github/scripts/project_issue_metadata.py",
     ".github/scripts/project_metadata.py",
     ".github/scripts/project_schedule.py",
 )
