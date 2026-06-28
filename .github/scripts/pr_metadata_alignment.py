@@ -9,8 +9,12 @@ import sys
 from dataclasses import dataclass
 
 from project_automation import (
-    get_project,
     issue_reference_numbers,
+)
+from project_board import (
+    add_content_to_project,
+    get_project,
+    project_item_id_for_content,
     project_issue_item,
     set_single_select_value,
 )
@@ -172,51 +176,18 @@ def set_pull_request_milestone(client: GitHubClient, repository: str, pull_reque
     return True
 
 
-def project_item_id_for_content(client: GitHubClient, project: Project, content_id: str) -> str | None:
-    """Return one Project item for an issue or pull request content ID."""
-
-    try:
-        data = client.graphql(
-            """
-            query($contentId: ID!) {
-              node(id: $contentId) {
-                ... on Issue { projectItems(first: 50, includeArchived: true) { nodes { id project { id } } } }
-                ... on PullRequest { projectItems(first: 50, includeArchived: true) { nodes { id project { id } } } }
-              }
-            }
-            """,
-            {"contentId": content_id},
-        )
-    except ProjectAutomationError as error:
-        raise PullRequestMetadataError(str(error)) from error
-    node = data.get("node")
-    if not node or "projectItems" not in node:
-        return None
-    for item in node["projectItems"]["nodes"]:
-        if item["project"]["id"] == project.id:
-            return item["id"]
-    return None
-
-
 def add_pr_to_project(client: GitHubClient, project: Project, pull_request: PullRequestIssue) -> str:
     """Add a pull request to the Project and return its item ID."""
 
-    existing = project_item_id_for_content(client, project, pull_request.node_id)
-    if existing:
-        return existing
     try:
-        data = client.graphql(
-            """
-            mutation($projectId: ID!, $contentId: ID!) {
-              addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) { item { id } }
-            }
-            """,
-            {"projectId": project.id, "contentId": pull_request.node_id},
-        )
+        existing = project_item_id_for_content(client, project, pull_request.node_id)
+        if existing:
+            return existing
+        item_id = add_content_to_project(client, project, pull_request.node_id)
     except ProjectAutomationError as error:
         raise PullRequestMetadataError(str(error)) from error
     print(f"Added PR #{pull_request.number} to Project")
-    return data["addProjectV2ItemById"]["item"]["id"]
+    return item_id
 
 
 def source_project_fields(client: GitHubClient, project: Project, repository: str, issues: list[ReferencedIssue]) -> dict[str, str]:
