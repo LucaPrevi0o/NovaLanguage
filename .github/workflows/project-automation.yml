@@ -63,6 +63,7 @@ env:
   PROJECT_START_DATE_FIELD: Start date
   PROJECT_END_DATE_FIELD: End date
   PROJECT_PR_READY_STATUS: In Review
+  PYTHONPATH: .github/scripts
 
 jobs:
   automation-health:
@@ -75,14 +76,14 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Check workflow and script wiring
-        run: python3 .github/scripts/automation_health.py
+        run: python3 -m nova_automation.cli.automation_health
 
       - name: Check shared issue-form fields
-        run: python3 .github/scripts/issue_forms.py --check
+        run: python3 -m nova_automation.issues.forms --check
 
       - name: Check native metadata helper
         run: |
-          python3 .github/scripts/issue_metadata.py \
+          python3 -m nova_automation.issues.native_metadata \
             --issue-number 0 \
             --labels refactor \
             --milestone "Nova MVP compiler"
@@ -108,7 +109,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
           ISSUE_MILESTONE: ${{ github.event.issue.milestone.title }}
-        run: python3 .github/scripts/issue_metadata.py
+        run: python3 -m nova_automation.issues.native_metadata
 
   sync-issue:
     name: Sync issue into Project
@@ -121,26 +122,26 @@ jobs:
 
       - name: Sync issue Project fields
         run: |
-          python3 .github/scripts/project_automation.py sync-issue \
+          python3 -m nova_automation.cli.project_automation sync-issue \
             --repo "${GITHUB_REPOSITORY}" \
             --issue-number "${{ github.event.issue.number }}"
 
       - name: Preserve managed issue labels
         run: |
-          python3 .github/scripts/project_automation.py sync-labels \
+          python3 -m nova_automation.cli.project_automation sync-labels \
             --repo "${GITHUB_REPOSITORY}" \
             --issue-number "${{ github.event.issue.number }}"
 
       - name: Sync issue schedule dates
         run: |
-          python3 .github/scripts/project_schedule.py \
+          python3 -m nova_automation.project.schedule \
             --repo "${GITHUB_REPOSITORY}" \
             --issue-number "${{ github.event.issue.number }}"
 
       - name: Ensure reopened issue is visible
         if: ${{ github.event.action == 'reopened' }}
         run: |
-          python3 .github/scripts/project_automation.py sync-issue-archive \
+          python3 -m nova_automation.cli.project_automation sync-issue-archive \
             --repo "${GITHUB_REPOSITORY}" \
             --issue-number "${{ github.event.issue.number }}"
 
@@ -155,7 +156,7 @@ jobs:
 
       - name: Sync issue archive state
         run: |
-          python3 .github/scripts/project_automation.py sync-issue-archive \
+          python3 -m nova_automation.cli.project_automation sync-issue-archive \
             --repo "${GITHUB_REPOSITORY}" \
             --issue-number "${{ github.event.issue.number }}"
 
@@ -170,7 +171,7 @@ jobs:
 
       - name: Align pull request with referenced issues
         run: |
-          python3 .github/scripts/pr_metadata_alignment.py \
+          python3 -m nova_automation.pull_requests.metadata_alignment \
             --repo "${GITHUB_REPOSITORY}" \
             --pr-number "${{ github.event.pull_request.number }}"
 
@@ -186,7 +187,7 @@ jobs:
 
       - name: Sync referenced issue status
         run: |
-          python3 .github/scripts/project_automation.py sync-pr-status \
+          python3 -m nova_automation.cli.project_automation sync-pr-status \
             --repo "${GITHUB_REPOSITORY}" \
             --pr-number "${{ github.event.pull_request.number }}"
 
@@ -201,7 +202,7 @@ jobs:
 
       - name: Check PLAN and Project alignment
         run: |
-          python3 .github/scripts/project_automation.py check-plan-drift \
+          python3 -m nova_automation.cli.project_automation check-plan-drift \
             --repo "${GITHUB_REPOSITORY}" \
             --plan PLAN.md \
             --readme README.md
@@ -236,9 +237,9 @@ jobs:
 
           case "${TARGET}" in
             health)
-              python3 .github/scripts/automation_health.py
-              python3 .github/scripts/issue_forms.py --check
-              python3 .github/scripts/issue_metadata.py \
+              python3 -m nova_automation.cli.automation_health
+              python3 -m nova_automation.issues.forms --check
+              python3 -m nova_automation.issues.native_metadata \
                 --issue-number 0 \
                 --labels refactor \
                 --milestone "Nova MVP compiler"
@@ -246,44 +247,44 @@ jobs:
               ;;
             issue)
               require_value "${ISSUE_NUMBER}" issue_number
-              python3 .github/scripts/project_automation.py sync-issue \
+              python3 -m nova_automation.cli.project_automation sync-issue \
                 --repo "${GITHUB_REPOSITORY}" \
                 --issue-number "${ISSUE_NUMBER}"
-              python3 .github/scripts/project_automation.py sync-labels \
+              python3 -m nova_automation.cli.project_automation sync-labels \
                 --repo "${GITHUB_REPOSITORY}" \
                 --issue-number "${ISSUE_NUMBER}"
-              python3 .github/scripts/project_schedule.py \
+              python3 -m nova_automation.project.schedule \
                 --repo "${GITHUB_REPOSITORY}" \
                 --issue-number "${ISSUE_NUMBER}"
-              python3 .github/scripts/project_automation.py sync-issue-archive \
+              python3 -m nova_automation.cli.project_automation sync-issue-archive \
                 --repo "${GITHUB_REPOSITORY}" \
                 --issue-number "${ISSUE_NUMBER}"
               ;;
             pr)
               require_value "${PR_NUMBER}" pr_number
-              python3 .github/scripts/pr_metadata_alignment.py \
+              python3 -m nova_automation.pull_requests.metadata_alignment \
                 --repo "${GITHUB_REPOSITORY}" \
                 --pr-number "${PR_NUMBER}"
-              python3 .github/scripts/project_automation.py sync-pr-status \
+              python3 -m nova_automation.cli.project_automation sync-pr-status \
                 --repo "${GITHUB_REPOSITORY}" \
                 --pr-number "${PR_NUMBER}"
               ;;
             all-open)
-              python3 .github/scripts/project_automation.py sync-issue \
+              python3 -m nova_automation.cli.project_automation sync-issue \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-open
-              python3 .github/scripts/project_automation.py sync-labels \
+              python3 -m nova_automation.cli.project_automation sync-labels \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-open
-              python3 .github/scripts/project_schedule.py \
+              python3 -m nova_automation.project.schedule \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-open
-              python3 .github/scripts/project_automation.py sync-issue-archive \
+              python3 -m nova_automation.cli.project_automation sync-issue-archive \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-open
               ;;
             all-closed)
-              python3 .github/scripts/project_automation.py sync-issue-archive \
+              python3 -m nova_automation.cli.project_automation sync-issue-archive \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-closed
               ;;
@@ -292,7 +293,7 @@ jobs:
               if [ "${FAIL_ON_WARNING}" = "true" ]; then
                 args+=(--fail-on-warning)
               fi
-              python3 .github/scripts/project_automation.py check-plan-drift \
+              python3 -m nova_automation.cli.project_automation check-plan-drift \
                 --repo "${GITHUB_REPOSITORY}" \
                 --plan PLAN.md \
                 --readme README.md \
@@ -303,7 +304,7 @@ jobs:
               if [ "${FAIL_ON_WARNING}" = "true" ]; then
                 args+=(--fail-on-findings)
               fi
-              python3 .github/scripts/project_automation.py audit-legacy-metadata \
+              python3 -m nova_automation.cli.project_automation audit-legacy-metadata \
                 --repo "${GITHUB_REPOSITORY}" \
                 --all-open \
                 "${args[@]}"
