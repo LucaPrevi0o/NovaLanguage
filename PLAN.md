@@ -208,12 +208,14 @@ Parser-owned semantic checks inventory:
 - [x] Type syntax construction: declaration/class parsing now passes parsed `TypeSyntax` directly into declaration AST constructors instead of building parser-owned `ReturnType` adapters.
 - [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
 - [x] TypeRegistry adapter removal: declaration/class parsing no longer uses a parser-side type registry.
+- [x] Parser-generated AST boundary audit: unresolved names, invalid assignment targets, duplicate declarations, unknown declared types, and unknown superclasses remain parser-accepted syntax with semantic-owned meaning.
 
 Exit criteria:
 
 - [x] `unknownVar + 1;` parses syntactically, then fails semantic name resolution.
 - [x] `1 = 2;` parses syntactically, then fails l-value analysis.
 - [x] Duplicate declarations become semantic diagnostics, not parser crashes.
+- [x] Parser semantic-boundary regression tests preserve AST shape for representative semantically invalid programs.
 
 ## Phase 5 - Introduce A Real Type Model
 
@@ -340,5 +342,5 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Audit remaining manual AST construction, printer paths, and compatibility getters that still rely on `ReturnType` adapter fallbacks.
-2. Keep advanced inheritance and overload rules scoped to later work: access control, conflict checks, override validation, generic specificity, and conversions.
+1. Design multi-file compiler pipeline contracts so `Compiler`, `SourceFile`, `CompilationUnit`, and `ProjectContext` have clear ownership before implementation.
+2. Define the two-file cross-reference acceptance test that will prove the Phase 6 pipeline works without single-file shortcuts.

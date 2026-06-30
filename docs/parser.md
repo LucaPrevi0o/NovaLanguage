@@ -113,6 +113,23 @@ Important boundary:
 
 Declaration and class parsing now build source-level type syntax nodes and pass them directly into declaration AST constructors. Declaration AST accessors expose that parsed `TypeSyntax` without requiring a `ReturnType` adapter. `ReturnType` remains available as a compatibility adapter for older manual AST/printer paths, but semantic type resolution reads parsed `TypeSyntax` before consulting legacy adapter metadata. The parser no longer has a type registry; it accepts syntactic type names and leaves visibility and type validity to semantic analysis.
 
+## Semantic boundary tests
+
+Parser tests should protect the rule that syntactically valid but semantically invalid programs
+still produce AST nodes.
+
+Representative examples include:
+
+- unresolved identifiers;
+- object creation for classes that are not declared yet;
+- assignments to expressions that are not valid l-values;
+- duplicate declarations;
+- unknown declared types;
+- unknown superclass names.
+
+These cases belong in parser tests when the assertion is about AST shape or absence of parser
+diagnostics. The matching meaning diagnostics belong in semantic tests.
+
 ## Error recovery
 
 The parser should report errors and continue when possible.

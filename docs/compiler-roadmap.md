@@ -117,6 +117,7 @@ Completed or partially completed work includes:
 - removing parser-owned symbol-table scope construction and symbol registration;
 - adding parsed type syntax nodes that declaration AST constructors receive directly;
 - removing the parser-side `TypeRegistry` adapter.
+- parser semantic-boundary regression tests for representative semantically invalid programs.
 
 Future semantic work is intentionally scoped to later phases:
 
@@ -145,7 +146,7 @@ Completed work:
 - `ReturnType` is now a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs;
 - syntaxless `ReturnType` fallback conversion is isolated in `ReturnTypeSyntaxBridge`;
 - the parser-side `TypeRegistry` adapter has been removed;
-- built-in primitive-like declarations resolve to Nova value type symbols.
+- built-in primitive-like declarations resolve to Nova value type symbols;
 - the `TypeSyntax` to `TypeSymbol` boundary is documented in [`type-model.md`](type-model.md).
 
 Planned work:
