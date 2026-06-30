@@ -71,6 +71,7 @@ Useful cases:
 - invalid syntax recovery;
 - unknown token recovery;
 - block-level recovery;
+- semantic-boundary AST preservation for syntactically valid but semantically invalid programs;
 - parser cursor movement regressions.
 
 ### Semantic tests
