@@ -30,6 +30,9 @@ Semantic diagnostics
 
 There is no backend-neutral IR, optimizer, or native code generator yet.
 
+Phase 6 design work for the planned project-level pipeline is documented in
+[`project-pipeline.md`](project-pipeline.md).
+
 ## Main layers
 
 ### Lexer
@@ -187,8 +190,18 @@ Backend code generation
 
 The next major architecture milestones are:
 
-1. introduce a real semantic type model;
-2. introduce a multi-file compilation pipeline;
-3. load the standard library as Nova source;
-4. lower semantically valid ASTs into an IR;
-5. add a backend after the front end is stable.
+1. introduce a multi-file compilation pipeline;
+2. load the standard library as Nova source;
+3. lower semantically valid ASTs into an IR;
+4. add a backend after the front end is stable.
+
+The Phase 6 contracts are:
+
+- `SourceFile` owns input identity and source text;
+- `CompilationUnit` owns tokens, AST, and lexer/parser diagnostics for one source file;
+- `ProjectContext` owns project-level units, declarations, scopes, and diagnostics;
+- `Compiler` orchestrates phases without becoming a parser helper or semantic pass.
+
+All files should be lexed and parsed before declaration collection or semantic
+analysis begins. The parser remains syntax-only, and semantic passes own
+cross-file meaning.
