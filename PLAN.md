@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-06-26
+Last updated: 2026-06-30
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -17,7 +17,7 @@ In this sense, the plan is a living document that can be updated as the project 
 
 ## Current Status
 
-Current focus: Phase 5 - type model groundwork.
+Current focus: Phase 6 - multi-file project pipeline design.
 
 | Phase                         | Status      | Summary                                                                                                                                                                             |
 |-------------------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -25,8 +25,8 @@ Current focus: Phase 5 - type model groundwork.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | Complete    | Parser-generated ASTs are syntax-only; semantic declaration collection, scopes, diagnostics, type checks, return/l-value checks, and loop-control checks own meaning.              |
-| 5. Type model                 | In progress | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, and syntaxless `ReturnType` fallback is isolated.                     |
-| 6. Multi-file pipeline        | Not started | Current compiler flow is still single-file oriented.                                                                                                                                |
+| 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, and syntaxless `ReturnType` fallback is isolated.                     |
+| 6. Multi-file pipeline        | In progress | Project-level compiler contracts are being designed before implementation begins.                                                                                                   |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
 | 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                                              |
@@ -219,7 +219,7 @@ Exit criteria:
 
 ## Phase 5 - Introduce A Real Type Model
 
-Status: In progress.
+Status: Complete.
 
 Goal: stop using lexer token classes as the semantic type model.
 
@@ -250,12 +250,13 @@ Exit criteria:
 
 ## Phase 6 - Multi-File Project Pipeline
 
-Status: Not started.
+Status: In progress.
 
 Goal: move from a single-file parser to a project compiler front end.
 
 Tasks:
 
+- [x] Design the Phase 6 project pipeline contracts for `Compiler`, `SourceFile`, `CompilationUnit`, and `ProjectContext`.
 - [ ] Add `Compiler`.
 - [ ] Add `SourceFile`.
 - [ ] Add `CompilationUnit`.
@@ -342,5 +343,5 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Design multi-file compiler pipeline contracts so `Compiler`, `SourceFile`, `CompilationUnit`, and `ProjectContext` have clear ownership before implementation.
-2. Define the two-file cross-reference acceptance test that will prove the Phase 6 pipeline works without single-file shortcuts.
+1. Define the two-file cross-reference acceptance test that will prove the Phase 6 pipeline works without single-file shortcuts.
+2. Add the project pipeline model and file-aware diagnostic foundation tracked by issue #70.

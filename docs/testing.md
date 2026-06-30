@@ -98,7 +98,7 @@ Useful cases:
 Integration tests should cover complete front-end flows:
 
 ```text
-source
+source file(s)
   ↓
 lexer
   ↓
@@ -110,6 +110,11 @@ diagnostics
 ```
 
 These tests are useful when a behavior depends on multiple compiler layers.
+
+Phase 6 integration tests should use the project-level compiler entry point once
+it exists. The first target is a two-file cross-reference test where one source
+file refers to a class declared in another file, proving that declaration
+collection happens across all parsed units before name/type resolution.
 
 ## Testing rule of thumb
 

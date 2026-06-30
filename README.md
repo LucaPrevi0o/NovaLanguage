@@ -8,9 +8,10 @@ This repository currently focuses on the **compiler front end**: reading Nova so
 
 The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 
-Current focus: **Phase 5 - type model groundwork**.
+Current focus: **Phase 6 - multi-file project pipeline design**.
 
 Phase 4 is complete: parsing now builds syntax-only ASTs, while semantic passes own name resolution, scope construction, duplicate checks, type checks, return checks, l-value checks, and loop-control validation.
+Phase 5 type-model groundwork is complete enough for Phase 6: parsed type syntax is preserved by declaration AST nodes, and semantic type symbols now distinguish Nova type categories.
 Roadmap issues for Phases 1 through 8 are grouped under the `Nova MVP compiler`
 milestone; advanced Phase 9 language features are tracked as separate post-MVP
 milestones.
@@ -29,6 +30,7 @@ Implemented or partially implemented today:
 - Parser-side type-registry metadata removal
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
 - Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
+- Documented Phase 6 contracts for the planned multi-file project pipeline
 - Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
 - Return checking
 - L-value checking
@@ -69,6 +71,7 @@ Important documentation:
 - [`docs/parser.md`](docs/parser.md) - parser structure and responsibilities
 - [`docs/semantic-analysis.md`](docs/semantic-analysis.md) - semantic passes and scope model
 - [`docs/type-model.md`](docs/type-model.md) - `TypeSyntax`, `TypeSymbol`, and compatibility boundary
+- [`docs/project-pipeline.md`](docs/project-pipeline.md) - planned multi-file compiler pipeline contracts
 - [`docs/language-design.md`](docs/language-design.md) - long-term Nova language vision
 - [`docs/ecosystem.md`](docs/ecosystem.md) - Nova ecosystem naming and package vocabulary
 - [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md) - roadmap explained in narrative form

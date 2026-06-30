@@ -8,9 +8,12 @@ For the ecosystem naming vocabulary, see [`ecosystem.md`](ecosystem.md).
 
 ## Current focus
 
-Current focus: **Phase 5 - type model groundwork**.
+Current focus: **Phase 6 - multi-file project pipeline design**.
 
-The main goal is to introduce a real type model without undoing the parser/semantic boundary.
+The current goal is to design the project-level compiler contracts before
+implementing multi-file compilation. The type-model groundwork is complete enough
+for this transition: parsed type syntax is preserved by the AST, and semantic
+type symbols carry Nova-level type categories.
 GitHub milestones track deliverables rather than internal phase numbers: Phase 1
 through Phase 8 work belongs to the `Nova MVP compiler` milestone, while Phase 9
 advanced language features are tracked as separate post-MVP milestones.
@@ -20,6 +23,7 @@ In practical terms:
 - invalid syntax should be reported by the parser;
 - syntactically valid but meaningless code should be reported by semantic analysis;
 - parsed type syntax should be preserved before semantic resolution;
+- all source files should be lexed and parsed before project-level semantic analysis;
 - future compiler stages should consume a stable AST plus semantic type information.
 
 ## Ecosystem direction
@@ -125,7 +129,7 @@ Future semantic work is intentionally scoped to later phases:
 
 ## Phase 5 - Real type model
 
-Status: **in progress**.
+Status: **complete**.
 
 Parser-created declarations preserve source `TypeSyntax`, and semantic type symbols carry
 Nova-level type categories. Declaration AST constructors now accept parsed `TypeSyntax`
@@ -149,22 +153,27 @@ Completed work:
 - built-in primitive-like declarations resolve to Nova value type symbols;
 - the `TypeSyntax` to `TypeSymbol` boundary is documented in [`type-model.md`](type-model.md).
 
-Planned work:
+Follow-up cleanup:
 
 - audit remaining manual AST construction and printer paths that still rely on compatibility adapters;
 - remove the compatibility bridge once syntaxless adapter fallbacks are no longer needed;
 - continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
 
-This phase is important before implementing advanced language features.
+This follow-up work is not a blocker for starting the Phase 6 project pipeline.
 
 ## Phase 6 - Multi-file project pipeline
 
-Status: **not started**.
+Status: **in progress**.
 
-The compiler flow is currently single-file oriented.
+The compiler flow is currently single-file oriented. The first Phase 6 step is
+to define contracts for `Compiler`, `SourceFile`, `CompilationUnit`, and
+`ProjectContext` before implementation begins.
+
+The design lives in [`project-pipeline.md`](project-pipeline.md).
 
 Planned work:
 
+- document project pipeline contracts;
 - introduce `Compiler`;
 - introduce `SourceFile`;
 - introduce `CompilationUnit`;
