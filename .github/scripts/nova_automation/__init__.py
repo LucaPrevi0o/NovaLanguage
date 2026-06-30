@@ -1,0 +1,1 @@
+"""NovaLanguage GitHub automation package."""

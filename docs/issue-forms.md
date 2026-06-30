@@ -4,7 +4,7 @@ Nova uses structured GitHub issue forms to keep roadmap metadata consistent and 
 
 ## Available issue forms
 
-- **Bug report**: regressions, incorrect diagnostics, or wrong compiler/front-end behavior.
+- **Bug report**: regressions, diagnostics, or compiler/front-end behavior.
 - **Compiler task**: focused implementation, test, documentation, or cleanup work.
 - **Design task**: decisions about language behavior, compiler architecture, workflow, or roadmap direction.
 - **Feature proposal**: proposed Nova language or compiler capabilities before implementation starts.
@@ -23,6 +23,8 @@ The native source of truth is:
 
 The `Check issue metadata` workflow validates new or edited issues and fails when an issue has no managed label, no milestone, or an unmanaged milestone.
 
+Milestone due dates can be used as planning guidance when choosing issue-level schedule fields, but the issue forms still keep milestone selection itself in native GitHub metadata.
+
 ## Issue-form metadata
 
 Every issue form still uses these shared project fields because GitHub does not provide native equivalents for this repository workflow:
@@ -30,25 +32,35 @@ Every issue form still uses these shared project fields because GitHub does not 
 - `Priority`
 - `Size`
 - `Suggested status`
+- `Expected start`
+- `Expected deadline`
 
-Those fields are parsed by the project automation documented in `docs/project-automation.md` and synchronized into the roadmap Project.
+`Priority`, `Size`, and `Suggested status` are parsed by the project automation documented in `docs/project-automation.md` and synchronized into the roadmap Project.
 
-Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## Project metadata` block remain supported by the existing automation during migration, but new issue forms should not reintroduce those duplicated body fields.
+`Expected start` and `Expected deadline` are optional `YYYY-MM-DD` fields. When present, `nova_automation.project.schedule` writes them into the roadmap Project date fields used by the Roadmap view. Empty schedule fields are ignored and do not clear existing Project dates.
+
+Legacy issue bodies that still contain `### Milestone`, `### Labels`, or a `## Project metadata` block are not a supported source for Project synchronization. New issue forms should not reintroduce those duplicated body fields, and existing issues should keep native labels, native milestones, and the current `Priority`, `Size`, `Suggested status`, `Expected start`, and `Expected deadline` headings instead.
+
+Run the legacy metadata audit before changing automation that touches issue metadata, and migrate any open findings to native labels, native milestones, and current issue-form fields:
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+```
 
 ## Keeping form options aligned
 
-The canonical source for managed labels, milestones, priorities, statuses, and sizes is `.github/scripts/project_metadata.py`. The helper script `.github/scripts/issue_forms.py` imports those constants, updates the remaining shared option blocks, and rejects duplicated native body fields. The native issue metadata check also imports the same constants through `.github/scripts/issue_metadata.py`, so label and milestone validation follows the same source of truth.
+The canonical source for managed labels, milestones, priorities, statuses, and sizes is `nova_automation.project.metadata`. The helper module `nova_automation.issues.forms` imports those constants, updates the remaining shared option blocks, and rejects duplicated native body fields. The native issue metadata check also imports the same constants through `nova_automation.issues.native_metadata`, so label and milestone validation follows the same source of truth.
 
 To update forms locally after changing managed metadata:
 
 ```bash
-python3 .github/scripts/issue_forms.py
+PYTHONPATH=.github/scripts python3 -m nova_automation.issues.forms
 ```
 
 To check that committed forms are aligned without editing files:
 
 ```bash
-python3 .github/scripts/issue_forms.py --check
+PYTHONPATH=.github/scripts python3 -m nova_automation.issues.forms --check
 ```
 
 The `Check issue forms` workflow runs the check mode on pull requests that touch issue forms or the related automation scripts.

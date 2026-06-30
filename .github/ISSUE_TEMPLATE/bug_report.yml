@@ -53,21 +53,31 @@ body:
       default: 0
     validations:
       required: true
+  - type: input
+    id: expected-start
+    attributes:
+      label: Expected start
+      description: Optional Roadmap start date. Use YYYY-MM-DD.
+      placeholder: "2026-07-01"
+  - type: input
+    id: expected-deadline
+    attributes:
+      label: Expected deadline
+      description: Optional Roadmap deadline/end date. Use YYYY-MM-DD.
+      placeholder: "2026-07-31"
   - type: textarea
     id: reproduction
     attributes:
       label: Reproduction
-      description: Add the smallest Nova snippet and steps that reproduce the problem.
+      description: Add the smallest Nova snippet and steps that show the problem.
       value: |
-        ```nova
-        // Smallest snippet that reproduces the problem.
-        ```
+        Smallest Nova snippet:
 
-        Steps to reproduce:
+        Steps:
 
-        1. 
-        2. 
-        3. 
+        1.
+        2.
+        3.
     validations:
       required: true
   - type: textarea
@@ -89,7 +99,7 @@ body:
     attributes:
       label: Scope
       value: |
-        - [ ] Add or update the smallest regression test that reproduces the bug.
+        - [ ] Add or update the smallest regression test that covers the bug.
         - [ ] Fix the bug without expanding unrelated language behavior.
         - [ ] Keep parser changes syntactic unless syntax truly changes.
     validations:

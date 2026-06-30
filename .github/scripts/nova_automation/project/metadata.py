@@ -38,65 +38,6 @@ MANAGED_MILESTONES = (
     FUTURE_MILESTONE,
 )
 
-MILESTONE_ALIASES = {
-    "project workflow": PROJECT_WORKFLOW_MILESTONE,
-    "nova mvp compiler": MVP_MILESTONE,
-    "mvp compiler": MVP_MILESTONE,
-    "first usable compiler": MVP_MILESTONE,
-    "phase 1 - build health": MVP_MILESTONE,
-    "1 - build health": MVP_MILESTONE,
-    "phase 2 - parser semantics": MVP_MILESTONE,
-    "2 - parser semantics": MVP_MILESTONE,
-    "phase 3 - diagnostics": MVP_MILESTONE,
-    "3 - diagnostics": MVP_MILESTONE,
-    "phase 4 - semantic analysis split": MVP_MILESTONE,
-    "4 - semantic analysis split": MVP_MILESTONE,
-    "phase 5 - type model": MVP_MILESTONE,
-    "5 - type model": MVP_MILESTONE,
-    "phase 6 - multi-file project pipeline": MVP_MILESTONE,
-    "6 - multi-file project pipeline": MVP_MILESTONE,
-    "phase 7 - standard library as source": MVP_MILESTONE,
-    "phase 7 - standard library": MVP_MILESTONE,
-    "7 - standard library": MVP_MILESTONE,
-    "phase 8 - ir preparation": MVP_MILESTONE,
-    "8 - ir preparation": MVP_MILESTONE,
-    "phase 9 - advanced nova features": FUTURE_MILESTONE,
-    "phase 9 - advanced features": FUTURE_MILESTONE,
-    "9 - advanced features": FUTURE_MILESTONE,
-    "advanced overload and override rules": "Advanced overload and override rules",
-    "access control": "Access control",
-    "inheritance conflict checks": "Inheritance conflict checks",
-    "generics": "Generics",
-    "bounded generics": "Bounded generics",
-    "class parameters": "Class parameters",
-    "operator-overloadable nova types": "Operator-overloadable Nova types",
-    "operator overloadable nova types": "Operator-overloadable Nova types",
-    "lambdas": "Lambdas",
-    "variadic generics": "Variadic generics",
-    "monomorphization": "Monomorphization",
-    "future development": FUTURE_MILESTONE,
-}
-
-MILESTONE_DESCRIPTIONS = {
-    PROJECT_WORKFLOW_MILESTONE: (
-        "Repository automation, issue tracking, documentation publishing, and project-management workflow work."
-    ),
-    MVP_MILESTONE: (
-        "Phase 1 through Phase 8 work needed for the first usable Nova compiler front-end."
-    ),
-    "Advanced overload and override rules": "Post-MVP overload, override, specificity, and dispatch design work.",
-    "Access control": "Post-MVP visibility and member-access enforcement work.",
-    "Inheritance conflict checks": "Post-MVP inherited-member conflict and hierarchy validation work.",
-    "Generics": "Post-MVP generic type and function support.",
-    "Bounded generics": "Post-MVP generic constraint and bound support.",
-    "Class parameters": "Post-MVP class parameter syntax, semantics, and lowering support.",
-    "Operator-overloadable Nova types": "Post-MVP operator overload support for Nova-defined types.",
-    "Lambdas": "Post-MVP lambda syntax, typing, capture, and lowering support.",
-    "Variadic generics": "Post-MVP variadic type parameter support.",
-    "Monomorphization": "Post-MVP generic specialization and monomorphization support.",
-    FUTURE_MILESTONE: "Future-facing design and maintenance work that is not part of the current compiler phase.",
-}
-
 PRIORITY_ALIASES = {
     "p0": "0 - Blocks progress",
     "0": "0 - Blocks progress",

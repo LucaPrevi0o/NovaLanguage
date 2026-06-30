@@ -2,24 +2,27 @@
 
 Nova uses GitHub Issues and the **Nova - Development Roadmap** GitHub Project to track roadmap work.
 
-The repository also contains GitHub Actions workflows that keep that project metadata aligned with issue bodies, native issue metadata, and pull request activity.
+The automation layer is intentionally split by responsibility but now has a single Project workflow entry point:
+
+```text
+.github/workflows/project-automation.yml
+```
+
+That workflow coordinates validation, issue-to-Project synchronization, pull-request synchronization, roadmap drift checks, and manual repair commands. The Python automation code lives in the `nova_automation` package under `.github/scripts/` and is invoked through `python3 -m` package entry points.
 
 ## Required secret
 
-Workflows that write to the user-level GitHub Project need a repository secret:
+Jobs that write to the user-level GitHub Project need this repository secret:
 
 ```text
 PROJECT_TOKEN
 ```
 
-The token must have GitHub Projects write access, including the `project` scope for classic personal access tokens.
-
-The built-in `GITHUB_TOKEN` is still passed to the scripts for normal repository access, but it is usually not enough for writing user-level Projects v2 fields.
+The token must have GitHub Projects write access, including the `project` scope for classic personal access tokens. The built-in `GITHUB_TOKEN` is still passed to automation modules for normal repository access, but it is usually not enough for writing user-level Projects v2 fields.
 
 ## Issue forms and metadata
 
-New issues should be opened through the YAML issue forms in `.github/ISSUE_TEMPLATE/`.
-Blank issues are disabled so contributors are guided through the same structured fields each time.
+New issues should be opened through the YAML issue forms in `.github/ISSUE_TEMPLATE/`. Blank issues are disabled so contributors are guided through the same structured fields each time.
 
 Issue forms do not duplicate native GitHub issue metadata in the body:
 
@@ -42,42 +45,27 @@ M
 Ready
 ```
 
-Existing issues that still contain older body metadata remain supported during migration:
-
-```markdown
-## Project metadata
-
-- Milestone: Nova MVP compiler
-- Area: type-system / semantic-analysis
-- Kind: refactor
-- Priority: P1
-- Size: M
-- Suggested status: Ready
-```
-
-Supported legacy/body metadata keys:
-
-- `Milestone`
-- `Kind`
-- `Priority`
-- `Size`
-- `Suggested status`
-
-The issue sync workflow writes `Priority`, `Size`, and `Suggested status` to Project fields. Legacy `Milestone` or `Phase` metadata is still accepted during migration, but new issues should use the native GitHub milestone selector instead of a form body field.
-
-The label sync workflow still understands legacy `Kind` metadata. New issues should use native GitHub labels instead. If an issue has no legacy `Kind` metadata, label sync keeps existing managed labels instead of treating missing body metadata as an error.
+The issue sync job writes `Priority`, `Size`, and `Suggested status` to Project fields. The label check job validates native GitHub labels and milestones through `nova_automation.issues.native_metadata`.
 
 The legacy custom Project `Phase` field has been removed from the roadmap Project. The cleanup command remains available as an idempotent maintenance helper:
 
 ```bash
-python3 .github/scripts/project_automation.py remove-legacy-phase-field --confirm
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation remove-legacy-phase-field --confirm
 ```
 
-The legacy custom Project `Kind` field is also deprecated because labels are the source of truth. After label-only automation is active on the default branch, remove it with:
+The legacy custom Project `Kind` field is also deprecated because labels are the source of truth. Remove it with:
 
 ```bash
-python3 .github/scripts/project_automation.py remove-legacy-kind-field --confirm
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation remove-legacy-kind-field --confirm
 ```
+
+Legacy body metadata is no longer a supported source for synchronization. Audit the current issue set when changing metadata automation or before enabling failure-on-findings gates:
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+```
+
+That command is read-only. It reports issues that still contain legacy `## Project metadata` blocks, duplicated native metadata headings such as `### Milestone` or `### Labels`, legacy schedule values, or missing native labels/milestones that make the body metadata the only remaining source. Use `--fail-on-findings` when a branch should fail until all open issues are clean.
 
 Managed milestone names:
 
@@ -97,20 +85,15 @@ Managed milestone names:
 
 Use `Nova MVP compiler` for Phase 1 through Phase 8 work: build health, parser stability, diagnostics, semantic separation, the type model, the multi-file pipeline, standard-library loading, and IR preparation. Use the specific advanced-feature milestones for post-MVP Phase 9 work.
 
-The workflow maps short issue values such as `P1` into Project values such as `1 - Important next step` for legacy issues.
+## Consolidated workflow jobs
 
-When an issue contains invalid metadata, single-issue runs fail loudly. Bulk sync runs warn and continue so one old issue does not block the whole resync.
+### Automation health
 
-## Issue metadata check
+The `automation-health` job runs on pull requests and manual dispatches. It checks workflow/package wiring, issue-form shared fields, native metadata helper behavior, and Python syntax for the Project automation helpers.
 
-Workflow: `.github/workflows/issue-metadata-check.yml`
+### Native issue metadata check
 
-Triggers:
-
-- issue opened;
-- issue edited;
-- issue reopened;
-- issue transferred.
+The `check-issue-metadata` job runs for issue events other than `closed`.
 
 Rules:
 
@@ -118,94 +101,33 @@ Rules:
 - every issue should have one managed roadmap milestone;
 - unmanaged milestones fail the workflow so they are fixed before roadmap automation relies on them.
 
-This workflow validates native GitHub issue properties through `.github/scripts/issue_metadata.py`, which imports the managed labels and milestones from `.github/scripts/project_metadata.py`. It does not edit labels, milestones, issue bodies, or Project fields.
+### Issue to Project sync
 
-## Issue to Project sync
+The `sync-issue` job runs when an issue is opened, edited, reopened, or transferred.
 
-Workflow: `.github/workflows/project-sync.yml`
-
-Script command:
+It coordinates the previous independent issue workflows in one job:
 
 ```bash
-python3 .github/scripts/project_automation.py sync-issue --repo LucaPrevi0o/NovaLanguage --issue-number 28
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-issue --repo LucaPrevi0o/NovaLanguage --issue-number 28
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-labels --repo LucaPrevi0o/NovaLanguage --issue-number 28
+PYTHONPATH=.github/scripts python3 -m nova_automation.project.schedule --repo LucaPrevi0o/NovaLanguage --issue-number 28
 ```
-
-Triggers:
-
-- issue opened;
-- issue edited;
-- issue reopened;
-- issue transferred;
-- manual dispatch for one issue;
-- manual dispatch for every open issue.
 
 Responsibilities:
 
 - add the issue to the roadmap Project when missing;
-- parse Project metadata from issue-form sections or the legacy `Project metadata` block;
-- sync legacy body `Milestone` or `Phase` metadata into the issue milestone when present;
 - sync `Priority`, `Size`, and `Suggested status` into Project fields;
-- ignore the removed custom Project `Phase` field while still accepting legacy `Phase` metadata in issue bodies;
-- ignore the deprecated custom Project `Kind` field because issue labels now represent kind metadata;
-- warn about missing legacy milestone metadata without failing new issues that rely on native labels and milestones;
-- fail when `Priority`, `Size`, or `Suggested status` maps to an option that does not exist in the roadmap Project.
+- preserve native GitHub labels as the source of truth for issue kind;
+- sync optional `Expected start` and `Expected deadline` into Roadmap date fields;
+- ensure reopened issues are visible in the Project.
 
-## Workflow automation roadmap
+### Issue archive sync
 
-The current workflow automation set was coordinated under issue #36. New automation should be introduced through focused follow-up issues before it is added to this script.
-
-## Pull request status sync
-
-Workflow: `.github/workflows/project-pr-status.yml`
-
-Script command:
+The `sync-issue-archive` job runs when an issue is closed or reopened.
 
 ```bash
-python3 .github/scripts/project_automation.py sync-pr-status --repo LucaPrevi0o/NovaLanguage --pr-number 12
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-issue-archive --repo LucaPrevi0o/NovaLanguage --issue-number 39
 ```
-
-Triggers:
-
-- pull request opened;
-- pull request edited;
-- pull request reopened;
-- pull request marked ready for review;
-- pull request converted to draft;
-- pull request closed;
-- manual dispatch for one pull request.
-
-Rules:
-
-- draft pull requests do not change issue status;
-- non-draft pull requests move referenced issues to `In Review`;
-- merged pull requests move only closing-keyword issue references to `Done`;
-- the workflow updates Project status only and does not close issues directly;
-- after a merged closing-keyword PR moves an issue to `Done`, the same script attempts the issue archive sync rule described below.
-
-## Issue archive sync
-
-Workflow: `.github/workflows/project-archive-sync.yml`
-
-Script command:
-
-```bash
-python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --issue-number 39
-```
-
-Bulk repair commands:
-
-```bash
-python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-closed
-python3 .github/scripts/project_automation.py sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-open
-```
-
-Triggers:
-
-- issue closed;
-- issue reopened;
-- manual dispatch for one issue;
-- manual dispatch for every closed issue;
-- manual dispatch for every open issue.
 
 Rules:
 
@@ -213,56 +135,41 @@ Rules:
 - closed issues with another status produce a warning and remain visible;
 - reopened/open issues are unarchived when they already exist in the Project;
 - open issues missing from the Project are added back as visible items;
-- the workflow does not change issue status, reopen issues, close issues, or edit issue metadata.
+- the job does not change issue status, reopen issues, close issues, or edit issue metadata.
 
-## Issue label sync
+### Pull request metadata alignment
 
-Workflow: `.github/workflows/project-label-sync.yml`
-
-Script command:
+The `align-pr-metadata` job runs for non-closed pull request events.
 
 ```bash
-python3 .github/scripts/project_automation.py sync-labels --repo LucaPrevi0o/NovaLanguage --issue-number 30
+PYTHONPATH=.github/scripts python3 -m nova_automation.pull_requests.metadata_alignment --repo LucaPrevi0o/NovaLanguage --pr-number 12
 ```
 
-Triggers:
+It copies managed labels, a shared milestone, and selected Project fields from referenced issues to the pull request when the referenced issues agree.
 
-- issue opened;
-- issue edited;
-- issue reopened;
-- issue transferred;
-- manual dispatch for one issue;
-- manual dispatch for every open issue.
+### Pull request status sync
 
-The workflow syncs only labels owned by legacy `Kind` metadata when that metadata exists:
-
-- `bug`
-- `feature`
-- `refactor`
-- `design`
-- `research`
-- `test`
-- `docs`
-
-It may remove stale labels from that managed set when an issue's legacy kind metadata changes, but it does not remove unrelated labels that were added manually. New issue forms do not include `Kind`/`Labels` body metadata, so native issue labels should be managed directly through GitHub and checked by the `Check issue metadata` workflow.
-
-## Roadmap drift check
-
-Workflow: `.github/workflows/project-drift-check.yml`
-
-Script command:
+The `sync-pr-status` job runs for pull request events after the PR metadata alignment job has had a chance to run.
 
 ```bash
-python3 .github/scripts/project_automation.py check-plan-drift --repo LucaPrevi0o/NovaLanguage --plan PLAN.md --readme README.md
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-pr-status --repo LucaPrevi0o/NovaLanguage --pr-number 12
 ```
 
-Triggers:
+Rules:
 
-- pull requests that change `PLAN.md`;
-- pull requests that change `README.md`;
-- pull requests that change Markdown docs;
-- pull requests that change Project automation scripts or workflows;
-- manual dispatch.
+- draft pull requests do not change issue status;
+- non-draft pull requests move referenced issues to `In Review`;
+- merged pull requests move only closing-keyword issue references to `Done`;
+- the job updates Project status only and does not close issues directly;
+- after a merged closing-keyword PR moves an issue to `Done`, the script attempts the issue archive sync rule described above.
+
+### Roadmap drift check
+
+The `check-roadmap-drift` job runs on pull requests.
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation check-plan-drift --repo LucaPrevi0o/NovaLanguage --plan PLAN.md --readme README.md
+```
 
 Checks:
 
@@ -273,3 +180,34 @@ Checks:
 - immediate next steps are loosely matched to open issues and reported as notices.
 
 Errors fail the workflow. Warnings are reported as GitHub annotations and can optionally be treated as failures through manual dispatch.
+
+## Manual dispatch targets
+
+The consolidated workflow exposes one `target` input:
+
+- `health` runs local no-network automation checks;
+- `issue` runs issue sync, label preservation, schedule sync, and archive visibility sync for one issue;
+- `pr` runs PR metadata alignment and PR status sync for one pull request;
+- `all-open` repairs Project fields, labels, schedules, and archive visibility for every open issue;
+- `all-closed` repairs archive state for every closed issue;
+- `drift` runs the roadmap drift check;
+- `legacy-audit` reports open issues that still depend on legacy body metadata.
+
+Bulk repair commands remain available locally:
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-issue --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-labels --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.project.schedule --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-closed
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation sync-issue-archive --repo LucaPrevi0o/NovaLanguage --all-open
+```
+
+Legacy migration audits can be scoped to one issue, open issues, closed issues, or the full issue history:
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --issue-number 23
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-closed
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all
+```
