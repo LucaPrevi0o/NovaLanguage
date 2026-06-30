@@ -12,7 +12,7 @@ from unittest.mock import patch
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from project_board import (  # noqa: E402
+from nova_automation.project.board import (  # noqa: E402
     add_issue_to_project,
     get_project,
     list_project_items,
@@ -20,7 +20,7 @@ from project_board import (  # noqa: E402
     set_issue_status,
     sync_issue_archive,
 )
-from project_github import Issue, Project  # noqa: E402
+from nova_automation.github import Issue, Project  # noqa: E402
 
 
 class FakeGitHubClient:

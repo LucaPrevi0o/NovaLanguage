@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from project_metadata import MANAGED_MILESTONES, managed_label_names
+from ..project.metadata import MANAGED_MILESTONES, managed_label_names
 
 
 class IssueMetadataError(RuntimeError):

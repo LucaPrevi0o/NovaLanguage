@@ -1,7 +1,7 @@
 # Automation map
 
-See `.github/scripts/automation_health.py` for the checked workflow and script inventory.
+See `nova_automation.cli.automation_health` for the checked workflow and package inventory.
 
-Script entry point:
+Package entry point:
 
-`.github/scripts/automation_health.py`
+`PYTHONPATH=.github/scripts python3 -m nova_automation.cli.automation_health`

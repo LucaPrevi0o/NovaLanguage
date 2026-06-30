@@ -37,17 +37,17 @@ Schedule synchronization now runs through the consolidated Project automation wo
 .github/workflows/project-automation.yml
 ```
 
-The script entry point remains:
+The package entry point is:
 
 ```text
-.github/scripts/project_schedule.py
+nova_automation.project.schedule
 ```
 
 The workflow runs schedule sync when an issue is opened, edited, reopened, or transferred. It can also be run manually through the `issue` target for one issue or the `all-open` target for every open issue.
 
 ## Project fields
 
-By default, the script writes issue schedule metadata to these Project date fields:
+By default, the module writes issue schedule metadata to these Project date fields:
 
 - `Start date`
 - `End date`
@@ -59,26 +59,26 @@ PROJECT_START_DATE_FIELD: Start date
 PROJECT_END_DATE_FIELD: End date
 ```
 
-The script expects those date fields to already exist in the configured roadmap Project. It does not create Project fields automatically.
+The module expects those date fields to already exist in the configured roadmap Project. It does not create Project fields automatically.
 
 ## Local commands
 
 Sync one issue:
 
 ```bash
-python3 .github/scripts/project_schedule.py --repo LucaPrevi0o/NovaLanguage --issue-number 54
+PYTHONPATH=.github/scripts python3 -m nova_automation.project.schedule --repo LucaPrevi0o/NovaLanguage --issue-number 54
 ```
 
 Sync every open issue that has schedule metadata:
 
 ```bash
-python3 .github/scripts/project_schedule.py --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.project.schedule --repo LucaPrevi0o/NovaLanguage --all-open
 ```
 
-The script validates date format before writing to the Project. If both dates are present, `Expected start` must not be later than `Expected deadline`.
+The module validates date format before writing to the Project. If both dates are present, `Expected start` must not be later than `Expected deadline`.
 
 Legacy schedule values in `## Project metadata` are not synchronized. Use the legacy metadata audit to find old issue bodies that still need to be migrated to current `### Expected start` and `### Expected deadline` headings:
 
 ```bash
-python3 .github/scripts/project_automation.py audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
+PYTHONPATH=.github/scripts python3 -m nova_automation.cli.project_automation audit-legacy-metadata --repo LucaPrevi0o/NovaLanguage --all-open
 ```

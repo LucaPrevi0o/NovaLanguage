@@ -10,7 +10,7 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from project_github import (  # noqa: E402
+from nova_automation.github import (  # noqa: E402
     GitHubClient,
     Issue,
     ProjectAutomationError,

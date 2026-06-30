@@ -2,9 +2,15 @@
 
 Nova uses issue metadata to organize work in the roadmap Project. A pull request that references an issue can copy a small set of that metadata so review work is visible too.
 
-Workflow: `.github/workflows/pr-metadata-alignment.yml`
+Workflow: `.github/workflows/project-automation.yml`
 
-Script: `.github/scripts/pr_metadata_alignment.py`
+Package module: `nova_automation.pull_requests.metadata_alignment`
+
+Local command:
+
+```bash
+PYTHONPATH=.github/scripts python3 -m nova_automation.pull_requests.metadata_alignment --repo LucaPrevi0o/NovaLanguage --pr-number 12
+```
 
 Behavior:
 

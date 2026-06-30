@@ -8,7 +8,7 @@ import difflib
 from pathlib import Path
 from typing import Iterable
 
-from project_metadata import SIZE_OPTIONS, priority_options, status_options
+from ..project.metadata import SIZE_OPTIONS, priority_options, status_options
 
 SYNCED_FORM_FIELDS = {
     "priority": "Priority",
@@ -164,7 +164,7 @@ def sync_issue_forms(root: Path, check: bool) -> int:
     if failed:
         return 1
     if changed and check:
-        print("Run `python3 .github/scripts/issue_forms.py` to update issue-form shared options.")
+        print("Run `PYTHONPATH=.github/scripts python3 -m nova_automation.issues.forms` to update issue-form shared options.")
         return 1
     return 0
 
