@@ -14,15 +14,15 @@ import java.util.Objects;
 /// A compilation unit groups the source file with its token stream, parser AST,
 /// lexer diagnostics, parser diagnostics, and future package/import placeholder
 /// metadata. It does not own semantic declarations, scopes, or resolved types.
-public record CompilationUnit(
-        SourceFile sourceFile,
-        List<Token> tokens,
-        List<StatementNode> statements,
-        List<Diagnostic> lexerDiagnostics,
-        List<Diagnostic> parserDiagnostics,
-        List<String> packageSegments,
-        List<String> imports
-) {
+/// @param sourceFile The source file represented by this unit.
+/// @param tokens Tokens produced for the source file.
+/// @param statements Parsed top-level statements.
+/// @param lexerDiagnostics Lexer diagnostics for the file.
+/// @param parserDiagnostics Parser diagnostics for the file.
+/// @param packageSegments Future package-name placeholder segments.
+/// @param imports Future import placeholder spellings.
+public record CompilationUnit(SourceFile sourceFile, List<Token> tokens, List<StatementNode> statements, List<Diagnostic> lexerDiagnostics,
+List<Diagnostic> parserDiagnostics, List<String> packageSegments, List<String> imports) {
 
     /// Creates a compilation unit from one file's syntax-phase data.
     /// @param sourceFile The source file represented by this unit.
@@ -49,13 +49,8 @@ public record CompilationUnit(
     /// @param statements Parsed top-level statements.
     /// @param lexerDiagnostics Lexer diagnostics for the file.
     /// @param parserDiagnostics Parser diagnostics for the file.
-    public CompilationUnit(
-            SourceFile sourceFile,
-            List<Token> tokens,
-            List<StatementNode> statements,
-            List<Diagnostic> lexerDiagnostics,
-            List<Diagnostic> parserDiagnostics
-    ) {
+    public CompilationUnit(SourceFile sourceFile, List<Token> tokens, List<StatementNode> statements, List<Diagnostic> lexerDiagnostics,
+    List<Diagnostic> parserDiagnostics) {
         this(sourceFile, tokens, statements, lexerDiagnostics, parserDiagnostics, List.of(), List.of());
     }
 
@@ -71,15 +66,17 @@ public record CompilationUnit(
 
     /// Returns whether this unit has lexer or parser error diagnostics.
     /// @return `true` when any syntax-phase diagnostic is an error.
-    public boolean hasSyntaxErrors() {
-        return hasErrors(lexerDiagnostics) || hasErrors(parserDiagnostics);
-    }
+    public boolean hasSyntaxErrors() { return hasErrors(lexerDiagnostics) || hasErrors(parserDiagnostics); }
 
+    /// Returns whether this unit has any diagnostics, including warnings and errors.
+    /// @return `true` when any syntax-phase diagnostic is present.
     private static boolean hasErrors(List<Diagnostic> diagnostics) {
         return diagnostics.stream().anyMatch(diagnostic -> diagnostic.severity() == DiagnosticSeverity.ERROR);
     }
 
-    private static <T> List<T> immutable(List<T> values) {
-        return values != null ? List.copyOf(values) : List.of();
-    }
+    /// Returns an immutable copy of the given list, or an empty list if the input is null.
+    /// @param values The list to copy.
+    /// @param <T> The type of elements in the list.
+    /// @return An immutable copy of the list, or an empty list if the input is null.
+    private static <T> List<T> immutable(List<T> values) { return values != null ? List.copyOf(values) : List.of(); }
 }

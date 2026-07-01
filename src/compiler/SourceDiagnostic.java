@@ -9,14 +9,15 @@ import java.util.Objects;
 /// Existing compiler phases can continue reporting plain diagnostics. The
 /// project pipeline wraps those diagnostics with source-file identity when it
 /// aggregates results across multiple files.
+///
+/// @param sourceFile The source file associated with the diagnostic, or `null` for project-level diagnostics.
+/// @param diagnostic The underlying compiler diagnostic.
 public record SourceDiagnostic(SourceFile sourceFile, Diagnostic diagnostic) {
 
     /// Creates a file-aware diagnostic.
     /// @param sourceFile The source file associated with the diagnostic, or `null` for project-level diagnostics.
     /// @param diagnostic The underlying compiler diagnostic.
-    public SourceDiagnostic {
-        Objects.requireNonNull(diagnostic, "Diagnostic must not be null");
-    }
+    public SourceDiagnostic { Objects.requireNonNull(diagnostic, "Diagnostic must not be null"); }
 
     /// Creates a diagnostic associated with a concrete source file.
     /// @param sourceFile The source file.
@@ -29,9 +30,7 @@ public record SourceDiagnostic(SourceFile sourceFile, Diagnostic diagnostic) {
     /// Creates a project-level diagnostic that is not tied to one file.
     /// @param diagnostic The diagnostic.
     /// @return A project-level diagnostic wrapper.
-    public static SourceDiagnostic project(Diagnostic diagnostic) {
-        return new SourceDiagnostic(null, diagnostic);
-    }
+    public static SourceDiagnostic project(Diagnostic diagnostic) { return new SourceDiagnostic(null, diagnostic); }
 
     /// Returns whether this diagnostic is associated with one source file.
     /// @return `true` when a source file is present.
