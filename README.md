@@ -31,6 +31,7 @@ Implemented or partially implemented today:
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
 - Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
 - Documented Phase 6 contracts for the planned multi-file project pipeline
+- Phase 6 source-file, compilation-unit, and file-aware diagnostic models
 - Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
 - Return checking
 - L-value checking

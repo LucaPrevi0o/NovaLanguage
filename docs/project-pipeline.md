@@ -48,6 +48,9 @@ that should be an explicit option rather than an accidental cascade.
 
 `SourceFile` is the immutable input identity and source text.
 
+Implementation status: `compiler.SourceFile` and `compiler.SourceOrigin` are
+available.
+
 It should own:
 
 - a stable file identity, such as a normalized path or display name;
@@ -69,6 +72,8 @@ files, generated test snippets, and future package-managed files.
 ## `CompilationUnit`
 
 `CompilationUnit` is the syntax result for one `SourceFile`.
+
+Implementation status: `compiler.CompilationUnit` is available.
 
 It should own:
 
@@ -139,6 +144,9 @@ Current diagnostics carry phase, message, line, column, optional span, and token
 context. Phase 6 needs file identity without forcing every compiler layer to know
 about paths.
 
+Implementation status: `compiler.SourceDiagnostic` wraps existing diagnostics
+with optional source-file identity.
+
 The project pipeline should therefore wrap diagnostics at the boundary:
 
 ```text
@@ -206,11 +214,12 @@ should not rely on parsing one file before the other for semantic visibility.
 
 The design implies these implementation tasks:
 
-- add immutable `SourceFile` and `CompilationUnit` models through issue #70;
-- add file-aware diagnostic aggregation through issue #70;
-- add a `Compiler` entry point that lexes and parses all files before semantic
-  analysis;
-- add `ProjectContext`;
+- use the existing immutable `SourceFile` and `CompilationUnit` models as the
+  input/output boundary for project orchestration;
+- use `SourceDiagnostic` for file-aware diagnostic aggregation;
+- add `ProjectContext` through issue #72;
+- add a `Compiler` entry point through issue #72 that lexes and parses all files
+  before semantic analysis;
 - adapt declaration collection and semantic passes to consume project-level
   inputs;
 - implement the two-file cross-reference acceptance test from issue #23.
