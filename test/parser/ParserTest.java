@@ -247,8 +247,8 @@ public class ParserTest {
         assertTrue(msg.contains("@"), "Unknown token diagnostic should include the raw lexeme");
 
         assertEquals(1, ex.getDiagnostics().size(), "Aggregate exception should expose structured diagnostics");
-        assertEquals(1, parser.getDiagnostics().size(), "Parser should retain diagnostics from the run");
-        assertEquals("@", parser.getDiagnostics().getFirst().lexeme());
+        assertEquals(1, parser.getState().getDiagnosticBag().size(), "Parser should retain diagnostics from the run");
+        assertEquals("@", parser.getState().getDiagnosticBag().getDiagnostics().getFirst().lexeme());
     }
 
     @Test

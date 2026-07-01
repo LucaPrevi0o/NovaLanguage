@@ -63,9 +63,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode assignment() {
 
         var expr = ternary();
-        if (match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
+        if (state.match(Operator.ASSIGN, Operator.PLUS_ASSIGN, Operator.MINUS_ASSIGN, Operator.MULTIPLY_ASSIGN, Operator.DIVIDE_ASSIGN, Operator.MODULO_ASSIGN)) {
 
-            var operator = previous();
+            var operator = state.previous();
             var value = assignment();
 
             // For compound assignments, expand them into their binary operation form (e.g., `x += 5` becomes `x = x + 5`)
@@ -82,11 +82,11 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode ternary() {
 
         var expr = logicOr();
-        if (match(Operator.QUESTION)) {
+        if (state.match(Operator.QUESTION)) {
 
-            var questionToken = previous();
+            var questionToken = state.previous();
             var thenExpr = parseExpression();
-            consume(Delimiter.COLON, "Expect ':' in ternary expression");
+            state.consume(Delimiter.COLON, "Expect ':' in ternary expression");
             var elseExpr = parseExpression();
             return new TernaryExpression(questionToken.getLine(), questionToken.getColumn(), expr, thenExpr, elseExpr);
         }
@@ -100,9 +100,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode logicOr() {
 
         var expr = logicAnd();
-        while (match(Operator.LOGICAL_OR)) {
+        while (state.match(Operator.LOGICAL_OR)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = logicAnd();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -116,9 +116,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode logicAnd() {
 
         var expr = equality();
-        while (match(Operator.LOGICAL_AND)) {
+        while (state.match(Operator.LOGICAL_AND)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = equality();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -132,9 +132,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode equality() {
 
         var expr = comparison();
-        while (match(Operator.EQUAL, Operator.NOT_EQUAL)) {
+        while (state.match(Operator.EQUAL, Operator.NOT_EQUAL)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = comparison();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -148,9 +148,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode comparison() {
 
         var expr = term();
-        while (match(Operator.LESS_THAN, Operator.GREATER_THAN, Operator.LESS_EQUAL, Operator.GREATER_EQUAL)) {
+        while (state.match(Operator.LESS_THAN, Operator.GREATER_THAN, Operator.LESS_EQUAL, Operator.GREATER_EQUAL)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = term();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -164,9 +164,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode term() {
 
         var expr = factor();
-        while (match(Operator.PLUS, Operator.MINUS)) {
+        while (state.match(Operator.PLUS, Operator.MINUS)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = factor();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -180,9 +180,9 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode factor() {
 
         var expr = unary();
-        while (match(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
+        while (state.match(Operator.MULTIPLY, Operator.DIVIDE, Operator.MODULO)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = unary();
             expr = new BinaryExpression(expr.getLine(), expr.getColumn(), expr, op, right);
         }
@@ -195,9 +195,9 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the unary expression if a unary operator is present, or the result of `call()` if not.
     private ExpressionNode unary() {
 
-        if (match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
+        if (state.match(Operator.NOT, Operator.MINUS, Operator.INCREMENT, Operator.DECREMENT)) {
 
-            var op = (OperatorToken) previous();
+            var op = (OperatorToken) state.previous();
             var right = unary();
             return new UnaryExpression(op.getLine(), op.getColumn(), op, right);
         }
@@ -214,19 +214,19 @@ public class ExpressionParser extends ParserBase {
         var expr = primary();
         while (true) {
 
-            if (match(Delimiter.LPAREN)) expr = finishCall(expr);
-            else if (match(Delimiter.DOT)) {
+            if (state.match(Delimiter.LPAREN)) expr = finishCall(expr);
+            else if (state.match(Delimiter.DOT)) {
 
-                var nameToken = consume(new IdentifierLiteral(), "Expect property name after '.'");
-                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, getLiteralValue(nameToken));
-            } else if (match(Delimiter.LSQUARE)) {
+                var nameToken = state.consume(new IdentifierLiteral(), "Expect property name after '.'");
+                expr = new MemberAccessExpression(nameToken.getLine(), nameToken.getColumn(), expr, state.getLiteralValue(nameToken));
+            } else if (state.match(Delimiter.LSQUARE)) {
 
                 var index = parseExpression();
-                var bracket = consume(Delimiter.RSQUARE, "Expect ']' after array index");
+                var bracket = state.consume(Delimiter.RSQUARE, "Expect ']' after array index");
                 expr = new ArrayAccessExpression(bracket.getLine(), bracket.getColumn(), expr, index);
-            } else if (match(Operator.INCREMENT, Operator.DECREMENT)) {
+            } else if (state.match(Operator.INCREMENT, Operator.DECREMENT)) {
 
-                var op = (OperatorToken) previous();
+                var op = (OperatorToken) state.previous();
                 expr = new PostfixUnaryExpression(op.getLine(), op.getColumn(), expr, op);
             } else break;
         }
@@ -242,12 +242,12 @@ public class ExpressionParser extends ParserBase {
     private ExpressionNode finishCall(ExpressionNode callee) {
 
         var arguments = new ArrayList<ExpressionNode>();
-        if (!check(Delimiter.RPAREN)) do {
+        if (!state.check(Delimiter.RPAREN)) do {
 
             arguments.add(parseExpression());
-        } while (match(Delimiter.COMMA));
+        } while (state.match(Delimiter.COMMA));
 
-        var paren = consume(Delimiter.RPAREN, "Expect ')' after arguments");
+        var paren = state.consume(Delimiter.RPAREN, "Expect ')' after arguments");
         return new CallExpression(paren.getLine(), paren.getColumn(), callee, arguments.toArray(new ExpressionNode[0]));
     }
 
@@ -257,63 +257,63 @@ public class ExpressionParser extends ParserBase {
     /// @return An ExpressionNode representing the primary expression, which may be a literal, an identifier, an object creation expression, or a parenthesized expression.
     private ExpressionNode primary() {
 
-        var token = peek();
+        var token = state.peek();
 
-        if (match(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
-        if (match(BoolLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
-        if (match(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
+        if (state.match(BoolLiteral.TRUE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), true);
+        if (state.match(BoolLiteral.FALSE)) return new BoolLiteralExpression(token.getLine(), token.getColumn(), false);
+        if (state.match(Keyword.NULL)) return new NullLiteralExpression(token.getLine(), token.getColumn());
 
-        if (match(new NumberLiteral())) return parseNumber((LiteralToken) previous());
+        if (state.match(new NumberLiteral())) return parseNumber((LiteralToken) state.previous());
 
-        if (match(new StringLiteral())) {
+        if (state.match(new StringLiteral())) {
 
-            var lit = (LiteralToken) previous();
+            var lit = (LiteralToken) state.previous();
             return new StringLiteralExpression(lit.getLine(), lit.getColumn(), lit.getType().token());
         }
 
-        if (match(new CharLiteral())) {
+        if (state.match(new CharLiteral())) {
 
-            var lit = (LiteralToken) previous();
+            var lit = (LiteralToken) state.previous();
             var value = lit.getType().token();
             var ch = (value != null && !value.isEmpty()) ? value.charAt(0) : '\0';
             return new CharLiteralExpression(lit.getLine(), lit.getColumn(), ch);
         }
 
-        if (match(new IdentifierLiteral())) {
+        if (state.match(new IdentifierLiteral())) {
 
-            var lit = (LiteralToken) previous();
+            var lit = (LiteralToken) state.previous();
             var name = lit.getType().token();
             return new IdentifierLiteralExpression(lit.getLine(), lit.getColumn(), name);
         }
 
-        if (match(Keyword.NEW)) {
+        if (state.match(Keyword.NEW)) {
 
-            var newToken = previous();
-            if (isTypeToken(peek())) {
+            var newToken = state.previous();
+            if (state.isTypeToken(state.peek())) {
 
-                var badToken = peek();
+                var badToken = state.peek();
                 throw parseError(
                     "Cannot use 'new' with primitive type '" + badToken.getType().token() + "'. Use a class name instead.",
                     badToken
                 );
             }
 
-            var classNameToken = consume(new IdentifierLiteral(), "Expect class name after 'new'");
-            var className = getLiteralValue(classNameToken);
+            var classNameToken = state.consume(new IdentifierLiteral(), "Expect class name after 'new'");
+            var className = state.getLiteralValue(classNameToken);
 
-            consume(Delimiter.LPAREN, "Expect '(' after class name");
+            state.consume(Delimiter.LPAREN, "Expect '(' after class name");
             var arguments = new ArrayList<ExpressionNode>();
-            if (!check(Delimiter.RPAREN)) do {
+            if (!state.check(Delimiter.RPAREN)) do {
                 arguments.add(parseExpression());
-            } while (match(Delimiter.COMMA));
-            consume(Delimiter.RPAREN, "Expect ')' after arguments");
+            } while (state.match(Delimiter.COMMA));
+            state.consume(Delimiter.RPAREN, "Expect ')' after arguments");
             return new ObjectCreationExpression(newToken.getLine(), newToken.getColumn(), className, arguments.toArray(new ExpressionNode[0]));
         }
 
-        if (match(Delimiter.LPAREN)) {
+        if (state.match(Delimiter.LPAREN)) {
 
             var expr = parseExpression();
-            consume(Delimiter.RPAREN, "Expect ')' after expression");
+            state.consume(Delimiter.RPAREN, "Expect ')' after expression");
             return expr;
         }
 

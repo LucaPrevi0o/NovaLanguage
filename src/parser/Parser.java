@@ -1,6 +1,5 @@
 package parser;
 
-import error.diagnostic.Diagnostic;
 import lexer.Token;
 import parser.ast.nodes.StatementNode;
 import parser.grammar.DeclarationParser;
@@ -57,14 +56,10 @@ public class Parser extends ParserBase {
         this.declarationParser = new DeclarationParser(state);
     }
 
-    /// Returns the diagnostics collected during this parser run.
-    /// @return An immutable list of parser diagnostics.
-    public List<Diagnostic> getDiagnostics() { return state.getDiagnostics(); }
-
     /// Returns the successfully parsed top-level statements from the most recent parse run.
     /// This is useful when parse recovery collected diagnostics and {@link #parse()} threw an aggregate exception.
     /// @return An immutable list of successfully parsed top-level AST nodes.
-    public List<StatementNode> getParsedStatements() { return parsedStatements; }
+    public List<StatementNode> getParsedStatements() { return List.copyOf(parsedStatements); }
 
     /// Parses the list of tokens into a list of statement nodes representing the program's AST.
     ///
@@ -72,8 +67,7 @@ public class Parser extends ParserBase {
     /// each top-level error.  When the token stream is exhausted, a {@link ParseErrorsException}
     /// is thrown if any errors were recorded during the run.</p>
     ///
-    /// @return A list of StatementNode objects representing the parsed program (contains only
-    ///         successfully parsed nodes).
+    /// @return A list of StatementNode objects representing the parsed program (contains only successfully parsed nodes).
     /// @throws ParseErrorsException if one or more parse errors were encountered.
     public List<StatementNode> parse() {
 
@@ -81,9 +75,8 @@ public class Parser extends ParserBase {
         var statements = new ArrayList<StatementNode>();
         parsedStatements = List.of();
 
-        while (isNotAtEnd()) try {
-            statements.add(declarationParser.parseDeclaration());
-        } catch (ParseException e) {
+        while (!state.isAtEnd()) try { statements.add(declarationParser.parseDeclaration()); }
+        catch (ParseException e) {
 
             state.report(e);
             synchronize();
@@ -110,19 +103,19 @@ public class Parser extends ParserBase {
     /// </ul>
     private void synchronize() {
 
-        if (isNotAtEnd()) getNextToken();  // always skip the offending token
-        while (isNotAtEnd()) {
+        if (!state.isAtEnd()) state.advance();  // always skip the offending token
+        while (!state.isAtEnd()) {
 
-            // A semicolon marks the end of the getPreviousToken statement — safe to resume after it.
-            if (getPreviousToken().getType() == Delimiter.SEMICOLON) return;
+            // A semicolon marks the end of the previous statement — safe to resume after it.
+            if (state.previous().getType() == Delimiter.SEMICOLON) return;
 
             // Keywords that begin a new declaration or statement are also safe resume points.
-            var next = getCurrentToken().getType();
+            var next = state.peek().getType();
             if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
                 next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
                 next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
 
-            getNextToken();
+            state.advance();
         }
     }
 }

@@ -20,7 +20,7 @@ public class ParserState {
     
     private final List<Token> tokens;
     private final List<ParseException> errors = new ArrayList<>();
-    private final DiagnosticBag diagnostics;
+    private final DiagnosticBag diagnosticBag;
     private int current = 0;
 
     /// Constructs a new ParserState with the given list of tokens.
@@ -29,12 +29,16 @@ public class ParserState {
 
     /// Constructs a new ParserState with the given token list and diagnostic bag.
     /// @param tokens The list of tokens to be parsed.
-    /// @param diagnostics The diagnostic bag used to collect parser diagnostics.
-    public ParserState(List<Token> tokens, DiagnosticBag diagnostics) {
+    /// @param diagnosticBag The diagnostic bag used to collect parser diagnostics.
+    public ParserState(List<Token> tokens, DiagnosticBag diagnosticBag) {
 
         this.tokens = tokens;
-        this.diagnostics = diagnostics != null ? diagnostics : new DiagnosticBag();
+        this.diagnosticBag = diagnosticBag != null ? diagnosticBag : new DiagnosticBag();
     }
+
+    /// Returns the diagnostic bag used to collect parser diagnostics.
+    /// @return The diagnostic bag.
+    public DiagnosticBag getDiagnosticBag() { return diagnosticBag; }
 
     // ========== Error Reporting ==========
 
@@ -44,79 +48,53 @@ public class ParserState {
 
         if (error == null) return;
         errors.add(error);
-        diagnostics.report(error.getDiagnostic());
+        diagnosticBag.report(error.getDiagnostic());
     }
 
     /// Clears parse errors and diagnostics from a previous parse run.
     public void clearErrors() {
 
         errors.clear();
-        diagnostics.clear();
+        diagnosticBag.clear();
     }
 
     /// Returns the parse errors collected during the current parse run.
     /// @return An immutable list of parse errors.
     public List<ParseException> getErrors() { return List.copyOf(errors); }
 
-    /// Returns the structured diagnostics collected during the current parse run.
-    /// @return An immutable list of diagnostics.
-    public List<Diagnostic> getDiagnostics() { return diagnostics.getDiagnostics(); }
-
     // ========== Token Navigation ==========
 
     /// Returns the current token without advancing the position.
     /// @return The current token.
-    public Token getCurrentToken() { return tokens.get(current); }
-
-    /// Returns the current token without advancing the position.
-    /// @return The current token.
-    public Token peek() { return getCurrentToken(); }
-
-    /// Returns the previous token that was consumed.
-    /// @return The previous token.
-    public Token getPreviousToken() { return tokens.get(current - 1); }
+    public Token peek() { return tokens.get(current); }
 
     /// Returns the token most recently consumed by {@link #advance()}.
     /// @return The previous token.
-    public Token previous() { return getPreviousToken(); }
+    public Token previous() { return tokens.get(current - 1); }
 
     /// Checks if the parser has reached the end of the token list.
     /// @return `true` if the current token is the end-of-file token, `false` otherwise.
-    public boolean isAtEnd() { return getCurrentToken().getType() == Special.EOF; }
-
-    /// Advances the current position and returns the token that was just consumed.
-    /// @return The token that was consumed by advancing the position.
-    public Token getNextToken() {
-
-        if (!isAtEnd()) current++;
-        return getPreviousToken();
-    }
+    public boolean isAtEnd() { return peek().getType() == Special.EOF; }
 
     /// Advances the parser by one token and returns the consumed token.
     /// @return The consumed token.
-    public Token advance() { return getNextToken(); }
+    public Token advance() {
+
+        if (!isAtEnd()) current++;
+        return previous();
+    }
     
     // ========== Token Checking ==========
 
-    /// Checks if the current token matches the specified token family.
-    ///
-    /// Matching rules for {@link Literal} types:
-    /// <ul>
-    ///   <li>If {@code type} has a non-null value (e.g. {@code BooleanLiteral.TRUE} / {@code BooleanLiteral.FALSE}),
-    ///       the token's value must equal that specific value — this correctly distinguishes TRUE from FALSE.</li>
-    ///   <li>If {@code type} has a null value (wildcard/placeholder, e.g. {@code new Literal.NumberLiteral()}),
-    ///       the token only needs to be the same subclass of {@code Literal}.</li>
-    /// </ul>
-    ///
-    /// @param type The token family to checkCurrentTokenType against the current token.
-    /// @return True if the current token matches the specified token family, false otherwise.
-    public boolean checkCurrentTokenType(TokenClass type) {
+    /// Checks whether the current token matches the given token class without consuming it.
+    /// @param type The expected token class.
+    /// @return `true` when the current token matches.
+    public boolean check(TokenClass type) {
 
         if (isAtEnd()) return false;
         rejectUnknownToken();
 
-        var currentType = getCurrentToken().getType();
-
+        var currentType = peek().getType();
         if (type instanceof Literal litType && currentType instanceof Literal litCurrent) {
 
             var typeVal = litType.token();
@@ -126,25 +104,15 @@ public class ParserState {
         return currentType == type;
     }
 
-    /// Checks whether the current token matches the given token class without consuming it.
-    /// @param type The expected token class.
-    /// @return `true` when the current token matches.
-    public boolean check(TokenClass type) { return checkCurrentTokenType(type); }
-
-    /// Checks if the current token matches any of the specified token families.
-    /// @param types The token families to checkCurrentTokenType against the current token.
-    /// @return `true` if the current token matches any of the specified token families, `false` otherwise.
-    public boolean checkCurrentTokenType(TokenClass... types) {
-
-        for (var type : types)
-            if (checkCurrentTokenType(type)) return true;
-        return false;
-    }
-
     /// Checks whether the current token matches any of the given token classes without consuming it.
     /// @param types The expected token classes.
     /// @return `true` when the current token matches any expected token class.
-    public boolean check(TokenClass... types) { return checkCurrentTokenType(types); }
+    public boolean check(TokenClass... types) {
+
+        for (var type : types)
+            if (check(type)) return true;
+        return false;
+    }
 
     /// Consumes the current token if it matches one of the given token classes.
     /// @param types The token classes to match.
@@ -211,15 +179,11 @@ public class ParserState {
     /// Rejects the current token if it is an unknown token, throwing a parse exception with a diagnostic message.
     private void rejectUnknownToken() {
 
-        if (getCurrentToken().getType() == Special.UNKNOWN) {
+        if (peek().getType() == Special.UNKNOWN) {
 
-            var token = getCurrentToken();
-            var diagnostic = Diagnostic.error(
-                    DiagnosticPhase.PARSER,
-                    "Unrecognized token: '" + tokenLexeme(token) + "'",
-                    token
-            );
-            throw new ParseException(diagnostic, getCurrentToken());
+            var token = peek();
+            var diagnostic = Diagnostic.error(DiagnosticPhase.PARSER, "Unrecognized token: '" + tokenLexeme(token) + "'", token);
+            throw new ParseException(diagnostic, peek());
         }
     }
 

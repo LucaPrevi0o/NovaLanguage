@@ -101,9 +101,9 @@ public class ClassParser extends ParserBase {
     /// @return A ClassHeader containing the parsed class name, generic parameter, and superclasses.
     private ClassHeader parseClassHeader() {
 
-        var classToken = previous(); // 'class' token was consumed by caller.
-        var nameToken = consume(new IdentifierLiteral(), "Expect class name after 'class'");
-        var className = getLiteralValue(nameToken);
+        var classToken = state.previous(); // 'class' token was consumed by caller.
+        var nameToken = state.consume(new IdentifierLiteral(), "Expect class name after 'class'");
+        var className = state.getLiteralValue(nameToken);
         var genericParameter = parseGenericParameter();
         var superClasses = parseSuperClasses();
 
@@ -119,11 +119,11 @@ public class ClassParser extends ParserBase {
     /// @return A TypeSyntax node representing the generic parameter, or `null` if no generic parameter is present.
     private TypeSyntax parseGenericParameter() {
 
-        if (!match(Delimiter.LSQUARE)) return null;
+        if (!state.match(Delimiter.LSQUARE)) return null;
 
-        var genToken = consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
-        var genericParameterName = getLiteralValue(genToken);
-        consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
+        var genToken = state.consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
+        var genericParameterName = state.getLiteralValue(genToken);
+        state.consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
 
         return new GenericTypeSyntax(
             genToken.getLine(),
@@ -142,10 +142,10 @@ public class ClassParser extends ParserBase {
     private TypeSyntax[] parseSuperClasses() {
 
         var superClasses = new ArrayList<TypeSyntax>();
-        if (!match(Delimiter.DOUBLE_COLON)) return superClasses.toArray(new TypeSyntax[0]);
+        if (!state.match(Delimiter.DOUBLE_COLON)) return superClasses.toArray(new TypeSyntax[0]);
 
         superClasses.add(parseSuperClass("Expect superclass name after '::'"));
-        while (match(Delimiter.COMMA)) superClasses.add(parseSuperClass("Expect superclass name after ','"));
+        while (state.match(Delimiter.COMMA)) superClasses.add(parseSuperClass("Expect superclass name after ','"));
         return superClasses.toArray(new TypeSyntax[0]);
     }
 
@@ -155,8 +155,8 @@ public class ClassParser extends ParserBase {
     /// @return A TypeSyntax node representing the parsed superclass.
     private TypeSyntax parseSuperClass(String message) {
 
-        var superClassToken = consume(new IdentifierLiteral(), message);
-        var superClassName = getLiteralValue(superClassToken);
+        var superClassToken = state.consume(new IdentifierLiteral(), message);
+        var superClassName = state.getLiteralValue(superClassToken);
         return new NamedTypeSyntax(
             superClassToken.getLine(),
             superClassToken.getColumn(),
@@ -195,10 +195,10 @@ public class ClassParser extends ParserBase {
     /// @return A ClassMembers object containing the parsed fields, methods, constructors, and inner classes of the class.
     private ClassMembers parseClassBody(ClassHeader header) {
 
-        consume(Delimiter.LBRACE, "Expect '{' before class body");
+        state.consume(Delimiter.LBRACE, "Expect '{' before class body");
 
         var members = new ClassMembers();
-        while (isNotAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
+        while (!state.isAtEnd() && !currentTokenIs(Delimiter.RBRACE)) try {
 
             parseClassMember(
                 header.className(),
@@ -212,7 +212,7 @@ public class ClassParser extends ParserBase {
             synchronizeClassMember();
         }
 
-        consume(Delimiter.RBRACE, "Expect '}' after class body");
+        state.consume(Delimiter.RBRACE, "Expect '}' after class body");
         return members;
     }
 
@@ -240,50 +240,50 @@ public class ClassParser extends ParserBase {
     private void parseClassMember(String className, int classLine, int classColumn, ClassMembers members) {
 
         var memberAccessModifier = parseAccessModifier();
-        if (memberAccessModifier == null) throw parseError("Class member declaration requires an access modifier", peek());
+        if (memberAccessModifier == null) throw parseError("Class member declaration requires an access modifier", state.peek());
 
-        if (match(Keyword.CLASS)) {
+        if (state.match(Keyword.CLASS)) {
 
             members.innerClasses().add(parseClassDeclaration(memberAccessModifier));
             return;
         }
 
-        if (check(new IdentifierLiteral()) && className.equals(getLiteralValue(peek()))) {
+        if (state.check(new IdentifierLiteral()) && className.equals(state.getLiteralValue(state.peek()))) {
 
-            advance();  // consume constructor name
+            state.advance();  // consume constructor name
             members.constructors().add(parseConstructor(classLine, classColumn, memberAccessModifier));
             return;
         }
 
-        if (!declarationParser.isValidType(peek()))
-            throw parseError("Expect type, constructor, inner class, or closing '}' in class body", peek());
+        if (!declarationParser.isValidType(state.peek()))
+            throw parseError("Expect type, constructor, inner class, or closing '}' in class body", state.peek());
 
         var type = declarationParser.parseTypeSyntax();
-        var memberNameToken = consume(new IdentifierLiteral(), "Expect member name");
-        var memberName = getLiteralValue(memberNameToken);
+        var memberNameToken = state.consume(new IdentifierLiteral(), "Expect member name");
+        var memberName = state.getLiteralValue(memberNameToken);
 
-        if (check(Delimiter.LPAREN)) members.methods().add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
+        if (state.check(Delimiter.LPAREN)) members.methods().add(parseClassMethod(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
         else members.fields().add(parseClassField(type, memberName, memberNameToken.getLine(), memberNameToken.getColumn(), memberAccessModifier));
     }
 
     /// Synchronizes after a class-body member error without escaping the current class body.
     private void synchronizeClassMember() {
 
-        if (!isNotAtEnd() || currentTokenIs(Delimiter.RBRACE)) return;
+        if (state.isAtEnd() || currentTokenIs(Delimiter.RBRACE)) return;
         if (currentTokenIs(Delimiter.SEMICOLON)) {
 
-            advance();
+            state.advance();
             return;
         }
 
-        if (isClassMemberRecoveryBoundary(peek())) return;
+        if (isClassMemberRecoveryBoundary(state.peek())) return;
         var braceDepth = 0;
-        while (isNotAtEnd()) {
+        while (!state.isAtEnd()) {
 
             if (braceDepth == 0 && currentTokenIs(Delimiter.RBRACE)) return;
-            if (braceDepth == 0 && isClassMemberRecoveryBoundary(peek())) return;
+            if (braceDepth == 0 && isClassMemberRecoveryBoundary(state.peek())) return;
 
-            var consumedType = advance().getType();
+            var consumedType = state.advance().getType();
             if (consumedType == Delimiter.LBRACE) braceDepth++;
             else if (consumedType == Delimiter.RBRACE && braceDepth > 0) braceDepth--;
             else if (consumedType == Delimiter.SEMICOLON && braceDepth == 0) return;
@@ -316,8 +316,8 @@ public class ClassParser extends ParserBase {
 
         ExpressionNode initializer = null;
 
-        if (match(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
-        consume(Delimiter.SEMICOLON, "Expect ';' after field declaration");
+        if (state.match(Operator.ASSIGN)) initializer = declarationParser.parseExpression();
+        state.consume(Delimiter.SEMICOLON, "Expect ';' after field declaration");
         return new ClassFieldDeclaration(line, column, type, name, initializer, accessModifier);
     }
 
@@ -335,12 +335,12 @@ public class ClassParser extends ParserBase {
     /// @return A ClassMethodDeclaration representing the parsed class method declaration.
     private ClassMethodDeclaration parseClassMethod(TypeSyntax returnType, String name, int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after method name");
+        state.consume(Delimiter.LPAREN, "Expect '(' after method name");
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        state.consume(Delimiter.RPAREN, "Expect ')' after parameters");
 
-        consume(Delimiter.LBRACE, "Expect '{' before method body");
+        state.consume(Delimiter.LBRACE, "Expect '{' before method body");
 
         var bodyStatements = declarationParser.parseBlockStatements();
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));
@@ -359,12 +359,12 @@ public class ClassParser extends ParserBase {
     /// @return A ClassConstructorDeclaration representing the parsed class constructor declaration.
     private ClassConstructorDeclaration parseConstructor(int line, int column, AccessModifier accessModifier) {
 
-        consume(Delimiter.LPAREN, "Expect '(' after constructor name");
+        state.consume(Delimiter.LPAREN, "Expect '(' after constructor name");
 
         var parameters = declarationParser.parseParameters();
-        consume(Delimiter.RPAREN, "Expect ')' after parameters");
+        state.consume(Delimiter.RPAREN, "Expect ')' after parameters");
 
-        consume(Delimiter.LBRACE, "Expect '{' before constructor body");
+        state.consume(Delimiter.LBRACE, "Expect '{' before constructor body");
 
         var bodyStatements = declarationParser.parseBlockStatements();
         var body = new BlockStatement(line, column, bodyStatements.toArray(new StatementNode[0]));

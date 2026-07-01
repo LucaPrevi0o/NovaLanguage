@@ -31,7 +31,7 @@ public class ParserSemanticBoundaryTest {
 
         var parser = parser(source);
         var ast = assertDoesNotThrow(parser::parse);
-        assertTrue(parser.getDiagnostics().isEmpty(), "Syntactically valid source should not produce parser diagnostics");
+        assertTrue(parser.getState().getDiagnosticBag().getDiagnostics().isEmpty(), "Syntactically valid source should not produce parser diagnostics");
         return ast;
     }
 
@@ -45,7 +45,7 @@ public class ParserSemanticBoundaryTest {
 
         assertEquals(2, ast.size());
 
-        var unresolvedStatement = assertInstanceOf(ExpressionStatement.class, ast.get(0));
+        var unresolvedStatement = assertInstanceOf(ExpressionStatement.class, ast.getFirst());
         var unresolvedExpression = assertInstanceOf(BinaryExpression.class, unresolvedStatement.getExpression());
         var identifier = assertInstanceOf(IdentifierLiteralExpression.class, unresolvedExpression.getLeft());
         var construction = assertInstanceOf(ObjectCreationExpression.class, unresolvedExpression.getRight());
