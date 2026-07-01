@@ -174,13 +174,20 @@ The design lives in [`project-pipeline.md`](project-pipeline.md).
 Planned work:
 
 - document project pipeline contracts;
+- add source-file and compilation-unit models;
+- add file-aware diagnostic aggregation;
 - introduce `Compiler`;
-- introduce `SourceFile`;
-- introduce `CompilationUnit`;
 - introduce `ProjectContext`;
 - lex and parse all files before project-level semantic analysis;
 - collect declarations across files;
 - add package/import placeholders.
+
+Completed foundation work:
+
+- Phase 6 project pipeline contracts are documented in [`project-pipeline.md`](project-pipeline.md);
+- `SourceFile` models source identity, text, and origin;
+- `CompilationUnit` models one file's tokens, AST, lexer diagnostics, parser diagnostics, and package/import placeholders;
+- `SourceDiagnostic` associates diagnostics with source-file identity at the project boundary.
 
 Exit condition: two `.nv` files can reference each other.
 

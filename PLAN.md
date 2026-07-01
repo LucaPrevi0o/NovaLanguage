@@ -257,9 +257,10 @@ Goal: move from a single-file parser to a project compiler front end.
 Tasks:
 
 - [x] Design the Phase 6 project pipeline contracts for `Compiler`, `SourceFile`, `CompilationUnit`, and `ProjectContext`.
+- [x] Add `SourceFile`.
+- [x] Add `CompilationUnit`.
+- [x] Add a file-aware diagnostic wrapper for project-level aggregation.
 - [ ] Add `Compiler`.
-- [ ] Add `SourceFile`.
-- [ ] Add `CompilationUnit`.
 - [ ] Add `ProjectContext`.
 - [ ] Lex all files before semantic analysis.
 - [ ] Parse all files before semantic analysis.
@@ -344,4 +345,4 @@ Exit criteria:
 ## Immediate Next Steps
 
 1. Define the two-file cross-reference acceptance test that will prove the Phase 6 pipeline works without single-file shortcuts.
-2. Add the project pipeline model and file-aware diagnostic foundation tracked by issue #70.
+2. Implement the `ProjectContext` and `Compiler` orchestration layer tracked by issue #72.
