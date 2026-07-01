@@ -2,12 +2,12 @@ package parser.ast.nodes.statement;
 
 import parser.ast.Printable;
 import parser.ast.nodes.ExpressionNode;
+import parser.ast.nodes.NamedStatementNode;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
 import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
 import lexer.token.family.NonPrimitiveType;
-import parser.ast.nodes.Symbol;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.type.TypeSyntax;
@@ -19,7 +19,7 @@ import java.util.List;
 import static printer.AstPrinter.buildTypeStringWithSizes;
 
 /// Represents a class declaration statement, including its methods, fields, superclasses, generic parameters, inner classes, access modifier, and constructors.
-public class ClassDeclarationStatement extends Symbol implements Printable {
+public class ClassDeclarationStatement extends NamedStatementNode implements Printable {
 
     private final AccessModifier accessModifier;
     private ClassMethodDeclaration[] methods;

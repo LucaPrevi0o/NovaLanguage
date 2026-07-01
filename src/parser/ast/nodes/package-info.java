@@ -8,7 +8,7 @@
 /// ## Typical contents
 ///
 /// - Base node helpers
-/// - Symbol-like AST structures
+/// - Symbol-like AST structures (named statements)
 /// - Shared statement and expression abstractions
 /// - Common printable or inspectable node contracts
 ///

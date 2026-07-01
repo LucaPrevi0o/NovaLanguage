@@ -1,7 +1,7 @@
 package parser.ast.nodes.statement.declaration;
 
 import parser.ast.Printable;
-import parser.ast.nodes.Symbol;
+import parser.ast.nodes.NamedStatementNode;
 import lexer.token.ReturnType;
 import parser.ast.nodes.type.TypeSyntax;
 import parser.support.TypeSyntaxAdapter;
@@ -10,7 +10,7 @@ import printer.AstPrinter;
 import java.util.List;
 
 /// Represents a parameter in a function declaration, including its type and name.
-public class FunctionParameter extends Symbol implements Printable {
+public class FunctionParameter extends NamedStatementNode implements Printable {
 
     private final ReturnType compatibilityType;
     private final TypeSyntax typeSyntax;

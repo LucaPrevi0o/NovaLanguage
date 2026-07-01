@@ -1,12 +1,12 @@
 package parser.ast.nodes.statement;
 
-import parser.ast.nodes.Symbol;
+import parser.ast.nodes.NamedStatementNode;
 import lexer.token.ReturnType;
 import parser.ast.nodes.type.TypeSyntax;
 import parser.support.TypeSyntaxAdapter;
 
 /// Represents a declaration statement in the abstract syntax tree (AST), which can be a variable declaration, function declaration, or object declaration.
-public abstract class DeclarationStatement extends Symbol {
+public abstract class DeclarationStatement extends NamedStatementNode {
 
     private final ReturnType compatibilityType;
     private final TypeSyntax typeSyntax;
