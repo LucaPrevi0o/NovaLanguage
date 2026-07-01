@@ -61,7 +61,7 @@ public final class TypeChecker {
     private static final TypeSymbol BOOL_TYPE = ValueTypeSymbol.builtin("bool");
     private static final TypeSymbol INT_TYPE = ValueTypeSymbol.builtin("int");
 
-    private final DiagnosticBag diagnostics = new DiagnosticBag();
+    private final DiagnosticBag diagnosticBag = new DiagnosticBag();
     private final TypeResolver typeResolver = new TypeResolver();
     private SemanticScope rootScope;
 
@@ -70,11 +70,11 @@ public final class TypeChecker {
     /// @return A list of diagnostics for any type errors found.
     public List<Diagnostic> check(List<StatementNode> statements) {
 
-        diagnostics.clear();
+        diagnosticBag.clear();
         rootScope = new SemanticScopeBuilder().build(statements);
         if (statements != null)
             for (var statement : statements) checkStatement(statement, rootScope);
-        return diagnostics.getDiagnostics();
+        return diagnosticBag.getDiagnostics();
     }
 
     /// Returns the root semantic scope built during type checking.
@@ -125,6 +125,7 @@ public final class TypeChecker {
                 inferExpression(switchStatement.getSubject(), scope);
                 var switchScope = childScope(scope, "switch", switchStatement);
                 for (var switchCase : switchStatement.getCases()) {
+
                     inferExpression(switchCase.getValue(), scope);
                     checkBranch(switchCase.getBody(), switchScope, "switch-case", switchCase);
                 }
@@ -204,8 +205,7 @@ public final class TypeChecker {
 
         var valueType = inferExpression(declaration.getInitialValue(), scope);
         var targetType = resolveDeclaredType(declaration.getDeclaredTypeSyntax(), declaration.getDeclaredType(), declaration, scope);
-        if (!isAssignable(targetType, valueType, scope))
-            reportTypeMismatch(targetType, valueType, declaration.getInitialValue());
+        if (!isAssignable(targetType, valueType, scope)) reportTypeMismatch(targetType, valueType, declaration.getInitialValue());
     }
 
     /// Infers the type of an expression and checks for type errors.
@@ -218,7 +218,7 @@ public final class TypeChecker {
 
             case BoolLiteralExpression _ -> BOOL_TYPE;
             case CharLiteralExpression _ -> ValueTypeSymbol.builtin("char");
-            case StringLiteralExpression _ -> ValueTypeSymbol.builtin("string");
+            case StringLiteralExpression _ -> ValueTypeSymbol.builtin("string"); // TODO: String will not be a built-in type: probably an alias for 'char[]' inherited from standard packages.
             case NumberLiteralExpression number -> ValueTypeSymbol.builtin(number.getTypeToken().getType().token());
             case IdentifierLiteralExpression identifier -> {
 
@@ -234,8 +234,7 @@ public final class TypeChecker {
 
                 var targetType = inferExpression(assignment.getTarget(), scope);
                 var valueType = inferExpression(assignment.getValue(), scope);
-                if (!isAssignable(targetType, valueType, scope))
-                    reportTypeMismatch(targetType, valueType, assignment.getValue());
+                if (!isAssignable(targetType, valueType, scope)) reportTypeMismatch(targetType, valueType, assignment.getValue());
                 yield targetType;
             }
             case BinaryExpression binary -> {
@@ -279,7 +278,7 @@ public final class TypeChecker {
         var arrayType = inferExpression(arrayAccess.getArray(), scope);
         var indexType = inferExpression(arrayAccess.getIndex(), scope);
 
-        if (indexType != null && !sameType(INT_TYPE, indexType)) diagnostics.report(Diagnostic.error(
+        if (indexType != null && !sameType(INT_TYPE, indexType)) diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Array index must be int, got " + typeName(indexType),
             arrayAccess.getIndex().getLine(),
@@ -289,7 +288,7 @@ public final class TypeChecker {
         if (arrayType == null) return null;
         if (!(arrayType instanceof ArrayTypeSymbol arrayTypeSymbol)) {
 
-            diagnostics.report(Diagnostic.error(
+            diagnosticBag.report(Diagnostic.error(
                 DiagnosticPhase.SEMANTIC,
                 "Cannot index non-array type " + typeName(arrayType),
                 arrayAccess.getLine(),
@@ -392,7 +391,7 @@ public final class TypeChecker {
             var callables = callableDeclarations(declarations);
             if (callables.isEmpty()) {
 
-                diagnostics.report(Diagnostic.error(
+                diagnosticBag.report(Diagnostic.error(
                     DiagnosticPhase.SEMANTIC,
                     "Cannot call non-function '" + identifier.getName() + "'",
                     call.getLine(),
@@ -415,7 +414,7 @@ public final class TypeChecker {
             var methods = methodDeclarations(members);
             if (methods.isEmpty()) {
 
-                diagnostics.report(Diagnostic.error(
+                diagnosticBag.report(Diagnostic.error(
                     DiagnosticPhase.SEMANTIC,
                     "Cannot call non-function member '" + members.getFirst().name() + "'",
                     call.getLine(),
@@ -452,7 +451,7 @@ public final class TypeChecker {
     private void checkCallArguments(CallExpression call, FunctionDeclarationStatement functionDeclaration, TypeSymbol[] argumentTypes, String callableKind, SemanticScope scope) {
 
         var parameters = functionDeclaration.getParameters();
-        if (parameters.length != argumentTypes.length) diagnostics.report(Diagnostic.error(
+        if (parameters.length != argumentTypes.length) diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             callableKind + " '" + functionDeclaration.getName() + "' expects " + parameters.length +
                 " arguments but got " + argumentTypes.length,
@@ -476,7 +475,7 @@ public final class TypeChecker {
 
         var parameterType = resolveDeclaredType(parameter.getTypeSyntax(), parameter.getType(), parameter, scope);
         if (isAssignable(parameterType, argumentType, scope)) return;
-        diagnostics.report(Diagnostic.error(
+        diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Argument " + argumentNumber + " for " + callableKind.toLowerCase() + " '" + functionDeclaration.getName() +
                 "' expects " + typeName(parameterType) + " but got " + typeName(argumentType),
@@ -493,7 +492,7 @@ public final class TypeChecker {
 
         if (expression == null) return;
         var type = inferExpression(expression, scope);
-        if (type != null && !sameType(BOOL_TYPE, type)) diagnostics.report(Diagnostic.error(
+        if (type != null && !sameType(BOOL_TYPE, type)) diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             message,
             expression.getLine(),
@@ -587,13 +586,13 @@ public final class TypeChecker {
 
         var callableLabel = callableKind.toLowerCase();
         if (matches.size() > 1)
-            diagnostics.report(Diagnostic.error(
+            diagnosticBag.report(Diagnostic.error(
                 DiagnosticPhase.SEMANTIC,
                 "Ambiguous " + callableLabel + " call '" + name + "' for argument types " + argumentTypesText(argumentTypes),
                 call.getLine(),
                 call.getColumn()
             ));
-        else diagnostics.report(Diagnostic.error(
+        else diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "No matching overload for " + callableLabel + " '" + name + "' with argument types " + argumentTypesText(argumentTypes),
             call.getLine(),
@@ -806,7 +805,7 @@ public final class TypeChecker {
 
         if (!(objectType instanceof ClassTypeSymbol classType)) {
 
-            diagnostics.report(Diagnostic.error(
+            diagnosticBag.report(Diagnostic.error(
                 DiagnosticPhase.SEMANTIC,
                 "Cannot access member '" + memberAccess.getMemberName() + "' on non-class type " + typeName(objectType),
                 memberAccess.getLine(),
@@ -821,7 +820,7 @@ public final class TypeChecker {
         var members = classMembers(classDeclaration, memberAccess.getMemberName(), scope);
         if (!members.isEmpty()) return members;
 
-        diagnostics.report(Diagnostic.error(
+        diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Undefined member '" + memberAccess.getMemberName() + "' on type '" + classDeclaration.getName() + "'",
             memberAccess.getLine(),
@@ -837,7 +836,7 @@ public final class TypeChecker {
     private void reportTypeMismatch(TypeSymbol targetType, TypeSymbol valueType, AstNode node) {
 
         if (node == null) return;
-        diagnostics.report(Diagnostic.error(
+        diagnosticBag.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Type mismatch: cannot assign " + typeName(valueType) + " to " + typeName(targetType),
             node.getLine(),
@@ -880,6 +879,6 @@ public final class TypeChecker {
     /// Reports diagnostics produced by semantic type resolution.
     /// @param resolution The type-resolution result.
     private void report(TypeResolution resolution) {
-        for (var diagnostic : resolution.diagnostics()) diagnostics.report(diagnostic);
+        for (var diagnostic : resolution.diagnostics()) diagnosticBag.report(diagnostic);
     }
 }
