@@ -68,8 +68,8 @@ List<Diagnostic> parserDiagnostics, List<String> packageSegments, List<String> i
     /// @return `true` when any syntax-phase diagnostic is an error.
     public boolean hasSyntaxErrors() { return hasErrors(lexerDiagnostics) || hasErrors(parserDiagnostics); }
 
-    /// Returns whether this unit has any diagnostics, including warnings and errors.
-    /// @return `true` when any syntax-phase diagnostic is present.
+    /// Returns whether this unit has any error diagnostics.
+    /// @return `true` when any syntax-phase diagnostic has severity ERROR.
     private static boolean hasErrors(List<Diagnostic> diagnostics) {
         return diagnostics.stream().anyMatch(diagnostic -> diagnostic.severity() == DiagnosticSeverity.ERROR);
     }
