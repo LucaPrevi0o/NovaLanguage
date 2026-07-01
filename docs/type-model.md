@@ -23,7 +23,7 @@ They preserve source-level type shape before semantic resolution:
 
 - `NamedTypeSyntax` stores a written type name such as `int`, `Box`, `Missing`, or `T`.
 - `ArrayTypeSyntax` stores the element type syntax plus parsed dimension expressions.
-- `GenericTypeSyntax` stores class generic-parameter syntax such as `T` from `class Box[T]`.
+- `GenericTypeSyntax` stores one class generic-parameter name, such as `T` from `class Box[T]`; class declarations may preserve multiple generic parameter syntax nodes, such as `K` and `V` from `class Pair[K, V]`.
 
 Examples:
 
@@ -46,12 +46,13 @@ int[3][] values;
 The parser records array type syntax whose element spelling is `int` and whose dimensions are `[3]` and `[]`.
 
 ```nova
-public class Box[T] {
-  public T value;
+public class Pair[K, V] {
+  public K key;
+  public V value;
 }
 ```
 
-The parser records the class generic parameter spelling and the field type spelling. Full generic constraints and specialization are still future work.
+The parser records each class generic parameter spelling and the field type spellings. Semantic type resolution can recognize visible class generic parameter names, but full generic constraints, instantiation, specialization, and monomorphization are still future work.
 
 ## TypeSymbol
 
@@ -62,7 +63,7 @@ They represent resolved semantic categories:
 - `ValueTypeSymbol` for Nova value/math types, including built-in primitive-like types.
 - `ClassTypeSymbol` for object/class types backed by semantic class declarations.
 - `ArrayTypeSymbol` for arrays with a resolved element type.
-- `GenericParameterSymbol` for a visible generic parameter.
+- `GenericParameterSymbol` for a visible generic parameter name.
 - `UnknownTypeSymbol` for unresolved names that should still allow later diagnostics to continue.
 
 Examples:
@@ -129,7 +130,7 @@ The current boundary is deliberately conservative. It supports the MVP front end
 
 - multi-file type resolution;
 - source-loaded standard-library declarations;
-- full generics and constraints;
+- full generic constraints, instantiation, specialization, and monomorphization;
 - user-defined Nova value/math types;
 - operator overload resolution;
 - backend-neutral IR that consumes semantic symbols instead of parser token metadata.

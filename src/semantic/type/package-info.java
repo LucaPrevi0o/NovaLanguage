@@ -21,7 +21,8 @@
 /// The compiler is moving away from using lexer token classes as semantic type meaning. This
 /// package is the foundation for a real Nova type model: class types model object identity,
 /// value types model mathematical/value-like semantics, arrays preserve their element type, and
-/// generic parameters stay explicit until later specialization work can resolve them.
+/// visible class generic parameter names stay explicit until later constraint and specialization
+/// work can resolve generic instantiations.
 ///
 /// ## Boundary
 ///

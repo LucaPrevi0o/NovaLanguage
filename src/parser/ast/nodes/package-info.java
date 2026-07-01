@@ -1,6 +1,6 @@
 /// # Shared AST nodes
 ///
-/// Shared AST node types used by Nova statements, expressions, symbols, and type syntax.
+/// Shared AST node types used by Nova statements, expressions, named nodes, and type syntax.
 ///
 /// This package contains common node-level abstractions reused by more specific AST packages.
 /// These classes form the bridge between parser output and later semantic analysis.
@@ -8,7 +8,7 @@
 /// ## Typical contents
 ///
 /// - Base node helpers
-/// - Symbol-like AST structures (named statements)
+/// - Named statement structures that preserve source-level names
 /// - Shared statement and expression abstractions
 /// - Common printable or inspectable node contracts
 ///

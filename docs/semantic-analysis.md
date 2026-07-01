@@ -115,7 +115,7 @@ The resolver currently distinguishes:
 - value/math types;
 - class/object types;
 - array types;
-- visible generic parameters;
+- visible generic parameters, including multiple class-level names declared by an enclosing class header;
 - unknown types used after failed resolution.
 
 The parser should not reject a syntactically valid type name just because semantic analysis may later report it as unknown.
@@ -227,10 +227,11 @@ Known limitations include:
 - type checking uses semantic type symbols internally, but some compatibility constructors/getters still expose `ReturnType` for older manual AST and printer paths;
 - semantic type symbols now distinguish Nova class/object types from Nova value/math types;
 - parser-side type registry metadata has been removed; declaration/class parsing preserves type spelling through `TypeSyntax`;
+- class headers can preserve multiple generic parameter names, and semantic type resolution can treat each visible name as a generic parameter symbol;
 - basic inheritance checks support subtype assignment and inherited member lookup, but access control, inherited-field conflicts, override compatibility, abstract/final behavior, and generic specificity are not implemented yet;
 - the compiler is still single-file oriented;
 - builtins and standard-library declarations are not yet modeled semantically or loaded through the same source pipeline as user code;
-- advanced features such as full generics, lambdas, and monomorphization are deliberately deferred.
+- advanced features such as generic constraints, generic instantiation/specialization, lambdas, and monomorphization are deliberately deferred.
 
 These limitations are tracked in [`../PLAN.md`](../PLAN.md).
 

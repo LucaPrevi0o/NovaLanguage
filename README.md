@@ -11,7 +11,7 @@ The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 Current focus: **Phase 6 - multi-file project pipeline design**.
 
 Phase 4 is complete: parsing now builds syntax-only ASTs, while semantic passes own name resolution, scope construction, duplicate checks, type checks, return checks, l-value checks, and loop-control validation.
-Phase 5 type-model groundwork is complete enough for Phase 6: parsed type syntax is preserved by declaration AST nodes, and semantic type symbols now distinguish Nova type categories.
+Phase 5 type-model groundwork is complete enough for Phase 6: parsed type syntax is preserved by declaration AST nodes, class declarations preserve multiple generic parameter names, and semantic type symbols now distinguish Nova type categories.
 Roadmap issues for Phases 1 through 8 are grouped under the `Nova MVP compiler`
 milestone; advanced Phase 9 language features are tracked as separate post-MVP
 milestones.
@@ -22,6 +22,7 @@ Implemented or partially implemented today:
 - Recursive-descent parsing
 - AST construction with parsed type-syntax preservation
 - Declaration AST constructors that accept parsed `TypeSyntax` directly
+- Class declaration syntax for multiple generic parameters, preserved as parsed type syntax
 - Parser recovery and structured lexer/parser diagnostics
 - Semantic declaration collection
 - Semantic scope construction
@@ -30,6 +31,7 @@ Implemented or partially implemented today:
 - Parser-side type-registry metadata removal
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
 - Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
+- Semantic recognition of visible class generic parameter names
 - Documented Phase 6 contracts for the planned multi-file project pipeline
 - Phase 6 source-file, compilation-unit, and file-aware diagnostic models
 - Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
@@ -48,7 +50,7 @@ Not implemented yet:
 - IR generation
 - Optimization
 - Native/backend code generation
-- Advanced Nova features such as full generics, lambdas, variadic generics, monomorphization, access-control checks, override validation, inherited-member conflict checks, generic overload specificity, and operator-overloadable Nova types
+- Advanced Nova features such as generic constraints, generic instantiation/specialization, lambdas, variadic generics, monomorphization, access-control checks, override validation, inherited-member conflict checks, generic overload specificity, and operator-overloadable Nova types
 - Ecosystem tools such as Pulsar, Orbit, Nebula, and Quark package resolution
 
 For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md).

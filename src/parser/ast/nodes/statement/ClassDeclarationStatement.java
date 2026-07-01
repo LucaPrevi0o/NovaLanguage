@@ -112,14 +112,14 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
         return superClassSyntaxes.clone();
     }
 
-    /// Returns the generic parameter of the class, if any.
-    /// @return A ReturnType object representing the generic parameter of the class, or null if the class does not have a generic parameter.
+    /// Returns the generic parameters of the class, if any.
+    /// @return ReturnType adapters representing the generic parameters of the class, or an empty array if none are declared.
     public ReturnType[] getGenericClassParameters() {
         return compatibilityGenericClassParameters != null ? compatibilityGenericClassParameters : adaptersFromSyntaxes(genericClassParameterSyntaxes);
     }
 
-    /// Returns the parsed source type syntax for this class's generic parameter, when available.
-    /// @return The generic parameter syntax, or {@code null} if none is declared.
+    /// Returns the parsed source type syntax for this class's generic parameters, when available.
+    /// @return The generic parameter syntax nodes, or an empty array if none are declared.
     public TypeSyntax[] getGenericClassParameterSyntaxes() {
         return genericClassParameterSyntaxes;
     }

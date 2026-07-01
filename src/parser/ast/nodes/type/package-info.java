@@ -9,7 +9,8 @@
 ///
 /// - Represent named type syntax.
 /// - Represent array type syntax.
-/// - Represent generic-parameter type syntax where supported by the parser.
+/// - Represent class generic-parameter type syntax where supported by the parser, including
+///   multiple names in a class header.
 /// - Preserve source type structure for the semantic type resolver.
 ///
 /// ## Important distinction

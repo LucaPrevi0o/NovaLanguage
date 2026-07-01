@@ -24,7 +24,7 @@ import java.util.List;
 /// GRAMMAR FOR CLASS DECLARATIONS
 ///
 /// ```
-/// classDecl      → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*] "{" classMembers "}"
+/// classDecl      → "class" IDENTIFIER ["[" IDENTIFIER ("," IDENTIFIER)* "]"] ["::" IDENTIFIER ("," IDENTIFIER)*] "{" classMembers "}"
 /// classMembers   → (classField | classMethod | constructor | innerClass)*
 ///
 /// classField     → accessModifier type IDENTIFIER ("=" expression)? ";"
@@ -37,7 +37,7 @@ import java.util.List;
 /// ```
 ///
 /// Features:
-/// - **Generic Parameters**: Classes can have a single generic parameter specified with square brackets `[T]`
+/// - **Generic Parameters**: Classes can declare one or more generic parameter names inside square brackets, such as `[T]` or `[K, V]`
 /// - **Superclasses**: Multiple inheritance supported using double colon `::` followed by comma-separated class names
 /// - **Inner Classes**: Nested class declarations within the class body
 /// - **Members**: Mix of fields (with optional initializers), methods, and constructors
@@ -49,10 +49,10 @@ public class ClassParser extends ParserBase {
 
     private final DeclarationParser declarationParser;
 
-    /// Represents the header of a class declaration, including its name, generic parameter, and superclasses.
+    /// Represents the header of a class declaration, including its name, generic parameters, and superclasses.
     /// @param classToken The token representing the 'class' keyword.
     /// @param className The name of the class being declared.
-    /// @param genericParameters The optional generic parameters of the class, or `null` if none are specified.
+    /// @param genericParameters The optional generic parameters of the class, or an empty array if none are specified.
     /// @param superClasses An array of TypeSyntax nodes representing the superclasses of the class, or an empty array if none are specified.
     private record ClassHeader(Token classToken, String className, TypeSyntax[] genericParameters, TypeSyntax[] superClasses) { }
 
@@ -95,13 +95,13 @@ public class ClassParser extends ParserBase {
         return classDecl;
     }
 
-    /// Parses the header of a class declaration, including its name, optional generic parameter, and optional superclasses.
+    /// Parses the header of a class declaration, including its name, optional generic parameters, and optional superclasses.
     ///
     /// Grammar rule:
     /// ```
-    /// classHeader → "class" IDENTIFIER ["[" IDENTIFIER "]"] ["::" IDENTIFIER ("," IDENTIFIER)*]
+    /// classHeader → "class" IDENTIFIER ["[" IDENTIFIER ("," IDENTIFIER)* "]"] ["::" IDENTIFIER ("," IDENTIFIER)*]
     /// ```
-    /// @return A ClassHeader containing the parsed class name, generic parameter, and superclasses.
+    /// @return A ClassHeader containing the parsed class name, generic parameters, and superclasses.
     private ClassHeader parseClassHeader() {
 
         var classToken = state.previous(); // 'class' token was consumed by caller.
@@ -123,13 +123,13 @@ public class ClassParser extends ParserBase {
         return new GenericTypeSyntax(genericParameterToken.getLine(), genericParameterToken.getColumn(), genericParameterName);
     }
 
-    /// Parses an optional generic parameter for a class declaration, which is specified inside square brackets.
+    /// Parses optional generic parameters for a class declaration, which are specified inside square brackets.
     ///
     /// Grammar rule:
     /// ```
-    /// genericParameter → "[" IDENTIFIER "]"
+    /// genericParameters → "[" IDENTIFIER ("," IDENTIFIER)* "]"
     /// ```
-    /// @return A TypeSyntax node representing the generic parameter, or `null` if no generic parameter is present.
+    /// @return TypeSyntax nodes representing the generic parameters, or an empty array if none are present.
     private TypeSyntax[] parseGenericParameters() {
 
         var genericParameters = new ArrayList<TypeSyntax>();
@@ -170,7 +170,7 @@ public class ClassParser extends ParserBase {
     }
 
     /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.
-    /// @param header The ClassHeader containing the class name, generic parameter, and superclasses.
+    /// @param header The ClassHeader containing the class name, generic parameters, and superclasses.
     /// @param classAccessModifier The access modifier of the class (e.g., public, private).
     /// @return A ClassDeclarationStatement representing the class declaration with empty members.
     private ClassDeclarationStatement createClassDeclaration(ClassHeader header, AccessModifier classAccessModifier) {
@@ -195,7 +195,7 @@ public class ClassParser extends ParserBase {
     /// ```
     /// classMembers → (classField | classMethod | constructor | innerClass)*
     /// ```
-    /// @param header The ClassHeader containing the class name, generic parameter, and superclasses.
+    /// @param header The ClassHeader containing the class name, generic parameters, and superclasses.
     /// @return A ClassMembers object containing the parsed fields, methods, constructors, and inner classes of the class.
     private ClassMembers parseClassBody(ClassHeader header) {
 

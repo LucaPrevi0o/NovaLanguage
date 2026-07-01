@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-06-30
+Last updated: 2026-07-01
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -25,7 +25,7 @@ Current focus: Phase 6 - multi-file project pipeline design.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | Complete    | Parser-generated ASTs are syntax-only; semantic declaration collection, scopes, diagnostics, type checks, return/l-value checks, and loop-control checks own meaning.              |
-| 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, and syntaxless `ReturnType` fallback is isolated.                     |
+| 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, class generic parameter syntax supports multiple names, and syntaxless `ReturnType` fallback is isolated. |
 | 6. Multi-file pipeline        | In progress | Project-level compiler contracts are being designed before implementation begins.                                                                                                   |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
@@ -51,6 +51,7 @@ Status: Current.
 - [x] Tests are grouped by compiler layer: `lexer`, `parser`, `semantic`, `error.diagnostic`, and `integration`.
 - [x] Semantic source and test packages are split into `semantic.analysis`, `semantic.declaration`, `semantic.scope`, and `semantic.type`.
 - [x] Parser-owned `SymbolTable` scope construction and symbol registration have been removed; semantic scopes now own name visibility.
+- [x] The legacy AST `Symbol` base has been renamed to `NamedStatementNode`, making it clear that named AST nodes only preserve source names while semantic declarations own meaning.
 - [x] GitHub issue milestones now own roadmap grouping for Project automation; Phase 1-8 work is tracked under `Nova MVP compiler`, Phase 9 work uses dedicated advanced-feature milestones, and custom Project `Phase`/`Kind` duplicates are removed in favor of milestones and labels.
 - [x] GitHub issue creation uses YAML issue forms so metadata is selected through structured fields before automation syncs milestones, labels, and Project fields.
 - [x] Closed issues marked `Done` can be archived from the roadmap Project, while reopened/open issues can be made visible again without changing their historical status.
@@ -206,6 +207,7 @@ Parser-owned semantic checks inventory:
 - [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes for declared source types.
 - [x] Type syntax exposure: declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters.
 - [x] Type syntax construction: declaration/class parsing now passes parsed `TypeSyntax` directly into declaration AST constructors instead of building parser-owned `ReturnType` adapters.
+- [x] Class generic syntax: class headers preserve multiple generic parameter names as parsed `GenericTypeSyntax` nodes.
 - [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
 - [x] TypeRegistry adapter removal: declaration/class parsing no longer uses a parser-side type registry.
 - [x] Parser-generated AST boundary audit: unresolved names, invalid assignment targets, duplicate declarations, unknown declared types, and unknown superclasses remain parser-accepted syntax with semantic-owned meaning.
@@ -228,6 +230,7 @@ Tasks:
 - [x] Add parsed type syntax nodes, such as `TypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`.
 - [x] Add resolved semantic type symbols, such as `ValueTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
 - [x] Resolve declared type names through semantic type symbols during name resolution.
+- [x] Resolve visible class generic parameter names from the full parsed class generic parameter list.
 - [x] Keep legacy `ReturnType` adapters able to expose source `TypeSyntax` while downstream compatibility paths are retired.
 - [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
 - [x] Keep `ReturnType` as a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs.

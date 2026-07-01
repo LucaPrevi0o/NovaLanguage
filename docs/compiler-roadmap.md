@@ -140,12 +140,14 @@ Completed work:
 
 - parsed type syntax nodes for named, array, and generic-parameter type syntax;
 - declaration AST constructors accept parsed `TypeSyntax` directly;
+- class declarations preserve multiple generic parameter names as parsed type syntax;
 - parser-created declarations no longer need temporary `ReturnType` adapters;
 - declaration AST nodes expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters;
 - semantic declarations preserve both parsed `TypeSyntax` and the temporary `ReturnType` adapter;
 - semantic type symbols for value, class, array, generic-parameter, and unknown types;
 - semantic type kinds that distinguish value/math types from class/object types;
 - name resolution resolves declared types through the semantic type resolver;
+- semantic type resolution recognizes every visible class generic parameter declared in the parsed class header;
 - type checking uses semantic type symbols internally instead of `ReturnType` token-class comparisons;
 - `ReturnType` is now a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs;
 - syntaxless `ReturnType` fallback conversion is isolated in `ReturnTypeSyntaxBridge`;
@@ -157,7 +159,8 @@ Follow-up cleanup:
 
 - audit remaining manual AST construction and printer paths that still rely on compatibility adapters;
 - remove the compatibility bridge once syntaxless adapter fallbacks are no longer needed;
-- continue refining inheritance and overload behavior after the AST/type boundary is cleaner.
+- continue refining inheritance and overload behavior after the AST/type boundary is cleaner;
+- keep generic constraints, generic instantiation, specialization, and monomorphization in the advanced-feature roadmap.
 
 This follow-up work is not a blocker for starting the Phase 6 project pipeline.
 
