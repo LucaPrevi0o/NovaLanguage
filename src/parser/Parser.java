@@ -1,6 +1,7 @@
 package parser;
 
 import lexer.Token;
+import lexer.token.TokenClass;
 import parser.ast.nodes.StatementNode;
 import parser.grammar.DeclarationParser;
 import error.diagnostic.ParseErrorsException;
@@ -111,9 +112,7 @@ public class Parser extends ParserBase {
 
             // Keywords that begin a new declaration or statement are also safe resume points.
             var next = state.peek().getType();
-            if (next == Keyword.CLASS   || next == Keyword.IF      || next == Keyword.WHILE  ||
-                next == Keyword.FOR     || next == Keyword.SWITCH  || next == Keyword.RETURN ||
-                next == Keyword.BREAK   || next == Keyword.CONTINUE) return;
+            if (isRecoveryBoundary(next)) return;
 
             state.advance();
         }

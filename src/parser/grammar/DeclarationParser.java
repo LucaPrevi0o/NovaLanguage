@@ -168,7 +168,6 @@ public class DeclarationParser extends ParserBase {
         var parameters = new ArrayList<FunctionParameter>();
         if (!state.check(Delimiter.RPAREN)) do {
 
-            //if (parameters.size() >= 255) throw parseError("Cannot have more than 255 parameters", getCurrentToken());
             var paramType = parseTypeSyntax();
             var paramName = state.consume(new IdentifierLiteral(), "Expect parameter name");
             parameters.add(new FunctionParameter(paramName.getLine(), paramName.getColumn(), state.getLiteralValue(paramName), paramType));
@@ -548,18 +547,7 @@ public class DeclarationParser extends ParserBase {
         if (token instanceof TypeToken || isTypeName(token)) return true;
 
         var type = token.getType();
-        return type == Delimiter.LBRACE ||
-               type == Keyword.CLASS ||
-               type == Keyword.IF ||
-               type == Keyword.WHILE ||
-               type == Keyword.FOR ||
-               type == Keyword.SWITCH ||
-               type == Keyword.RETURN ||
-               type == Keyword.BREAK ||
-               type == Keyword.CONTINUE ||
-               type == AccessModifier.PUBLIC ||
-               type == AccessModifier.PRIVATE ||
-               type == AccessModifier.PROTECTED;
+        return type == Delimiter.LBRACE || type == Keyword.RETURN || isRecoveryBoundary(type) || isAccessModifier(type);
     }
 
     /// Parses an expression statement.

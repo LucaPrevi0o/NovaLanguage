@@ -15,6 +15,7 @@ import parser.ast.nodes.type.TypeSyntax;
 import parser.support.ParserBase;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /// Parses class declarations, including their methods, fields, superclasses, generic parameters, inner classes, access modifiers, and constructors.
 ///
@@ -49,20 +50,22 @@ public class ClassParser extends ParserBase {
     private final DeclarationParser declarationParser;
 
     /// Represents the header of a class declaration, including its name, generic parameter, and superclasses.
+    /// @param classToken The token representing the 'class' keyword.
+    /// @param className The name of the class being declared.
+    /// @param genericParameter The optional generic parameter of the class, or `null` if not present.
+    /// @param superClasses An array of TypeSyntax nodes representing the superclasses of the class, or an empty array if none are specified.
     private record ClassHeader(Token classToken, String className, TypeSyntax genericParameter, TypeSyntax[] superClasses) { }
 
     /// Represents the members of a class, including fields, constructors, methods, and inner classes.
-    private record ClassMembers(
-        ArrayList<ClassFieldDeclaration> fields,
-        ArrayList<ClassConstructorDeclaration> constructors,
-        ArrayList<ClassMethodDeclaration> methods,
-        ArrayList<ClassDeclarationStatement> innerClasses
-    ) {
+    /// @param fields A list of ClassFieldDeclaration representing the fields of the class.
+    /// @param constructors A list of ClassConstructorDeclaration representing the constructors of the class.
+    /// @param methods A list of ClassMethodDeclaration representing the methods of the class.
+    /// @param innerClasses A list of ClassDeclarationStatement representing the inner classes of the class.
+    private record ClassMembers(List<ClassFieldDeclaration> fields, List<ClassConstructorDeclaration> constructors,
+    List<ClassMethodDeclaration> methods, List<ClassDeclarationStatement> innerClasses) {
 
-        /// Constructs a new ClassMembers instance.
-        private ClassMembers() {
-            this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
-        }
+        /// Constructs a new ClassMembers instance with empty initializer lists.
+        private ClassMembers() { this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()); }
     }
 
     /// Constructs a new ClassParser with the given DeclarationParser.
@@ -106,7 +109,6 @@ public class ClassParser extends ParserBase {
         var className = state.getLiteralValue(nameToken);
         var genericParameter = parseGenericParameter();
         var superClasses = parseSuperClasses();
-
         return new ClassHeader(classToken, className, genericParameter, superClasses);
     }
 
@@ -125,11 +127,7 @@ public class ClassParser extends ParserBase {
         var genericParameterName = state.getLiteralValue(genToken);
         state.consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
 
-        return new GenericTypeSyntax(
-            genToken.getLine(),
-            genToken.getColumn(),
-            genericParameterName
-        );
+        return new GenericTypeSyntax(genToken.getLine(), genToken.getColumn(), genericParameterName);
     }
 
     /// Parses an optional list of superclasses for a class declaration, which is specified after a double colon `::` and can include multiple comma-separated class names.
@@ -157,12 +155,7 @@ public class ClassParser extends ParserBase {
 
         var superClassToken = state.consume(new IdentifierLiteral(), message);
         var superClassName = state.getLiteralValue(superClassToken);
-        return new NamedTypeSyntax(
-            superClassToken.getLine(),
-            superClassToken.getColumn(),
-            superClassName,
-            false
-        );
+        return new NamedTypeSyntax(superClassToken.getLine(), superClassToken.getColumn(), superClassName, false);
     }
 
     /// Creates a ClassDeclarationStatement with the given header and access modifier, initializing its members to empty arrays.
