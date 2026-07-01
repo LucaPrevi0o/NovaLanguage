@@ -156,9 +156,12 @@ public final class TypeResolver {
         var current = scope;
         while (current != null) {
 
-            if (current.getOwner() instanceof ClassDeclarationStatement classDeclaration &&
-                genericParameterName(classDeclaration).equals(name))
-                return true;
+            if (current.getOwner() instanceof ClassDeclarationStatement classDeclaration) {// &&
+                //genericParametersName(classDeclaration).equals(name))
+
+                for (var genericName : genericParametersName(classDeclaration))
+                    if (genericName.equals(name)) return true;
+            }
             current = current.getParent();
         }
         return false;
@@ -167,12 +170,21 @@ public final class TypeResolver {
     /// Retrieves the name of the generic parameter declared in a class, if any.
     /// @param classDeclaration The class declaration to inspect.
     /// @return The generic parameter name, or an empty string if none is declared.
-    private String genericParameterName(ClassDeclarationStatement classDeclaration) {
+    private String[] genericParametersName(ClassDeclarationStatement classDeclaration) {
 
-        var genericParameter = classDeclaration.getGenericClassParameter();
-        var genericParameterSyntax = classDeclaration.getGenericClassParameterSyntax();
-        if (genericParameterSyntax != null) return genericParameterSyntax.getName();
-        return ReturnTypeSyntaxBridge.genericParameterName(genericParameter);
+        var genericParameters = classDeclaration.getGenericClassParameters();
+        var genericParameterSyntax = classDeclaration.getGenericClassParameterSyntaxes();
+        if (genericParameterSyntax != null) {
+
+            var names = new String[genericParameterSyntax.length];
+            for (int i = 0; i < genericParameterSyntax.length; i++) names[i] = genericParameterSyntax[i].getName();
+            return names;
+        }
+        //return ReturnTypeSyntaxBridge.genericParameterName(genericParameter);
+
+        var names = new String[genericParameters.length];
+        for (int i = 0; i < genericParameters.length; i++) names[i] =ReturnTypeSyntaxBridge.genericParameterName(genericParameters[i]);
+        return names;
     }
 
     /// Finds a visible class declaration with the given name in the current semantic scope or its ancestors.

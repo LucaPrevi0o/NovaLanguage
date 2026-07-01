@@ -27,9 +27,9 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
     private ClassConstructorDeclaration[] constructors;
     private ClassDeclarationStatement[] innerClasses;
     private final ReturnType[] compatibilitySuperClasses;
-    private final ReturnType compatibilityGenericClassParameter;
+    private final ReturnType[] compatibilityGenericClassParameters;
     private final TypeSyntax[] superClassSyntaxes;
-    private final TypeSyntax genericClassParameterSyntax;
+    private final TypeSyntax[] genericClassParameterSyntaxes;
 
     /// Constructs a new ClassDeclarationStatement.
     ///
@@ -39,19 +39,19 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
     /// @param methods The methods declared within the class.
     /// @param fields The fields declared within the class.
     /// @param superClasses The parsed superclass type syntax nodes that the class extends or implements.
-    /// @param genericClassParameter The parsed generic parameter type syntax of the class, if any.
+    /// @param genericClassParameters The parsed generic parameter type syntaxes of the class, if any.
     /// @param innerClasses The inner classes declared within the class.
     /// @param accessModifier The access modifier of the class (e.g., public, private).
     /// @param constructors The constructors declared within the class.
-    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, TypeSyntax[] superClasses, TypeSyntax genericClassParameter, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
+    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, TypeSyntax[] superClasses, TypeSyntax[] genericClassParameters, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
 
         super(line, column, name);
         this.methods = methods;
         this.fields = fields;
         this.superClassSyntaxes = superClasses != null ? superClasses.clone() : new TypeSyntax[0];
-        this.genericClassParameterSyntax = genericClassParameter;
+        this.genericClassParameterSyntaxes = genericClassParameters;
         this.compatibilitySuperClasses = null;
-        this.compatibilityGenericClassParameter = null;
+        this.compatibilityGenericClassParameters = null;
         this.innerClasses = innerClasses;
         this.accessModifier = accessModifier;
         this.constructors = constructors;
@@ -65,19 +65,23 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
     /// @param methods The methods declared within the class.
     /// @param fields The fields declared within the class.
     /// @param superClasses The temporary ReturnType superclass adapters for older callers.
-    /// @param genericClassParameter The temporary ReturnType generic parameter adapter, if any.
+    /// @param genericClassParameters The temporary ReturnType generic parameter adapters, if any.
     /// @param innerClasses The inner classes declared within the class.
     /// @param accessModifier The access modifier of the class (e.g., public, private).
     /// @param constructors The constructors declared within the class.
-    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, ReturnType[] superClasses, ReturnType genericClassParameter, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
+    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, ReturnType[] superClasses, ReturnType[] genericClassParameters, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
 
         super(line, column, name);
         this.methods = methods;
         this.fields = fields;
         this.compatibilitySuperClasses = superClasses;
-        this.compatibilityGenericClassParameter = genericClassParameter;
+        this.compatibilityGenericClassParameters = genericClassParameters;
         this.superClassSyntaxes = syntaxFromReturnTypes(superClasses);
-        this.genericClassParameterSyntax = genericClassParameter != null ? genericClassParameter.getSyntax() : null;
+
+        var arr = new TypeSyntax[genericClassParameters != null ? genericClassParameters.length : 0];
+        for (int i = 0; i < arr.length; i++) arr[i] = genericClassParameters[i] != null ? genericClassParameters[i].getSyntax() : null;
+        this.genericClassParameterSyntaxes = arr;
+
         this.innerClasses = innerClasses;
         this.accessModifier = accessModifier;
         this.constructors = constructors;
@@ -110,16 +114,14 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
 
     /// Returns the generic parameter of the class, if any.
     /// @return A ReturnType object representing the generic parameter of the class, or null if the class does not have a generic parameter.
-    public ReturnType getGenericClassParameter() {
-        return compatibilityGenericClassParameter != null
-            ? compatibilityGenericClassParameter
-            : TypeSyntaxAdapter.toReturnType(genericClassParameterSyntax);
+    public ReturnType[] getGenericClassParameters() {
+        return compatibilityGenericClassParameters != null ? compatibilityGenericClassParameters : adaptersFromSyntaxes(genericClassParameterSyntaxes);
     }
 
     /// Returns the parsed source type syntax for this class's generic parameter, when available.
     /// @return The generic parameter syntax, or {@code null} if none is declared.
-    public TypeSyntax getGenericClassParameterSyntax() {
-        return genericClassParameterSyntax;
+    public TypeSyntax[] getGenericClassParameterSyntaxes() {
+        return genericClassParameterSyntaxes;
     }
 
     /// Returns the inner classes declared within the class.
@@ -141,7 +143,7 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
             new NonPrimitiveType(this.getName()),
             new ExpressionNode[0],
             getSuperClasses(),
-            getGenericClassParameter(),
+           compatibilityGenericClassParameters == null ? null : getGenericClassParameters()[0],
             getTypeSyntax()
         );
     }
@@ -175,8 +177,18 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
-        var genericClassParameter = getGenericClassParameter();
-        if (genericClassParameter != null) entries.add(new PrintEntry.Info("Generic Parameter: " + buildTypeStringWithSizes(genericClassParameter)));
+        var genericClassParameters = getGenericClassParameters();
+        if (genericClassParameters != null && genericClassParameters.length > 0) {
+
+            var superNames = new StringBuilder();
+            for (var i = 0; i < genericClassParameters.length; i++) {
+
+                if (i > 0) superNames.append(", ");
+                superNames.append(buildTypeStringWithSizes(genericClassParameters[i]));
+            }
+            entries.add(new PrintEntry.Info("Generic types: " + superNames));
+        }
+
         var superClasses = getSuperClasses();
         if (superClasses != null && superClasses.length > 0) {
 

@@ -151,7 +151,7 @@ public class SemanticTypeResolverTest {
             """);
         var classDeclaration = assertInstanceOf(ClassDeclarationStatement.class, ast.get(1));
 
-        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, classDeclaration.getGenericClassParameterSyntax());
+        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, classDeclaration.getGenericClassParameterSyntaxes()[0]);
         assertEquals("T", genericSyntax.getName());
 
         assertEquals(1, classDeclaration.getSuperClassSyntaxes().length);

@@ -263,7 +263,7 @@ public class ClassParserTest {
         var ast = parse("public class Container[T] { public T value; }");
         var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
 
-        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, cls.getGenericClassParameterSyntax());
+        var genericSyntax = assertInstanceOf(GenericTypeSyntax.class, cls.getGenericClassParameterSyntaxes()[0]);
         assertEquals("T", genericSyntax.getName());
 
         var fieldSyntax = assertInstanceOf(NamedTypeSyntax.class, cls.getFields()[0].getDeclaredTypeSyntax());

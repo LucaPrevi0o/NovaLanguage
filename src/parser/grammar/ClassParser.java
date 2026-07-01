@@ -52,9 +52,9 @@ public class ClassParser extends ParserBase {
     /// Represents the header of a class declaration, including its name, generic parameter, and superclasses.
     /// @param classToken The token representing the 'class' keyword.
     /// @param className The name of the class being declared.
-    /// @param genericParameter The optional generic parameter of the class, or `null` if not present.
+    /// @param genericParameters The optional generic parameters of the class, or `null` if none are specified.
     /// @param superClasses An array of TypeSyntax nodes representing the superclasses of the class, or an empty array if none are specified.
-    private record ClassHeader(Token classToken, String className, TypeSyntax genericParameter, TypeSyntax[] superClasses) { }
+    private record ClassHeader(Token classToken, String className, TypeSyntax[] genericParameters, TypeSyntax[] superClasses) { }
 
     /// Represents the members of a class, including fields, constructors, methods, and inner classes.
     /// @param fields A list of ClassFieldDeclaration representing the fields of the class.
@@ -107,9 +107,20 @@ public class ClassParser extends ParserBase {
         var classToken = state.previous(); // 'class' token was consumed by caller.
         var nameToken = state.consume(new IdentifierLiteral(), "Expect class name after 'class'");
         var className = state.getLiteralValue(nameToken);
-        var genericParameter = parseGenericParameter();
+        var genericParameters = parseGenericParameters();
         var superClasses = parseSuperClasses();
-        return new ClassHeader(classToken, className, genericParameter, superClasses);
+        return new ClassHeader(classToken, className, genericParameters, superClasses);
+    }
+
+    /// Parses a single superclass name for a class declaration, which is expected to be an identifier.
+    ///
+    /// @param message The error message to display if the superclass name is not found.
+    /// @return A TypeSyntax node representing the parsed superclass.
+    private TypeSyntax parseGenericParameter(String message) {
+
+        var genericParameterToken = state.consume(new IdentifierLiteral(), message);
+        var genericParameterName = state.getLiteralValue(genericParameterToken);
+        return new GenericTypeSyntax(genericParameterToken.getLine(), genericParameterToken.getColumn(), genericParameterName);
     }
 
     /// Parses an optional generic parameter for a class declaration, which is specified inside square brackets.
@@ -119,15 +130,15 @@ public class ClassParser extends ParserBase {
     /// genericParameter → "[" IDENTIFIER "]"
     /// ```
     /// @return A TypeSyntax node representing the generic parameter, or `null` if no generic parameter is present.
-    private TypeSyntax parseGenericParameter() {
+    private TypeSyntax[] parseGenericParameters() {
 
-        if (!state.match(Delimiter.LSQUARE)) return null;
+        var genericParameters = new ArrayList<TypeSyntax>();
+        if (!state.match(Delimiter.LSQUARE)) return genericParameters.toArray(new TypeSyntax[0]);
 
-        var genToken = state.consume(new IdentifierLiteral(), "Expect generic parameter name inside '[' ']'");
-        var genericParameterName = state.getLiteralValue(genToken);
-        state.consume(Delimiter.RSQUARE, "Expect ']' after generic parameter");
-
-        return new GenericTypeSyntax(genToken.getLine(), genToken.getColumn(), genericParameterName);
+        genericParameters.add(parseGenericParameter("Expect generic type name after '['"));
+        while (state.match(Delimiter.COMMA)) genericParameters.add(parseGenericParameter("Expect generic type name after ','"));
+        state.consume(Delimiter.RSQUARE, "Expect ']' after generic type name");
+        return genericParameters.toArray(new TypeSyntax[0]);
     }
 
     /// Parses an optional list of superclasses for a class declaration, which is specified after a double colon `::` and can include multiple comma-separated class names.
@@ -171,7 +182,7 @@ public class ClassParser extends ParserBase {
             new ClassMethodDeclaration[0],
             new ClassFieldDeclaration[0],
             header.superClasses(),
-            header.genericParameter(),
+            header.genericParameters(),
             new ClassDeclarationStatement[0],
             classAccessModifier,
             new ClassConstructorDeclaration[0]
