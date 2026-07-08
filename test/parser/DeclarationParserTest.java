@@ -163,7 +163,7 @@ public class DeclarationParserTest {
     }
 
     @Test
-    void testFunctionWithReturnType() {
+    void testFunctionWithDeclaredResultType() {
 
         var ast = parse("int getAnswer() { return 42; }");
         var fn = (FunctionDeclarationStatement) ast.getFirst();

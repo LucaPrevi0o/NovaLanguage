@@ -3,7 +3,6 @@ package semantic.analysis;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
-import lexer.token.ReturnType;
 import parser.ast.AstNode;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
@@ -75,7 +74,7 @@ public final class NameResolver {
             case FunctionDeclarationStatement functionDeclaration -> resolveFunction(functionDeclaration, scope, "function " + functionDeclaration.getName());
             case VariableDeclarationStatement variableDeclaration -> {
 
-                resolveType(variableDeclaration.getDeclaredTypeSyntax(), variableDeclaration.getDeclaredType(), variableDeclaration, scope);
+                resolveType(variableDeclaration.getDeclaredTypeSyntax(), variableDeclaration, scope);
                 resolveExpression(variableDeclaration.getInitialValue(), scope);
             }
             case BlockStatement block -> resolveBlock(block, scope);
@@ -102,7 +101,7 @@ public final class NameResolver {
             }
             case ForEachStatement forEachStatement -> {
 
-                resolveType(forEachStatement.getElementTypeSyntax(), forEachStatement.getElementType(), forEachStatement, scope);
+                resolveType(forEachStatement.getElementTypeSyntax(), forEachStatement, scope);
                 resolveExpression(forEachStatement.getIterable(), scope);
                 var forEachScope = childScope(scope, "for-each", forEachStatement);
                 resolveBranch(forEachStatement.getBody(), forEachScope, "for-each-body", forEachStatement);
@@ -127,10 +126,9 @@ public final class NameResolver {
     /// @param scope The current semantic scope in which to resolve names.
     private void resolveClass(ClassDeclarationStatement classDeclaration, SemanticScope scope) {
 
-        var superClassTypes = classDeclaration.getSuperClasses();
         var superClassSyntaxes = classDeclaration.getSuperClassSyntaxes();
-        for (var i = 0; i < superClassTypes.length; i++)
-            report(typeResolver.resolve(superClassSyntaxes[i], superClassTypes[i], classDeclaration, scope, "superclass"));
+        for (var superClassSyntax : superClassSyntaxes)
+            report(typeResolver.resolve(superClassSyntax, classDeclaration, scope, "superclass"));
 
         var classScope = childScope(scope, "class " + classDeclaration.getName(), classDeclaration);
 
@@ -146,10 +144,10 @@ public final class NameResolver {
     /// @param scopeName The name to use for the child scope of the function or method.
     private void resolveFunction(FunctionDeclarationStatement functionDeclaration, SemanticScope scope, String scopeName) {
 
-        resolveType(functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration.getDeclaredType(), functionDeclaration, scope);
+        resolveType(functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration, scope);
         var functionScope = childScope(scope, scopeName, functionDeclaration);
         for (var parameter : functionDeclaration.getParameters())
-            resolveType(parameter.getTypeSyntax(), parameter.getType(), parameter, functionScope);
+            resolveType(parameter.getTypeSyntax(), parameter, functionScope);
         resolveFunctionBody(functionDeclaration.getBody(), functionScope);
     }
 
@@ -161,7 +159,7 @@ public final class NameResolver {
 
         var constructorScope = childScope(classScope, "constructor " + classDeclaration.getName(), constructorDeclaration);
         for (var parameter : constructorDeclaration.getParameters())
-            resolveType(parameter.getTypeSyntax(), parameter.getType(), parameter, constructorScope);
+            resolveType(parameter.getTypeSyntax(), parameter, constructorScope);
         resolveFunctionBody(constructorDeclaration.getBody(), constructorScope);
     }
 
@@ -249,30 +247,24 @@ public final class NameResolver {
 
     /// Resolves a declared type, checking for unresolved types and resolving any size expressions in the given semantic scope.
     /// @param typeSyntax The parsed source type syntax to resolve.
-    /// @param type The ReturnType adapter to use as a fallback.
     /// @param owner The AST node that owns the type, used for error reporting.
     /// @param scope The current semantic scope in which to resolve names.
-    private void resolveType(TypeSyntax typeSyntax, ReturnType type, AstNode owner, SemanticScope scope) {
+    private void resolveType(TypeSyntax typeSyntax, AstNode owner, SemanticScope scope) {
 
-        if (typeSyntax == null && type == null) return;
-        resolveTypeSizeExpressions(typeSyntax, type, scope);
-        report(typeResolver.resolve(typeSyntax, type, owner, scope));
+        if (typeSyntax == null) return;
+        resolveTypeSizeExpressions(typeSyntax, scope);
+        report(typeResolver.resolve(typeSyntax, owner, scope));
     }
 
     /// Resolves expressions used in array type dimensions.
     /// @param typeSyntax The parsed source type syntax.
-    /// @param fallbackType The ReturnType adapter to inspect when parsed syntax is unavailable.
     /// @param scope The current semantic scope in which to resolve names.
-    private void resolveTypeSizeExpressions(TypeSyntax typeSyntax, ReturnType fallbackType, SemanticScope scope) {
+    private void resolveTypeSizeExpressions(TypeSyntax typeSyntax, SemanticScope scope) {
 
         if (typeSyntax instanceof ArrayTypeSyntax arrayType) {
 
             for (var size : arrayType.getSizes()) resolveExpression(size, scope);
-            return;
         }
-
-        if (fallbackType == null) return;
-        for (var size : fallbackType.getSizes()) resolveExpression(size, scope);
     }
 
     /// Finds visible declarations with the given name in the current semantic scope and its parent scopes.

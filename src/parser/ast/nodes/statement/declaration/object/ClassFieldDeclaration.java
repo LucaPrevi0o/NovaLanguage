@@ -1,7 +1,6 @@
 package parser.ast.nodes.statement.declaration.object;
 
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
-import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
 import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.type.TypeSyntax;
@@ -19,24 +18,11 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
     /// Constructs a new ClassFieldDeclaration.
     /// @param line The line number where the field is declared.
     /// @param column The column number where the field is declared.
-    /// @param variableType The return type of the field.
+    /// @param variableType The parsed source type syntax of the field.
     /// @param variableName The name of the field.
     /// @param initialValue The initial value of the field, if any.
     /// @param accessModifier The access modifier of the field (e.g., public, private).
     public ClassFieldDeclaration(int line, int column, TypeSyntax variableType, String variableName, ExpressionNode initialValue, AccessModifier accessModifier) {
-
-        super(line, column, variableType, variableName, initialValue);
-        this.accessModifier = accessModifier;
-    }
-
-    /// Constructs a compatibility ClassFieldDeclaration from a legacy ReturnType adapter.
-    /// @param line The line number where the field is declared.
-    /// @param column The column number where the field is declared.
-    /// @param variableType The temporary ReturnType adapter for older callers.
-    /// @param variableName The name of the field.
-    /// @param initialValue The initial value of the field, if any.
-    /// @param accessModifier The access modifier of the field (e.g., public, private).
-    public ClassFieldDeclaration(int line, int column, ReturnType variableType, String variableName, ExpressionNode initialValue, AccessModifier accessModifier) {
 
         super(line, column, variableType, variableName, initialValue);
         this.accessModifier = accessModifier;
@@ -54,7 +40,7 @@ public class ClassFieldDeclaration extends VariableDeclarationStatement {
 
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
-        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
+        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredTypeSyntax())));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
         if (getInitialValue() != null) entries.add(new PrintEntry.Child("Initializer", getInitialValue()));
         return entries;

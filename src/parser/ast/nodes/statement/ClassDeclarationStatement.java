@@ -1,17 +1,13 @@
 package parser.ast.nodes.statement;
 
 import parser.ast.Printable;
-import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.NamedStatementNode;
 import parser.ast.nodes.statement.declaration.object.ClassFieldDeclaration;
 import parser.ast.nodes.statement.declaration.object.ClassMethodDeclaration;
-import lexer.token.ReturnType;
 import lexer.token.family.AccessModifier;
-import lexer.token.family.NonPrimitiveType;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.type.TypeSyntax;
-import parser.support.TypeSyntaxAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +22,6 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
     private ClassFieldDeclaration[] fields;
     private ClassConstructorDeclaration[] constructors;
     private ClassDeclarationStatement[] innerClasses;
-    private final ReturnType[] compatibilitySuperClasses;
-    private final ReturnType[] compatibilityGenericClassParameters;
     private final TypeSyntax[] superClassSyntaxes;
     private final TypeSyntax[] genericClassParameterSyntaxes;
 
@@ -49,39 +43,7 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
         this.methods = methods;
         this.fields = fields;
         this.superClassSyntaxes = superClasses != null ? superClasses.clone() : new TypeSyntax[0];
-        this.genericClassParameterSyntaxes = genericClassParameters;
-        this.compatibilitySuperClasses = null;
-        this.compatibilityGenericClassParameters = null;
-        this.innerClasses = innerClasses;
-        this.accessModifier = accessModifier;
-        this.constructors = constructors;
-    }
-
-    /// Constructs a compatibility ClassDeclarationStatement from legacy ReturnType adapters.
-    ///
-    /// @param line The line number where the class is declared.
-    /// @param column The column number where the class is declared.
-    /// @param name The name of the class.
-    /// @param methods The methods declared within the class.
-    /// @param fields The fields declared within the class.
-    /// @param superClasses The temporary ReturnType superclass adapters for older callers.
-    /// @param genericClassParameters The temporary ReturnType generic parameter adapters, if any.
-    /// @param innerClasses The inner classes declared within the class.
-    /// @param accessModifier The access modifier of the class (e.g., public, private).
-    /// @param constructors The constructors declared within the class.
-    public ClassDeclarationStatement(int line, int column, String name, ClassMethodDeclaration[] methods, ClassFieldDeclaration[] fields, ReturnType[] superClasses, ReturnType[] genericClassParameters, ClassDeclarationStatement[] innerClasses, AccessModifier accessModifier, ClassConstructorDeclaration[] constructors) {
-
-        super(line, column, name);
-        this.methods = methods;
-        this.fields = fields;
-        this.compatibilitySuperClasses = superClasses;
-        this.compatibilityGenericClassParameters = genericClassParameters;
-        this.superClassSyntaxes = syntaxFromReturnTypes(superClasses);
-
-        var arr = new TypeSyntax[genericClassParameters != null ? genericClassParameters.length : 0];
-        for (int i = 0; i < arr.length; i++) arr[i] = genericClassParameters[i] != null ? genericClassParameters[i].getSyntax() : null;
-        this.genericClassParameterSyntaxes = arr;
-
+        this.genericClassParameterSyntaxes = genericClassParameters != null ? genericClassParameters.clone() : new TypeSyntax[0];
         this.innerClasses = innerClasses;
         this.accessModifier = accessModifier;
         this.constructors = constructors;
@@ -99,53 +61,27 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
     /// @return The access modifier of the class (e.g., public, private).
     public AccessModifier getAccessModifier() { return accessModifier; }
 
-    /// Returns the superclasses that the class extends or implements.
-    /// @return An array of ReturnType objects representing the superclasses that the class extends or implements.
-    public ReturnType[] getSuperClasses() {
-        return compatibilitySuperClasses != null ? compatibilitySuperClasses : adaptersFromSyntaxes(superClassSyntaxes);
-    }
-
     /// Returns the parsed source type syntax for each declared superclass.
-    /// @return An array of parsed superclass type syntax nodes, with {@code null} for compatibility-only entries.
+    /// @return An array of parsed superclass type syntax nodes.
     public TypeSyntax[] getSuperClassSyntaxes() {
 
         return superClassSyntaxes.clone();
     }
 
-    /// Returns the generic parameters of the class, if any.
-    /// @return ReturnType adapters representing the generic parameters of the class, or an empty array if none are declared.
-    public ReturnType[] getGenericClassParameters() {
-        return compatibilityGenericClassParameters != null ? compatibilityGenericClassParameters : adaptersFromSyntaxes(genericClassParameterSyntaxes);
-    }
-
-    /// Returns the parsed source type syntax for this class's generic parameters, when available.
+    /// Returns the parsed source type syntax for this class's generic parameters.
     /// @return The generic parameter syntax nodes, or an empty array if none are declared.
     public TypeSyntax[] getGenericClassParameterSyntaxes() {
-        return genericClassParameterSyntaxes;
+        return genericClassParameterSyntaxes.clone();
     }
 
     /// Returns the inner classes declared within the class.
     /// @return An array of ClassDeclarationStatement objects representing the inner classes declared within the class.
     public ClassDeclarationStatement[] getInnerClasses() { return innerClasses; }
 
-    /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
+    /// Returns the source type syntax representing this class declaration's name.
     /// @return A source-level type syntax node representing this class name.
     public TypeSyntax getTypeSyntax() {
         return new NamedTypeSyntax(getLine(), getColumn(), getName(), false);
-    }
-
-    /// Returns the type of this class, which is a NonPrimitiveType wrapping this class declaration.
-    /// This ReturnType remains a compatibility adapter for older AST/printer callers.
-    /// @return A ReturnType representing the type of this class.
-    public ReturnType getReturnType() {
-
-        return new ReturnType(
-            new NonPrimitiveType(this.getName()),
-            new ExpressionNode[0],
-            getSuperClasses(),
-           compatibilityGenericClassParameters == null ? null : getGenericClassParameters()[0],
-            getTypeSyntax()
-        );
     }
 
     /// Returns the constructors declared within the class.
@@ -177,8 +113,8 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
         var entries = new ArrayList<PrintEntry>();
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Info("Access Modifier: " + accessModifier));
-        var genericClassParameters = getGenericClassParameters();
-        if (genericClassParameters != null && genericClassParameters.length > 0) {
+        var genericClassParameters = getGenericClassParameterSyntaxes();
+        if (genericClassParameters.length > 0) {
 
             var superNames = new StringBuilder();
             for (var i = 0; i < genericClassParameters.length; i++) {
@@ -189,8 +125,8 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
             entries.add(new PrintEntry.Info("Generic types: " + superNames));
         }
 
-        var superClasses = getSuperClasses();
-        if (superClasses != null && superClasses.length > 0) {
+        var superClasses = getSuperClassSyntaxes();
+        if (superClasses.length > 0) {
 
             var superNames = new StringBuilder();
             for (var i = 0; i < superClasses.length; i++) {
@@ -205,23 +141,5 @@ public class ClassDeclarationStatement extends NamedStatementNode implements Pri
         entries.add(new PrintEntry.Children("Fields", fields));
         entries.add(new PrintEntry.Children("Methods", methods));
         return entries;
-    }
-
-    private static TypeSyntax[] syntaxFromReturnTypes(ReturnType[] types) {
-
-        if (types == null) return new TypeSyntax[0];
-        var syntaxes = new TypeSyntax[types.length];
-        for (var i = 0; i < types.length; i++)
-            syntaxes[i] = types[i] != null ? types[i].getSyntax() : null;
-        return syntaxes;
-    }
-
-    private static ReturnType[] adaptersFromSyntaxes(TypeSyntax[] syntaxes) {
-
-        if (syntaxes == null) return new ReturnType[0];
-        var adapters = new ReturnType[syntaxes.length];
-        for (var i = 0; i < syntaxes.length; i++)
-            adapters[i] = TypeSyntaxAdapter.toReturnType(syntaxes[i]);
-        return adapters;
     }
 }

@@ -231,8 +231,8 @@ public class ClassParserTest {
         var ast = parse("public class Orphan :: NoParent { }");
         var cls = assertInstanceOf(ClassDeclarationStatement.class, ast.getFirst());
 
-        assertEquals(1, cls.getSuperClasses().length);
-        assertEquals("NoParent", cls.getSuperClasses()[0].getTokenClass().token());
+        assertEquals(1, cls.getSuperClassSyntaxes().length);
+        assertEquals("NoParent", cls.getSuperClassSyntaxes()[0].getName());
     }
 
     @Test

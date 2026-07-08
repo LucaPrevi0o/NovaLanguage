@@ -3,7 +3,6 @@ package semantic.analysis;
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticBag;
 import error.diagnostic.DiagnosticPhase;
-import lexer.token.ReturnType;
 import parser.ast.nodes.type.NamedTypeSyntax;
 import parser.ast.nodes.type.TypeSyntax;
 import parser.ast.nodes.StatementNode;
@@ -17,7 +16,6 @@ import parser.ast.nodes.statement.conditional.SwitchStatement;
 import parser.ast.nodes.statement.conditional.WhileStatement;
 import parser.ast.nodes.statement.declaration.FunctionDeclarationStatement;
 import parser.ast.nodes.statement.declaration.object.ClassConstructorDeclaration;
-import semantic.type.ReturnTypeSyntaxBridge;
 
 import java.util.List;
 
@@ -80,10 +78,10 @@ public final class ReturnChecker {
     /// @param functionDeclaration The function declaration to check.
     private void checkFunction(FunctionDeclarationStatement functionDeclaration) {
 
-        var context = new ReturnContext(functionDeclaration.getName(), functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration.getDeclaredType(), false);
+        var context = new ReturnContext(functionDeclaration.getName(), functionDeclaration.getDeclaredTypeSyntax(), false);
         checkStatement(functionDeclaration.getBody(), context);
 
-        if (!isVoid(functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration.getDeclaredType()) && !guaranteesReturn(functionDeclaration.getBody()))
+        if (!isVoid(functionDeclaration.getDeclaredTypeSyntax()) && !guaranteesReturn(functionDeclaration.getBody()))
             diagnostics.report(Diagnostic.error(
                 DiagnosticPhase.SEMANTIC,
                 "Missing return in non-void function '" + functionDeclaration.getName() + "'",
@@ -99,7 +97,6 @@ public final class ReturnChecker {
         var context = new ReturnContext(
             "<constructor>",
             new NamedTypeSyntax(constructorDeclaration.getLine(), constructorDeclaration.getColumn(), "void", true),
-            null,
             true
         );
         checkStatement(constructorDeclaration.getBody(), context);
@@ -133,14 +130,14 @@ public final class ReturnChecker {
             return;
         }
 
-        if (isVoid(context.returnTypeSyntax, context.returnTypeFallback) && hasValue) diagnostics.report(Diagnostic.error(
+        if (isVoid(context.returnTypeSyntax) && hasValue) diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Void function '" + context.name + "' cannot return a value",
             returnStatement.getLine(),
             returnStatement.getColumn()
         ));
 
-        if (!isVoid(context.returnTypeSyntax, context.returnTypeFallback) && !hasValue) diagnostics.report(Diagnostic.error(
+        if (!isVoid(context.returnTypeSyntax) && !hasValue) diagnostics.report(Diagnostic.error(
             DiagnosticPhase.SEMANTIC,
             "Non-void function '" + context.name + "' must return a value",
             returnStatement.getLine(),
@@ -169,16 +166,16 @@ public final class ReturnChecker {
         };
     }
 
-    /// Determines if a return type is void, using adapter metadata only when parsed syntax is unavailable.
+    /// Determines if a return type is primitive `void`.
     /// @param returnType The parsed return type syntax to check.
-    /// @param fallbackType The compatibility adapter to inspect when syntax is absent.
     /// @return `true` if the return type is void; otherwise, `false`.
-    private boolean isVoid(TypeSyntax returnType, ReturnType fallbackType) {
+    private boolean isVoid(TypeSyntax returnType) {
 
-        var syntax = returnType != null ? returnType : ReturnTypeSyntaxBridge.toTypeSyntax(fallbackType);
-        return ReturnTypeSyntaxBridge.isVoid(syntax);
+        return returnType instanceof NamedTypeSyntax namedType &&
+                namedType.isPrimitive() &&
+                "void".equals(namedType.getName());
     }
 
     /// Represents the context of a return statement, including the name of the enclosing function or constructor, its return type, and whether it is a constructor.
-    private record ReturnContext(String name, TypeSyntax returnTypeSyntax, ReturnType returnTypeFallback, boolean constructor) { }
+    private record ReturnContext(String name, TypeSyntax returnTypeSyntax, boolean constructor) { }
 }

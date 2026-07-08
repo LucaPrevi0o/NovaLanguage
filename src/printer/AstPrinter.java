@@ -6,7 +6,8 @@ import parser.ast.AstNode;
 import parser.ast.Printable;
 import parser.ast.Printable.PrintEntry;
 import parser.ast.nodes.expression.literal.NumberLiteralExpression;
-import lexer.token.ReturnType;
+import parser.ast.nodes.type.ArrayTypeSyntax;
+import parser.ast.nodes.type.TypeSyntax;
 
 /// A utility class for printing the Abstract Syntax Tree (AST) of a program in a readable format.
 ///
@@ -93,17 +94,16 @@ public final class AstPrinter {
         System.out.println(prefix + text);
     }
 
-    /// Builds a string representation of a return type, including its base type and any array sizes.
-    /// @param type The ReturnType to render.
+    /// Builds a string representation of parsed type syntax, including any array sizes.
+    /// @param type The type syntax to render.
     /// @return A string such as {@code "int"} or {@code "int[3][2]"}.
-    public static String buildTypeStringWithSizes(ReturnType type) {
+    public static String buildTypeStringWithSizes(TypeSyntax type) {
 
         if (type == null) return "null";
-        var baseTypeStr = type.getTokenClass().token();
+        if (!(type instanceof ArrayTypeSyntax arrayType)) return type.getName();
 
-        var sizes = type.getSizes();
-        if (sizes == null || sizes.length == 0) return baseTypeStr;
-        var result = new StringBuilder(baseTypeStr);
+        var sizes = arrayType.getSizes();
+        var result = new StringBuilder(buildTypeStringWithSizes(arrayType.getElementType()));
         for (var size : sizes) {
 
             result.append("[");

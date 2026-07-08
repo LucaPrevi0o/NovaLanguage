@@ -2,7 +2,6 @@ package semantic.type;
 
 import error.diagnostic.Diagnostic;
 import error.diagnostic.DiagnosticPhase;
-import lexer.token.ReturnType;
 import parser.ast.AstNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.type.ArrayTypeSyntax;
@@ -21,59 +20,8 @@ import semantic.type.symbol.ClassTypeSymbol;
 
 import java.util.List;
 
-/// Resolves parsed type syntax and temporary ReturnType adapters into semantic type symbols.
-///
-/// Parsed TypeSyntax is the preferred input. ReturnType adapters are accepted as compatibility
-/// fallbacks, and syntaxless adapter metadata is converted through `ReturnTypeSyntaxBridge`.
+/// Resolves parsed type syntax into semantic type symbols.
 public final class TypeResolver {
-
-    /// Resolves a ReturnType adapter as a normal declared type.
-    /// @param type The ReturnType adapter to resolve.
-    /// @param owner The AST node that owns the type.
-    /// @param scope The semantic scope used for class lookup.
-    /// @return The resolved semantic type and any diagnostics.
-    public TypeResolution resolve(ReturnType type, AstNode owner, SemanticScope scope) {
-
-        return resolve(type, owner, scope, "type");
-    }
-
-    /// Resolves source type syntax with a ReturnType adapter as a compatibility fallback.
-    /// @param syntax The parsed type syntax, or {@code null} when unavailable.
-    /// @param fallbackType The ReturnType adapter to use only when syntax is unavailable.
-    /// @param owner The AST node that owns the type.
-    /// @param scope The semantic scope used for class lookup.
-    /// @return The resolved semantic type and any diagnostics.
-    public TypeResolution resolve(TypeSyntax syntax, ReturnType fallbackType, AstNode owner, SemanticScope scope) {
-
-        return resolve(syntax, fallbackType, owner, scope, "type");
-    }
-
-    /// Resolves source type syntax with a ReturnType adapter as a compatibility fallback.
-    /// @param syntax The parsed type syntax, or {@code null} when unavailable.
-    /// @param fallbackType The ReturnType adapter to use only when syntax is unavailable.
-    /// @param owner The AST node that owns the type.
-    /// @param scope The semantic scope used for class lookup.
-    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
-    /// @return The resolved semantic type and any diagnostics.
-    public TypeResolution resolve(TypeSyntax syntax, ReturnType fallbackType, AstNode owner, SemanticScope scope, String unresolvedLabel) {
-
-        return syntax != null
-                ? resolve(syntax, owner, scope, unresolvedLabel)
-                : resolve(fallbackType, owner, scope, unresolvedLabel);
-    }
-
-    /// Resolves a ReturnType adapter with a custom unresolved-name label.
-    /// @param type The ReturnType adapter to resolve.
-    /// @param owner The AST node that owns the type.
-    /// @param scope The semantic scope used for class lookup.
-    /// @param unresolvedLabel The diagnostic label to use when a name cannot be resolved.
-    /// @return The resolved semantic type and any diagnostics.
-    public TypeResolution resolve(ReturnType type, AstNode owner, SemanticScope scope, String unresolvedLabel) {
-
-        if (type == null) return new TypeResolution(null, List.of());
-        var syntax = ReturnTypeSyntaxBridge.toTypeSyntax(type);
-        return syntax != null ? resolve(syntax, owner, scope, unresolvedLabel) : resolved(new UnknownTypeSymbol("<unknown>"));
-    }
 
     /// Resolves source-level type syntax as a normal declared type.
     /// @param syntax The parsed type syntax to resolve.
@@ -156,8 +104,7 @@ public final class TypeResolver {
         var current = scope;
         while (current != null) {
 
-            if (current.getOwner() instanceof ClassDeclarationStatement classDeclaration) {// &&
-                //genericParametersName(classDeclaration).equals(name))
+            if (current.getOwner() instanceof ClassDeclarationStatement classDeclaration) {
 
                 for (var genericName : genericParametersName(classDeclaration))
                     if (genericName.equals(name)) return true;
@@ -172,18 +119,10 @@ public final class TypeResolver {
     /// @return The generic parameter name, or an empty string if none is declared.
     private String[] genericParametersName(ClassDeclarationStatement classDeclaration) {
 
-        var genericParameters = classDeclaration.getGenericClassParameters();
         var genericParameterSyntax = classDeclaration.getGenericClassParameterSyntaxes();
-        if (genericParameterSyntax != null) {
 
-            var names = new String[genericParameterSyntax.length];
-            for (int i = 0; i < genericParameterSyntax.length; i++) names[i] = genericParameterSyntax[i].getName();
-            return names;
-        }
-        //return ReturnTypeSyntaxBridge.genericParameterName(genericParameter);
-
-        var names = new String[genericParameters.length];
-        for (int i = 0; i < genericParameters.length; i++) names[i] =ReturnTypeSyntaxBridge.genericParameterName(genericParameters[i]);
+        var names = new String[genericParameterSyntax.length];
+        for (int i = 0; i < genericParameterSyntax.length; i++) names[i] = genericParameterSyntax[i].getName();
         return names;
     }
 

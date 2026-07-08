@@ -22,5 +22,5 @@
 /// - Control-flow-sensitive return behavior, once implemented.
 ///
 /// `ForEachStatement` receives parsed element `TypeSyntax` directly from the parser and exposes it
-/// for semantic type resolution while keeping its temporary `ReturnType` adapter for compatibility.
+/// for semantic type resolution.
 package parser.ast.nodes.statement.conditional;

@@ -159,7 +159,7 @@ public class SemanticTypeCheckerTest {
     }
 
     @Test
-    void testUsesFunctionCallReturnTypeInInitializerChecking() {
+    void testUsesFunctionCallResultTypeInInitializerChecking() {
 
         var diagnostics = check("""
             int choose(int value, bool ok) { return value; }

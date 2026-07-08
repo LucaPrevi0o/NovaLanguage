@@ -13,7 +13,6 @@
 /// - Access modifiers
 /// - Primitive type tokens
 /// - Special tokens such as end-of-file or unknown input
-/// - Non-primitive and generic-parameter type-like tokens used by parser adapters
 ///
 /// ## Layer boundary
 ///

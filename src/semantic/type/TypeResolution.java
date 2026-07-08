@@ -5,7 +5,7 @@ import semantic.type.symbol.TypeSymbol;
 
 import java.util.List;
 
-/// Result of resolving type syntax or a temporary ReturnType adapter.
+/// Result of resolving parsed type syntax.
 /// @param type The resolved type symbol, or an unknown placeholder when resolution failed.
 /// @param diagnostics Diagnostics produced during type resolution.
 public record TypeResolution(TypeSymbol type, List<Diagnostic> diagnostics) {

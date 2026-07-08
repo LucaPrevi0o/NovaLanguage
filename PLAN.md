@@ -25,7 +25,7 @@ Current focus: Phase 7 - standard library as source planning.
 | 2. Parser semantics           | Complete    | Parser cursor contract, expression parsing, parser package layout, recovery, and class grammar have been tightened.                                                                 |
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | Complete    | Parser-generated ASTs are syntax-only; semantic declaration collection, scopes, diagnostics, type checks, return/l-value checks, and loop-control checks own meaning.              |
-| 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, class generic parameter syntax supports multiple names, and syntaxless `ReturnType` fallback is isolated. |
+| 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, class generic parameter syntax supports multiple names, and legacy type adapters are removed. |
 | 6. Multi-file pipeline        | Complete    | `Compiler` and `ProjectContext` now lex and parse all inputs, aggregate file-aware diagnostics, collect declarations, build project scope, and run semantic checks across units.     |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
@@ -205,8 +205,8 @@ Parser-owned semantic checks inventory:
 - [x] Scope construction coupling: declaration and class parsers no longer build parser symbol-table scopes or register symbols while parsing syntax.
 - [x] TypeRegistry boundary decision: expression parsing no longer depends on parser type metadata, and `TypeRegistry` is not used for semantic validation.
 - [x] Type syntax nodes: declaration/class type parsing now builds parsed `TypeSyntax` nodes for declared source types.
-- [x] Type syntax exposure: declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly while keeping `ReturnType` compatibility getters.
-- [x] Type syntax construction: declaration/class parsing now passes parsed `TypeSyntax` directly into declaration AST constructors instead of building parser-owned `ReturnType` adapters.
+- [x] Type syntax exposure: declaration AST nodes and semantic declarations expose parsed `TypeSyntax` directly.
+- [x] Type syntax construction: declaration/class parsing now passes parsed `TypeSyntax` directly into declaration AST constructors instead of building parser-owned type adapters.
 - [x] Class generic syntax: class headers preserve multiple generic parameter names as parsed `GenericTypeSyntax` nodes.
 - [x] Semantic type resolution: name resolution now resolves declared types through semantic `TypeSymbol` objects.
 - [x] TypeRegistry adapter removal: declaration/class parsing no longer uses a parser-side type registry.
@@ -231,14 +231,14 @@ Tasks:
 - [x] Add resolved semantic type symbols, such as `ValueTypeSymbol`, `ClassTypeSymbol`, and `GenericParameterSymbol`.
 - [x] Resolve declared type names through semantic type symbols during name resolution.
 - [x] Resolve visible class generic parameter names from the full parsed class generic parameter list.
-- [x] Keep legacy `ReturnType` adapters able to expose source `TypeSyntax` while downstream compatibility paths are retired.
-- [x] Migrate type checking to semantic type symbols instead of `ReturnType` token-class comparisons.
-- [x] Keep `ReturnType` as a source-syntax-first compatibility adapter alongside direct `TypeSyntax` AST APIs.
+- [x] Retire legacy type adapters after downstream compatibility paths moved to parsed `TypeSyntax`.
+- [x] Migrate type checking to semantic type symbols instead of lexer token-class comparisons.
+- [x] Remove source-syntax compatibility adapters in favor of direct `TypeSyntax` AST APIs.
 - [x] Expose parsed `TypeSyntax` directly from declaration AST nodes and semantic declarations.
-- [x] Resolve semantic declaration types from `TypeSyntax` first, with `ReturnType` only as a compatibility fallback.
+- [x] Resolve semantic declaration types directly from `TypeSyntax`.
 - [x] Remove parser `TypeRegistry` once parsed type syntax nodes can preserve class/generic metadata without it.
 - [x] Model Nova classes and Nova value/math types separately, matching the README design.
-- [x] Isolate syntaxless `ReturnType` fallback conversion in `semantic.type.ReturnTypeSyntaxBridge`.
+- [x] Remove syntaxless adapter fallback conversion after semantic analysis switched to parsed `TypeSyntax`.
 - [x] Add regression tests for semantic type categories: value/math, class/object, array, generic-parameter, and unknown.
 - [x] Document the `TypeSyntax` to `TypeSymbol` boundary for parser-owned syntax and semantic-owned meaning.
 
@@ -246,8 +246,8 @@ Exit criteria:
 
 - [x] Type names can be parsed before they are resolved.
 - [x] Forward and mutual references become possible.
-- [x] Semantic analysis no longer reads lexer token classes outside the isolated `ReturnType` compatibility bridge.
-- [x] Declaration AST constructors no longer require `ReturnType` compatibility adapters.
+- [x] Semantic analysis no longer reads lexer token classes for declared type meaning.
+- [x] Declaration AST constructors no longer require compatibility adapters.
 - [x] Semantic type-category behavior is covered by focused regression tests.
 - [x] The parser/semantic type boundary is documented with examples.
 

@@ -1,8 +1,6 @@
 package semantic.declaration;
 
 import lexer.Lexer;
-import lexer.token.ReturnType;
-import lexer.token.family.PrimitiveType;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
 import parser.ast.nodes.StatementNode;
@@ -75,7 +73,7 @@ public class SemanticDeclarationCollectorTest {
     @Test
     void testCollectorPreservesDuplicateDeclarationsForLaterValidation() {
 
-        var intType = new ReturnType(PrimitiveType.INT);
+        var intType = new NamedTypeSyntax(1, 1, "int", true);
         var ast = List.<StatementNode>of(
             new VariableDeclarationStatement(1, 1, intType, "x", null),
             new VariableDeclarationStatement(2, 1, intType, "x", null)

@@ -321,15 +321,15 @@ Semantic passes use resolved type symbols for declared type validation,
 initializer and assignment compatibility, array access, function and method
 argument checks, member lookup, class subtype assignment, and overload selection.
 
-### `ReturnType` during migration
+### Type Syntax Boundary
 
-`ReturnType` is a temporary compatibility adapter. It may support older manual
-AST construction in tests and printer paths that still expect a `ReturnType`,
-but it should not be used as the semantic type model.
+Declaration AST nodes and semantic declarations carry parsed `TypeSyntax`
+directly. The semantic resolver consumes that syntax and produces `TypeSymbol`
+objects; it does not read lexer token classes as declared type meaning.
 
-New parser-created declarations should carry `TypeSyntax` directly. Semantic
-passes should prefer parsed syntax before consulting syntaxless compatibility
-fallbacks through `semantic.type.ReturnTypeSyntaxBridge`.
+Manual AST construction in tests should use `TypeSyntax` nodes such as
+`NamedTypeSyntax`, `ArrayTypeSyntax`, and `GenericTypeSyntax`, matching parser
+output.
 
 ## Project pipeline
 

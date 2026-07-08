@@ -10,12 +10,10 @@
 ///
 /// - Represent token classes and lexemes emitted by the lexer.
 /// - Carry source-location information used by diagnostics.
-/// - Provide token-level adapters consumed by parser code.
 /// - Keep token representation separate from resolved semantic symbols.
 ///
-/// ## Current transition
+/// ## Boundary
 ///
-/// Some classes in this package still act as temporary adapters between token-level type
-/// information and later semantic type information. The long-term direction is to keep this
-/// package lexical/syntactic and move resolved meaning into `semantic.type`.
+/// This package is lexical and syntactic. Resolved type meaning belongs in `semantic.type`,
+/// and source-level type spelling belongs in `parser.ast.nodes.type`.
 package lexer.token;

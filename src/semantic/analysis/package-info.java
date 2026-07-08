@@ -23,11 +23,10 @@
 /// resolved type symbols. They should not push meaning back into parser code or require the
 /// parser to reject semantically invalid but syntactically valid constructs.
 ///
-/// ## Current evolution
+/// ## Current type model
 ///
-/// Type checking now compares semantic type symbols internally. Declarations still expose the
-/// transitional `ReturnType` adapter, but syntaxless adapter metadata is converted through
-/// `semantic.type.ReturnTypeSyntaxBridge` before the checker works with `semantic.type` symbols
-/// for assignability, subtype compatibility, inherited member access, calls, arrays, overload
+/// Type checking compares semantic type symbols internally. Declarations expose parsed
+/// `TypeSyntax`, which the semantic resolver turns into `semantic.type` symbols for
+/// assignability, subtype compatibility, inherited member access, calls, arrays, overload
 /// selection, and condition expressions.
 package semantic.analysis;

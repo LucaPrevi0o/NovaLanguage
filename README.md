@@ -31,7 +31,7 @@ Implemented or partially implemented today:
 - Duplicate declaration validation, including overload-signature duplicate checks
 - Parser-side type-registry metadata removal
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
-- Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
+- Semantic type resolution directly through parsed `TypeSyntax`
 - Semantic recognition of visible class generic parameter names
 - Phase 6 source-file, compilation-unit, and file-aware diagnostic models
 - Project-level `Compiler` and `ProjectContext` orchestration for multi-file front-end compilation
@@ -45,7 +45,6 @@ Implemented or partially implemented today:
 
 Not implemented yet:
 
-- Full removal of temporary `ReturnType` adapter constructors, compatibility getters, fallback bridges, and printer compatibility paths
 - Full package/import semantics
 - Semantic standard-library declarations
 - Standard library loading from Nova source files

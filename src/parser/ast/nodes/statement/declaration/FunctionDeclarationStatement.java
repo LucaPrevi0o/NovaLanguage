@@ -2,7 +2,6 @@ package parser.ast.nodes.statement.declaration;
 
 import parser.ast.Printable;
 import parser.ast.nodes.statement.DeclarationStatement;
-import lexer.token.ReturnType;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.type.TypeSyntax;
 
@@ -20,25 +19,11 @@ public class FunctionDeclarationStatement extends DeclarationStatement implement
     /// Constructs a new FunctionDeclarationStatement.
     /// @param line The line number where the function is declared.
     /// @param column The column number where the function is declared.
-    /// @param returnType The return type of the function.
+    /// @param returnType The parsed source return type syntax of the function.
     /// @param name The name of the function.
     /// @param parameters The parameters of the function.
     /// @param body The body of the function (may be {@code null} for pre-registration before the body is parsed).
     public FunctionDeclarationStatement(int line, int column, TypeSyntax returnType, String name, FunctionParameter[] parameters, StatementNode body) {
-
-        super(line, column, returnType, name);
-        this.parameters = parameters;
-        this.body = body;
-    }
-
-    /// Constructs a compatibility FunctionDeclarationStatement from a legacy ReturnType adapter.
-    /// @param line The line number where the function is declared.
-    /// @param column The column number where the function is declared.
-    /// @param returnType The temporary ReturnType adapter for older callers.
-    /// @param name The name of the function.
-    /// @param parameters The parameters of the function.
-    /// @param body The body of the function (may be {@code null} for pre-registration before the body is parsed).
-    public FunctionDeclarationStatement(int line, int column, ReturnType returnType, String name, FunctionParameter[] parameters, StatementNode body) {
 
         super(line, column, returnType, name);
         this.parameters = parameters;
@@ -65,7 +50,7 @@ public class FunctionDeclarationStatement extends DeclarationStatement implement
     public List<PrintEntry> getPrintEntries() {
 
         var entries = new ArrayList<PrintEntry>();
-        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredType())));
+        entries.add(new PrintEntry.Info("Type: " + buildTypeStringWithSizes(getDeclaredTypeSyntax())));
         entries.add(new PrintEntry.Children("Parameters", parameters));
         entries.add(new PrintEntry.Info("Name: " + getName()));
         entries.add(new PrintEntry.Child("Body", body));

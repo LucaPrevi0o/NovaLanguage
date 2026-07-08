@@ -1,12 +1,8 @@
 package semantic.type;
 
 import lexer.Lexer;
-import lexer.token.ReturnType;
-import lexer.token.family.NonPrimitiveType;
-import lexer.token.family.PrimitiveType;
 import org.junit.jupiter.api.Test;
 import parser.Parser;
-import parser.ast.nodes.ExpressionNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.ClassDeclarationStatement;
 import parser.ast.nodes.statement.declaration.VariableDeclarationStatement;
@@ -100,24 +96,24 @@ public class SemanticTypeResolverTest {
         var resolver = new TypeResolver();
 
         var count = variable(ast, "count");
-        var valueType = resolver.resolve(count.getDeclaredTypeSyntax(), count.getDeclaredType(), count, rootScope);
+        var valueType = resolver.resolve(count.getDeclaredTypeSyntax(), count, rootScope);
         assertTrue(valueType.diagnostics().isEmpty());
         assertEquals(TypeKind.VALUE, valueType.type().getKind());
 
         var object = variable(ast, "object");
-        var classType = resolver.resolve(object.getDeclaredTypeSyntax(), object.getDeclaredType(), object, rootScope);
+        var classType = resolver.resolve(object.getDeclaredTypeSyntax(), object, rootScope);
         assertTrue(classType.diagnostics().isEmpty());
         assertEquals(TypeKind.CLASS, classType.type().getKind());
 
         var objects = variable(ast, "objects");
-        var arrayType = resolver.resolve(objects.getDeclaredTypeSyntax(), objects.getDeclaredType(), objects, rootScope);
+        var arrayType = resolver.resolve(objects.getDeclaredTypeSyntax(), objects, rootScope);
         assertTrue(arrayType.diagnostics().isEmpty());
         var arraySymbol = assertInstanceOf(ArrayTypeSymbol.class, arrayType.type());
         assertEquals(TypeKind.ARRAY, arraySymbol.getKind());
         assertEquals(TypeKind.CLASS, arraySymbol.elementType().getKind());
 
         var missing = variable(ast, "missing");
-        var unknownType = resolver.resolve(missing.getDeclaredTypeSyntax(), missing.getDeclaredType(), missing, rootScope);
+        var unknownType = resolver.resolve(missing.getDeclaredTypeSyntax(), missing, rootScope);
         assertEquals(TypeKind.UNKNOWN, unknownType.type().getKind());
         assertInstanceOf(UnknownTypeSymbol.class, unknownType.type());
         assertEquals(1, unknownType.diagnostics().size());
@@ -125,7 +121,7 @@ public class SemanticTypeResolverTest {
         var box = classDeclaration(ast, "Box");
         var boxScope = rootScope.childOwnedBy(box).orElseThrow();
         var field = box.getFields()[0];
-        var genericType = resolver.resolve(field.getDeclaredTypeSyntax(), field.getDeclaredType(), field, boxScope);
+        var genericType = resolver.resolve(field.getDeclaredTypeSyntax(), field, boxScope);
         assertTrue(genericType.diagnostics().isEmpty());
         assertEquals(TypeKind.GENERIC_PARAMETER, genericType.type().getKind());
     }
@@ -166,7 +162,7 @@ public class SemanticTypeResolverTest {
         var rootScope = scope(ast);
         var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
 
-        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration.getDeclaredType(), declaration, rootScope);
+        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration, rootScope);
 
         assertTrue(resolution.diagnostics().isEmpty());
         var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
@@ -186,7 +182,7 @@ public class SemanticTypeResolverTest {
         var rootScope = scope(ast);
         var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
 
-        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration.getDeclaredType(), declaration, rootScope);
+        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration, rootScope);
 
         assertTrue(resolution.diagnostics().isEmpty());
         var classType = assertInstanceOf(ClassTypeSymbol.class, resolution.type());
@@ -204,7 +200,7 @@ public class SemanticTypeResolverTest {
         var rootScope = scope(ast);
         var declaration = assertInstanceOf(VariableDeclarationStatement.class, ast.getFirst());
 
-        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration.getDeclaredType(), declaration, rootScope);
+        var resolution = new TypeResolver().resolve(declaration.getDeclaredTypeSyntax(), declaration, rootScope);
 
         assertInstanceOf(UnknownTypeSymbol.class, resolution.type());
         assertEquals(TypeKind.UNKNOWN, resolution.type().getKind());
@@ -222,7 +218,7 @@ public class SemanticTypeResolverTest {
         var classScope = rootScope.childOwnedBy(classDeclaration).orElseThrow();
         var field = classDeclaration.getFields()[0];
 
-        var resolution = new TypeResolver().resolve(field.getDeclaredTypeSyntax(), field.getDeclaredType(), field, classScope);
+        var resolution = new TypeResolver().resolve(field.getDeclaredTypeSyntax(), field, classScope);
 
         assertTrue(resolution.diagnostics().isEmpty());
         var genericType = assertInstanceOf(GenericParameterSymbol.class, resolution.type());
@@ -239,59 +235,12 @@ public class SemanticTypeResolverTest {
         var classScope = rootScope.childOwnedBy(classDeclaration).orElseThrow();
         var field = classDeclaration.getFields()[0];
 
-        var resolution = new TypeResolver().resolve(field.getDeclaredTypeSyntax(), field.getDeclaredType(), field, classScope);
+        var resolution = new TypeResolver().resolve(field.getDeclaredTypeSyntax(), field, classScope);
 
         assertTrue(resolution.diagnostics().isEmpty());
         var arrayType = assertInstanceOf(ArrayTypeSymbol.class, resolution.type());
         var elementType = assertInstanceOf(GenericParameterSymbol.class, arrayType.elementType());
         assertEquals("T", elementType.getName());
-    }
-
-    @Test
-    void testReturnTypeAdapterResolvesSourceSyntaxBeforeLegacyTokenMetadata() {
-
-        var ast = parse("public class Actual { }");
-        var rootScope = scope(ast);
-        var syntax = new NamedTypeSyntax(1, 1, "Actual", false);
-        var adapter = new ReturnType(
-            new NonPrimitiveType("Stale"),
-            new ExpressionNode[0],
-            null,
-            null,
-            syntax
-        );
-
-        var resolution = new TypeResolver().resolve(adapter, ast.getFirst(), rootScope);
-
-        assertTrue(resolution.diagnostics().isEmpty());
-        var classType = assertInstanceOf(ClassTypeSymbol.class, resolution.type());
-        assertEquals("Actual", classType.getName());
-    }
-
-    @Test
-    void testSyntaxlessReturnTypeFallbacksResolveThroughTypeSyntaxBridge() {
-
-        var ast = parse("public class Later { }");
-        var rootScope = scope(ast);
-        var resolver = new TypeResolver();
-
-        var valueResolution = resolver.resolve(new ReturnType(PrimitiveType.INT), ast.getFirst(), rootScope);
-        assertTrue(valueResolution.diagnostics().isEmpty());
-        var valueType = assertInstanceOf(ValueTypeSymbol.class, valueResolution.type());
-        assertEquals("int", valueType.getName());
-
-        var classResolution = resolver.resolve(new ReturnType(new NonPrimitiveType("Later")), ast.getFirst(), rootScope);
-        assertTrue(classResolution.diagnostics().isEmpty());
-        var classType = assertInstanceOf(ClassTypeSymbol.class, classResolution.type());
-        assertEquals("Later", classType.getName());
-
-        var arrayAdapter = new ReturnType(PrimitiveType.INT, new ExpressionNode[] { null }, null, null);
-        var arrayResolution = resolver.resolve(arrayAdapter, ast.getFirst(), rootScope);
-        assertTrue(arrayResolution.diagnostics().isEmpty());
-        var arrayType = assertInstanceOf(ArrayTypeSymbol.class, arrayResolution.type());
-        assertEquals(1, arrayType.getDimensions());
-        var elementType = assertInstanceOf(ValueTypeSymbol.class, arrayType.elementType());
-        assertEquals("int", elementType.getName());
     }
 
     private void assertBuiltinValueDomain(String name, ValueTypeDomain expectedDomain, boolean expectedNumeric) {

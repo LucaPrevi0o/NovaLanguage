@@ -14,12 +14,11 @@
 /// - Represent unknown types so diagnostics can continue after failed resolution.
 /// - Classify resolved symbols by high-level `TypeKind`.
 /// - Resolve parsed type syntax into semantic type symbols.
-/// - Convert syntaxless `ReturnType` adapters into `TypeSyntax` only at the compatibility boundary.
 ///
 /// ## Why this package matters
 ///
-/// The compiler is moving away from using lexer token classes as semantic type meaning. This
-/// package is the foundation for a real Nova type model: class types model object identity,
+/// The compiler uses semantic type symbols instead of lexer token classes for type meaning. This
+/// package is the foundation for Nova's type model: class types model object identity,
 /// value types model mathematical/value-like semantics, arrays preserve their element type, and
 /// visible class generic parameter names stay explicit until later constraint and specialization
 /// work can resolve generic instantiations.
@@ -27,7 +26,6 @@
 /// ## Boundary
 ///
 /// Parsed type syntax lives in `parser.ast.nodes.type`; resolved type meaning lives here.
-/// Semantic passes should pass parsed `TypeSyntax` to the resolver first and use legacy
-/// `ReturnType` metadata only through `ReturnTypeSyntaxBridge` for compatibility-only AST nodes.
+/// Semantic passes should pass parsed `TypeSyntax` to the resolver.
 /// The human-readable version of this boundary is documented in `docs/architecture.md`.
 package semantic.type;

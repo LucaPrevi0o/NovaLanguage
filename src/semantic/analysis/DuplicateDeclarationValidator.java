@@ -20,8 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static printer.AstPrinter.buildTypeStringWithSizes;
-
 /// Reports duplicate declarations inside each semantic scope.
 public final class DuplicateDeclarationValidator {
 
@@ -144,13 +142,12 @@ public final class DuplicateDeclarationValidator {
         return signature.append(')').toString();
     }
 
-    /// Builds a parameter type signature from source syntax, falling back to the compatibility adapter when needed.
+    /// Builds a parameter type signature from source syntax.
     /// @param parameter The function or constructor parameter.
     /// @return A stable parameter type signature.
     private String parameterTypeSignature(FunctionParameter parameter) {
 
-        var syntax = parameter.getTypeSyntax();
-        return syntax != null ? typeSyntaxSignature(syntax) : buildTypeStringWithSizes(parameter.getType());
+        return typeSyntaxSignature(parameter.getTypeSyntax());
     }
 
     /// Builds a type signature from parsed type syntax.

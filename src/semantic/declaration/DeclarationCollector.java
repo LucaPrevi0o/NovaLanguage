@@ -1,6 +1,5 @@
 package semantic.declaration;
 
-import lexer.token.ReturnType;
 import parser.ast.AstNode;
 import parser.ast.nodes.StatementNode;
 import parser.ast.nodes.statement.BlockStatement;
@@ -46,8 +45,8 @@ public final class DeclarationCollector {
             case ClassDeclarationStatement classDeclaration -> collectClass(classDeclaration, owner);
             case ClassMethodDeclaration methodDeclaration -> collectFunction(methodDeclaration, owner, DeclarationKind.METHOD);
             case FunctionDeclarationStatement functionDeclaration -> collectFunction(functionDeclaration, owner, DeclarationKind.FUNCTION);
-            case ClassFieldDeclaration fieldDeclaration -> declare(DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredType(), fieldDeclaration.getDeclaredTypeSyntax(), fieldDeclaration, owner);
-            case VariableDeclarationStatement variableDeclaration -> declare(DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredType(), variableDeclaration.getDeclaredTypeSyntax(), variableDeclaration, owner);
+            case ClassFieldDeclaration fieldDeclaration -> declare(DeclarationKind.FIELD, fieldDeclaration.getName(), fieldDeclaration.getDeclaredTypeSyntax(), fieldDeclaration, owner);
+            case VariableDeclarationStatement variableDeclaration -> declare(DeclarationKind.VARIABLE, variableDeclaration.getName(), variableDeclaration.getDeclaredTypeSyntax(), variableDeclaration, owner);
             case BlockStatement block -> {
                 for (var child : block.getStatements()) collectStatement(child, block);
             }
@@ -67,7 +66,6 @@ public final class DeclarationCollector {
                 declare(
                         DeclarationKind.FOREACH_VARIABLE,
                         forEachStatement.getElementName(),
-                        forEachStatement.getElementType(),
                         forEachStatement.getElementTypeSyntax(),
                         forEachStatement,
                         owner
@@ -86,7 +84,7 @@ public final class DeclarationCollector {
     /// @param owner The owner of the class declaration, or null if the class has no owner.
     private void collectClass(ClassDeclarationStatement classDeclaration, AstNode owner) {
 
-        declare(DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getReturnType(), classDeclaration.getTypeSyntax(), classDeclaration, owner);
+        declare(DeclarationKind.CLASS, classDeclaration.getName(), classDeclaration.getTypeSyntax(), classDeclaration, owner);
 
         for (var field : classDeclaration.getFields()) collectStatement(field, classDeclaration);
         for (var method : classDeclaration.getMethods()) collectStatement(method, classDeclaration);
@@ -100,9 +98,9 @@ public final class DeclarationCollector {
     /// @param kind The kind of the function declaration (e.g., `FUNCTION` or `METHOD`).
     private void collectFunction(FunctionDeclarationStatement functionDeclaration, AstNode owner, DeclarationKind kind) {
 
-        declare(kind, functionDeclaration.getName(), functionDeclaration.getDeclaredType(), functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration, owner);
+        declare(kind, functionDeclaration.getName(), functionDeclaration.getDeclaredTypeSyntax(), functionDeclaration, owner);
         for (var parameter : functionDeclaration.getParameters())
-            declare(DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter.getTypeSyntax(), parameter, functionDeclaration);
+            declare(DeclarationKind.PARAMETER, parameter.getName(), parameter.getTypeSyntax(), parameter, functionDeclaration);
         collectStatement(functionDeclaration.getBody(), functionDeclaration);
     }
 
@@ -113,28 +111,17 @@ public final class DeclarationCollector {
 
         declare(DeclarationKind.CONSTRUCTOR, owner.getName(), null, constructorDeclaration, owner);
         for (var parameter : constructorDeclaration.getParameters())
-            declare(DeclarationKind.PARAMETER, parameter.getName(), parameter.getType(), parameter.getTypeSyntax(), parameter, constructorDeclaration);
+            declare(DeclarationKind.PARAMETER, parameter.getName(), parameter.getTypeSyntax(), parameter, constructorDeclaration);
         collectStatement(constructorDeclaration.getBody(), constructorDeclaration);
     }
 
     /// Declares a new semantic declaration and adds it to the list of declarations.
     /// @param kind The kind of the declaration (e.g., `FUNCTION`, `VARIABLE`, `CLASS`, etc.).
     /// @param name The name of the declaration.
-    /// @param declaredType The ReturnType adapter for the declaration, or `null` if absent.
     /// @param declaredTypeSyntax The parsed source type syntax for the declaration, or `null` if absent.
     /// @param node The AST node that represents the declaration.
     /// @param owner The owner of the declaration, or `null` if the declaration has no owner.
-    private void declare(DeclarationKind kind, String name, ReturnType declaredType, TypeSyntax declaredTypeSyntax, AstNode node, AstNode owner) {
-        declarations.add(new SemanticDeclaration(kind, name, declaredType, declaredTypeSyntax, node, owner));
-    }
-
-    /// Declares a new semantic declaration without a source type.
-    /// @param kind The kind of the declaration.
-    /// @param name The name of the declaration.
-    /// @param declaredType The ReturnType adapter for the declaration, or `null` if absent.
-    /// @param node The AST node that represents the declaration.
-    /// @param owner The owner of the declaration, or `null` if the declaration has no owner.
-    private void declare(DeclarationKind kind, String name, ReturnType declaredType, AstNode node, AstNode owner) {
-        declarations.add(new SemanticDeclaration(kind, name, declaredType, node, owner));
+    private void declare(DeclarationKind kind, String name, TypeSyntax declaredTypeSyntax, AstNode node, AstNode owner) {
+        declarations.add(new SemanticDeclaration(kind, name, declaredTypeSyntax, node, owner));
     }
 }
