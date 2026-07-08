@@ -8,10 +8,11 @@ This repository currently focuses on the **compiler front end**: reading Nova so
 
 The implementation follows the living roadmap in [`PLAN.md`](PLAN.md).
 
-Current focus: **Phase 6 - multi-file project pipeline design**.
+Current focus: **Phase 7 - standard library as source planning**.
 
 Phase 4 is complete: parsing now builds syntax-only ASTs, while semantic passes own name resolution, scope construction, duplicate checks, type checks, return checks, l-value checks, and loop-control validation.
 Phase 5 type-model groundwork is complete enough for Phase 6: parsed type syntax is preserved by declaration AST nodes, class declarations preserve multiple generic parameter names, and semantic type symbols now distinguish Nova type categories.
+Phase 6 is complete: the project-level compiler entry point accepts multiple source files, creates compilation units for every input before semantic analysis, preserves file-aware diagnostics, and runs declaration collection plus semantic checks across the combined project AST.
 Roadmap issues for Phases 1 through 8 are grouped under the `Nova MVP compiler`
 milestone; advanced Phase 9 language features are tracked as separate post-MVP
 milestones.
@@ -32,8 +33,9 @@ Implemented or partially implemented today:
 - Semantic type symbols for Nova value/math, class/object, array, generic-parameter, and unknown types
 - Semantic type resolution through parsed `TypeSyntax`, with syntaxless `ReturnType` fallbacks isolated behind a compatibility bridge
 - Semantic recognition of visible class generic parameter names
-- Documented Phase 6 contracts for the planned multi-file project pipeline
 - Phase 6 source-file, compilation-unit, and file-aware diagnostic models
+- Project-level `Compiler` and `ProjectContext` orchestration for multi-file front-end compilation
+- Cross-file declaration collection, project scope construction, name/type resolution, and semantic checks
 - Type checking for variables, initializers, assignments, function/method calls, arrays, direct and inherited class members, class subtype assignment, and basic overload selection
 - Return checking
 - L-value checking
@@ -44,7 +46,7 @@ Implemented or partially implemented today:
 Not implemented yet:
 
 - Full removal of temporary `ReturnType` adapter constructors, compatibility getters, fallback bridges, and printer compatibility paths
-- Multi-file project compilation
+- Full package/import semantics
 - Semantic standard-library declarations
 - Standard library loading from Nova source files
 - IR generation

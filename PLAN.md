@@ -1,6 +1,6 @@
 # Nova Compiler Upgrade Plan
 
-Last updated: 2026-07-01
+Last updated: 2026-07-08
 
 This file tracks the current upgrade path for the Nova compiler front end. The goal is to keep the project moving in small, testable steps while preserving the existing recursive-descent architecture until there is a clear reason to replace it.
 The goal of these incremental steps is to guide the implementation plan for the Nova compiler front end, while conserving a list of committable upgrades that can follow a clear path toward a more robust, testable, and maintainable compiler.
@@ -17,7 +17,7 @@ In this sense, the plan is a living document that can be updated as the project 
 
 ## Current Status
 
-Current focus: Phase 6 - multi-file project pipeline design.
+Current focus: Phase 7 - standard library as source planning.
 
 | Phase                         | Status      | Summary                                                                                                                                                                             |
 |-------------------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -26,7 +26,7 @@ Current focus: Phase 6 - multi-file project pipeline design.
 | 3. Diagnostics                | Complete    | Lexer and parser diagnostics now share a structured model without global error state or legacy error wrappers.                                                                      |
 | 4. Semantic analysis split    | Complete    | Parser-generated ASTs are syntax-only; semantic declaration collection, scopes, diagnostics, type checks, return/l-value checks, and loop-control checks own meaning.              |
 | 5. Type model                 | Complete    | Declaration AST nodes expose parsed type syntax directly; semantic symbols distinguish Nova type categories, class generic parameter syntax supports multiple names, and syntaxless `ReturnType` fallback is isolated. |
-| 6. Multi-file pipeline        | In progress | Project-level compiler contracts are being designed before implementation begins.                                                                                                   |
+| 6. Multi-file pipeline        | Complete    | `Compiler` and `ProjectContext` now lex and parse all inputs, aggregate file-aware diagnostics, collect declarations, build project scope, and run semantic checks across units.     |
 | 7. Standard library as source | Not started | Parser hard-coded builtins are gone; semantic builtin declarations and source loading are not implemented.                                                                          |
 | 8. IR preparation             | Not started | No backend-neutral lowered representation yet.                                                                                                                                      |
 | 9. Advanced Nova features     | Not started | Generics, lambdas, monomorphization, and related features should wait.                                                                                                              |
@@ -253,7 +253,7 @@ Exit criteria:
 
 ## Phase 6 - Multi-File Project Pipeline
 
-Status: In progress.
+Status: Complete.
 
 Goal: move from a single-file parser to a project compiler front end.
 
@@ -263,20 +263,20 @@ Tasks:
 - [x] Add `SourceFile`.
 - [x] Add `CompilationUnit`.
 - [x] Add a file-aware diagnostic wrapper for project-level aggregation.
-- [ ] Add `Compiler`.
-- [ ] Add `ProjectContext`.
-- [ ] Lex all files before semantic analysis.
-- [ ] Parse all files before semantic analysis.
-- [ ] Collect declarations across files.
-- [ ] Resolve names and types across files.
-- [ ] Run semantic checks across the project.
-- [ ] Add package/import placeholders, even if package semantics are minimal at first.
+- [x] Add `Compiler`.
+- [x] Add `ProjectContext`.
+- [x] Lex all files before semantic analysis.
+- [x] Parse all files before semantic analysis.
+- [x] Collect declarations across files.
+- [x] Resolve names and types across files.
+- [x] Run semantic checks across the project.
+- [x] Add package/import placeholders, even if package semantics are minimal at first.
 
 Exit criteria:
 
-- [ ] Two `.nv` files can reference each other.
-- [ ] Classes can be discovered before method bodies are analyzed.
-- [ ] The standard library can later plug into the same path.
+- [x] Two `.nv` files can reference each other.
+- [x] Classes can be discovered before method bodies are analyzed.
+- [x] The standard library can later plug into the same path.
 
 ## Phase 7 - Standard Library As Source
 
@@ -347,5 +347,5 @@ Exit criteria:
 
 ## Immediate Next Steps
 
-1. Define the two-file cross-reference acceptance test that will prove the Phase 6 pipeline works without single-file shortcuts.
-2. Implement the `ProjectContext` and `Compiler` orchestration layer tracked by issue #72.
+1. Decide how native/builtin declarations enter semantic declaration collection before source-loaded standard-library files exist.
+2. Create the initial `stdlib/` source layout and route those files through the project-level `Compiler` path.

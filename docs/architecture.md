@@ -9,24 +9,24 @@ For long-term language goals, see [`language-design.md`](language-design.md).
 
 ## Current pipeline
 
-The repository currently implements a single-file compiler front end:
+The repository implements single-file lexer/parser APIs and a project-level
+compiler front-end entry point:
 
 ```mermaid
 flowchart TD
-    source[Nova source] --> lexer[Lexer]
-    lexer --> tokens[Token stream]
-    lexer --> lexerDiagnostics[Lexer diagnostics]
-    tokens --> parser[Parser]
-    parser --> ast[AST]
-    parser --> parserDiagnostics[Parser diagnostics]
-    ast --> declarations[Semantic declaration collection]
+    files[SourceFile list] --> compiler[Compiler]
+    compiler --> lexer[Lex every file]
+    lexer --> parser[Parse every token stream]
+    parser --> units[CompilationUnit values]
+    units --> context[ProjectContext]
+    context --> declarations[Project declaration collection]
     declarations --> scopes[Semantic scope construction]
     scopes --> passes[Semantic analysis passes]
-    passes --> semanticDiagnostics[Semantic diagnostics]
+    passes --> diagnostics[File-aware diagnostics]
 ```
 
 There is no backend-neutral IR, optimizer, or native code generator yet. The next
-major architecture step is the Phase 6 project-level pipeline described below.
+major architecture step is Phase 7 standard-library source loading.
 
 ## Layer ownership
 
@@ -333,8 +333,8 @@ fallbacks through `semantic.type.ReturnTypeSyntaxBridge`.
 
 ## Project pipeline
 
-Phase 6 moves Nova from a single-file front end toward a project-level compiler
-pipeline. The first implementation should lex and parse every source file before
+Phase 6 moved Nova from a single-file front end toward a project-level compiler
+pipeline. The implementation lexes and parses every source file before
 declaration collection or semantic analysis begins.
 
 ```mermaid
@@ -386,10 +386,13 @@ visible, or whether a declaration is duplicated.
 
 ### `ProjectContext`
 
-`ProjectContext` is the project-level semantic workspace. It should own the
-ordered list of compilation units, project diagnostics, project declaration
-index, root project/global semantic scope, future package/import placeholder
-state, and future standard-library or native declaration inputs.
+`ProjectContext` is the project-level semantic workspace.
+`compiler.ProjectContext` is available.
+
+It owns the ordered list of compilation units, aggregated file-aware diagnostics,
+project declaration collection, root project/global semantic scope, future
+package/import placeholder state, and future standard-library or native
+declaration inputs.
 
 The initial package model should be simple: all files belong to one default
 project namespace unless a later package/import design says otherwise. Duplicate
@@ -398,10 +401,11 @@ shared namespace.
 
 ### `Compiler`
 
-`Compiler` is the orchestrator. It should coordinate phases without becoming a
-semantic pass or parser helper.
+`Compiler` is the orchestrator. `compiler.Compiler` is available.
 
-Recommended phase order:
+It coordinates phases without becoming a semantic pass or parser helper.
+
+Implemented phase order:
 
 1. Validate source-file identities, reporting duplicate input identities as
    project diagnostics.
@@ -418,9 +422,12 @@ Recommended phase order:
 Diagnostics should be file-aware at the project boundary through
 `compiler.SourceDiagnostic`. Do not encode file paths into diagnostic messages;
 formatting belongs at the reporting boundary where file identity, line, and
-column can be combined for CLI output or tests.
+column can be combined for CLI output or tests. Semantic diagnostics are wrapped
+with a source file when their line and column uniquely identify one compilation
+unit; ambiguous semantic locations remain project-level diagnostics until AST
+nodes carry explicit source ownership.
 
-The first acceptance target is a two-file cross-reference:
+The first acceptance target is covered by the project-pipeline tests:
 
 ```nova
 // a.nv
@@ -434,8 +441,8 @@ public class A {
 public class B {}
 ```
 
-The project-level entry point should compile both files without depending on one
-file being parsed before the other for semantic visibility.
+The project-level entry point compiles both files without depending on one file
+being parsed before the other for semantic visibility.
 
 ## Future architecture
 
