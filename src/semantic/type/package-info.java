@@ -29,5 +29,5 @@
 /// Parsed type syntax lives in `parser.ast.nodes.type`; resolved type meaning lives here.
 /// Semantic passes should pass parsed `TypeSyntax` to the resolver first and use legacy
 /// `ReturnType` metadata only through `ReturnTypeSyntaxBridge` for compatibility-only AST nodes.
-/// The human-readable version of this boundary is documented in `docs/type-model.md`.
+/// The human-readable version of this boundary is documented in `docs/architecture.md`.
 package semantic.type;

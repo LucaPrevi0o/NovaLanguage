@@ -53,7 +53,8 @@ Not implemented yet:
 - Advanced Nova features such as generic constraints, generic instantiation/specialization, lambdas, variadic generics, monomorphization, access-control checks, override validation, inherited-member conflict checks, generic overload specificity, and operator-overloadable Nova types
 - Ecosystem tools such as Pulsar, Orbit, Nebula, and Quark package resolution
 
-For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md).
+For the detailed implementation plan, see [`PLAN.md`](PLAN.md). For compiler
+architecture and pipeline details, see [`docs/architecture.md`](docs/architecture.md).
 
 ## Repository layout
 
@@ -61,7 +62,7 @@ For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compil
 .
 ├── src/                  # Compiler front-end source code
 ├── test/                 # JUnit tests grouped by compiler layer
-├── docs/                 # Design and implementation documentation
+├── docs/                 # Consolidated design and operations documentation
 ├── PLAN.md               # Living implementation checklist
 ├── pom.xml               # Maven project configuration
 ├── mvnw / mvnw.cmd       # Maven Wrapper
@@ -70,17 +71,10 @@ For the detailed implementation plan, see [`PLAN.md`](PLAN.md) and [`docs/compil
 
 Important documentation:
 
-- [`docs/architecture.md`](docs/architecture.md) - current compiler-front-end architecture
-- [`docs/parser.md`](docs/parser.md) - parser structure and responsibilities
-- [`docs/semantic-analysis.md`](docs/semantic-analysis.md) - semantic passes and scope model
-- [`docs/type-model.md`](docs/type-model.md) - `TypeSyntax`, `TypeSymbol`, and compatibility boundary
-- [`docs/project-pipeline.md`](docs/project-pipeline.md) - planned multi-file compiler pipeline contracts
-- [`docs/language-design.md`](docs/language-design.md) - long-term Nova language vision
-- [`docs/ecosystem.md`](docs/ecosystem.md) - Nova ecosystem naming and package vocabulary
-- [`docs/compiler-roadmap.md`](docs/compiler-roadmap.md) - roadmap explained in narrative form
-- [`docs/testing.md`](docs/testing.md) - test and CI notes
-- [`docs/project-automation.md`](docs/project-automation.md) - GitHub Project and issue automation notes
-- [`docs/contributing.md`](docs/contributing.md) - development rules for future changes
+- [`docs/architecture.md`](docs/architecture.md) - compiler layers, parser rules, semantic passes, type model, and project pipeline
+- [`docs/language-design.md`](docs/language-design.md) - long-term Nova language and ecosystem vision
+- [`docs/project-automation.md`](docs/project-automation.md) - GitHub Project, issue, pull request, Wiki, and Pages automation
+- [`docs/contributing.md`](docs/contributing.md) - development rules, tests, CI behavior, and documentation conventions
 
 ## Requirements
 
@@ -105,7 +99,7 @@ On Windows:
 
 The Java CI workflow runs the test suite automatically on pushes to `main`, pull requests targeting `main`, and manual dispatch. It tests with Temurin JDK 24 and 26, uploads Surefire reports, publishes a JUnit report, and checks local Markdown documentation links.
 
-A separate documentation workflow mirrors Markdown files from `docs/` into the GitHub Wiki and publishes generated Javadocs to GitHub Pages when documentation, source, build, or publishing files change on `main`. Project automation workflows keep issue milestones, managed labels, PR-derived status, and archive visibility aligned with the roadmap Project.
+A separate documentation workflow mirrors each Markdown file from `docs/` into one GitHub Wiki page and publishes generated Javadocs to GitHub Pages when documentation, source, build, or publishing files change on `main`. Project automation workflows keep issue milestones, managed labels, PR-derived status, and archive visibility aligned with the roadmap Project.
 
 ## What Nova is intended to become
 
@@ -118,7 +112,7 @@ The broader ecosystem vocabulary is also being reserved now: **Pulsar** for the 
 
 Those language and ecosystem goals are documented separately from the implementation status because many of them are not implemented yet.
 
-See [`docs/language-design.md`](docs/language-design.md) for the broader design vision and [`docs/ecosystem.md`](docs/ecosystem.md) for the ecosystem naming guide.
+See [`docs/language-design.md`](docs/language-design.md) for the broader design vision and ecosystem naming guide.
 
 ## Development approach
 

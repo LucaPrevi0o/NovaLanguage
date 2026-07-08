@@ -249,7 +249,7 @@ def check_documentation_mentions(root: Path, findings: list[Finding]) -> None:
     """Check that automation health-check entry points are documented."""
 
     docs_text = documented_automation_text(root)
-    docs_path = root / "docs" / "automation-health-check.md"
+    docs_path = root / "docs" / "project-automation.md"
     for expected in DOCUMENTED_ENTRY_POINTS:
         if expected not in docs_text:
             findings.append(Finding("error", f"Automation health-check docs do not mention {expected}", docs_path))
