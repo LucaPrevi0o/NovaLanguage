@@ -61,8 +61,8 @@ architecture and pipeline details, see [`docs/architecture.md`](docs/architectur
 
 ```text
 .
-├── src/                  # Compiler front-end source code
-├── test/                 # JUnit tests grouped by compiler layer
+├── src/main/java/        # Compiler front-end source code
+├── src/test/java/        # JUnit tests grouped by compiler layer
 ├── docs/                 # Consolidated design and operations documentation
 ├── PLAN.md               # Living implementation checklist
 ├── pom.xml               # Maven project configuration
